@@ -33,3 +33,9 @@ Databasetabellene opprettes automatisk ved første forespørsel.
 - Produktbilder hentes automatisk ved publisering av Excel-rapporten.
 - Kjente produkter kobles mot produktbiblioteket; manglende bilder forsøkes hentet fra Obsbygg.no og lagres i Neon.
 - Ingen manuell «Hent manglende bilder»-knapp.
+
+## V5.5
+- Produktsalg kan filtreres på leverandør og produktkategori.
+- Kategorier: Maling / Dekkbeis / Beis, Vindu / Dør og Murmaling.
+- Produktkort viser kategori ved siden av leverandør.
+- Kategori beregnes automatisk fra produktnavn og SAP-navn ved Excel-opplasting.

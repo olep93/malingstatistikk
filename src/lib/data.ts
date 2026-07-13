@@ -1,7 +1,8 @@
 import {catalogEntry} from "./product-catalog";
 export type Supplier = "Infra"|"Butinox"|"Jotun";
 export type Period = "Dag"|"Uke"|"Måned";
-export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;size:string;supplier:Supplier;quantity:number;revenue:number;profit:number;margin:number;image?:string};
+export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
+export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;size:string;supplier:Supplier;category?:ProductCategory;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
 export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[]};
 
@@ -29,4 +30,12 @@ export const normalizeProduct=(raw:string)=>{
   return {product,size};
 };
 export const imageForProduct=(p:string,rawName="")=>catalogEntry(p,rawName)?.image;
-export const aggregateProducts=(rows:ProductRow[])=>{const map=new Map<string,ProductRow>();rows.forEach(r=>{const key=[r.storeId,r.supplier,r.product,r.size].join("|");const x=map.get(key);if(x){x.quantity+=r.quantity;x.revenue+=r.revenue;x.profit+=r.profit;x.margin=x.revenue?x.profit/x.revenue*100:0}else map.set(key,{...r,image:r.image||imageForProduct(r.product,r.rawName)})});return [...map.values()]};
+
+export const categoryForProduct=(product:string,rawName=""):ProductCategory=>{
+  const n=`${product} ${rawName}`.toUpperCase();
+  if(/MUR|FASADE.*MUR|BETONG|SOKKEL/.test(n)) return "Murmaling";
+  if(/VINDU|DØR|DOR|TREVERK.*VIND|VINDUS|DØRMALING/.test(n)) return "Vindu / Dør";
+  if(/MALING|DEKKB|DEKKBEIS|BEIS|OLJEMALING|OLJEBEIS|SUPERIOR|NORDLYS|RESIDENCE|FUTURA|DRYGOLIN|OPTIMAL|POWER CLEAN/.test(n)) return "Maling / Dekkbeis / Beis";
+  return "Annet";
+};
+export const aggregateProducts=(rows:ProductRow[])=>{const map=new Map<string,ProductRow>();rows.forEach(r=>{const key=[r.storeId,r.supplier,r.product,r.size].join("|");const x=map.get(key);if(x){x.quantity+=r.quantity;x.revenue+=r.revenue;x.profit+=r.profit;x.margin=x.revenue?x.profit/x.revenue*100:0}else map.set(key,{...r,category:r.category||categoryForProduct(r.product,r.rawName),image:r.image||imageForProduct(r.product,r.rawName)})});return [...map.values()]};

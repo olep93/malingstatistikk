@@ -153,3 +153,9 @@
   .supplierCard .shareCompare .shareValue{font-size:11pt!important}
   .supplierCard .shareCompare .shareTrack{height:3.6mm!important}
 }
+
+/* V5.5 – produktkategorier */
+.productFilters{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:end;margin:18px 0 4px;background:#fff;border:1px solid #e1e8ef;border-radius:14px;padding:15px 17px;box-shadow:0 5px 16px rgba(14,40,68,.06)}
+.productFilters>div{min-width:0}.filterLabel{display:block;margin-bottom:8px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.7px}.categoryChips button{white-space:nowrap}.productTags{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.categoryTag{font-size:10px;font-weight:800;padding:5px 7px;border-radius:5px;background:#f0f3f7;color:#40566d;border:1px solid #dfe6ee}
+@media(max-width:900px){.productFilters{grid-template-columns:1fr}.categoryChips{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.categoryChips::-webkit-scrollbar{height:4px}}
+@media print{.productFilters{display:none!important}.categoryTag{font-size:8px;padding:3px 5px}}

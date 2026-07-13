@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import {DailyReport,ProductRow,SourceTotal,aggregateProducts,normalizeProduct,supplierFromVendor} from "./data";
+import {DailyReport,ProductRow,SourceTotal,aggregateProducts,categoryForProduct,normalizeProduct,supplierFromVendor} from "./data";
 const num=(v:unknown)=>typeof v==="number"?v:Number(String(v??"").replace(/\s/g,"").replace(",","."))||0;
 const shortStore=(s:string)=>String(s||"").replace(/^OBS BYGG\s+/i,"").replace(/,.*$/,'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
 export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{
@@ -12,7 +12,7 @@ export async function parsePaintWorkbook(file:File,date:string):Promise<DailyRep
  for(let i=4;i<grid.length;i++){const row=grid[i]||[];const item=String(row[2]??"");const raw=String(row[3]??"");const storeId=String(row[0]??"");const store=shortStore(String(row[1]??""));
    if(item.toLowerCase()==="resultat"&&storeId&&store){const revenue=num(row[19]),profit=num(row[18]),quantity=num(row[16]);sourceTotals.push({storeId,store,quantity,revenue,profit,margin:revenue?profit/revenue*100:num(row[17])});continue}
    if(!storeId||!raw)continue;
-   for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;const n=normalizeProduct(raw);rows.push({storeId,store,itemNo:item,rawName:raw,product:n.product,size:n.size,supplier:g.supplier,quantity:q,revenue,profit,margin:revenue?profit/revenue*100:num(row[g.m])})}
+   for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;const n=normalizeProduct(raw);rows.push({storeId,store,itemNo:item,rawName:raw,product:n.product,size:n.size,supplier:g.supplier,category:categoryForProduct(n.product,raw),quantity:q,revenue,profit,margin:revenue?profit/revenue*100:num(row[g.m])})}
  }
  if(!rows.length) throw new Error("Fant ingen produktlinjer med salg.");
  return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals};
