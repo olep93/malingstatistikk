@@ -218,3 +218,76 @@
  .otherStoreRow>strong{font-size:6pt;text-align:right;color:#102d54}.otherStoreRow>span,.otherStoreRow>em,.otherStoreRow>small{font-size:5.2pt;text-align:right;white-space:nowrap}.otherStoreRow>em{font-style:normal;color:#258552}.otherStoreRow>small{font-weight:900;color:#102d54}
  .printRankingStrip{grid-template-columns:27mm repeat(5,1fr);padding:1mm 2mm}.rankChip{height:8mm}
 }
+
+/* V6.2 – definitive share-bar geometry, KPI day comparison and reliable print logo */
+.supplierCard .shareCompare .shareRow{
+  display:grid!important;
+  grid-template-columns:minmax(124px,132px) minmax(72px,1fr) 62px!important;
+  align-items:center!important;
+  column-gap:12px!important;
+  min-height:20px!important;
+  height:auto!important;
+  background:transparent!important;
+  overflow:visible!important;
+  position:relative!important;
+}
+.supplierCard .shareCompare .shareName{
+  position:static!important;
+  display:block!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  font-size:11px!important;
+  line-height:1.05!important;
+  font-weight:850!important;
+  color:#263b52!important;
+}
+.supplierCard .shareCompare .shareTrack{
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  min-width:0!important;
+  height:12px!important;
+  margin:0!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  background:#e5ebf1!important;
+}
+.supplierCard .shareCompare .shareValue{
+  position:static!important;
+  display:block!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:right!important;
+  font-size:15px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.kpi{position:relative;overflow:hidden}
+.kpiDelta{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:5px 8px;border-radius:999px;font-size:10px;font-style:normal;font-weight:900;background:#eef3f7;color:#607287}
+.kpi.up{background:linear-gradient(145deg,#fff 0,#f0fbf5 100%)}
+.kpi.down{background:linear-gradient(145deg,#fff 0,#fff3f1 100%)}
+.kpi.flat{background:linear-gradient(145deg,#fff 0,#f6f8fa 100%)}
+.kpi.up .kpiDelta{background:#dff4e8;color:#147648}
+.kpi.down .kpiDelta{background:#fde3df;color:#b23e32}
+.kpi.flat .kpiDelta{background:#e9eef3;color:#5f7184}
+@media(max-width:1180px){
+ .supplierCard .shareCompare .shareRow{grid-template-columns:110px minmax(60px,1fr) 56px!important;column-gap:8px!important}
+ .supplierCard .shareCompare .shareName{font-size:9.5px!important}
+ .supplierCard .shareCompare .shareValue{font-size:13px!important}
+}
+@media print{
+ .onePageReport .printHeader img{content:url('/logos/obsbygg-print.jpg')!important;display:block!important;opacity:1!important;filter:none!important;background:#0a3f78!important;object-fit:contain!important}
+ .onePageReport .supplierCard .shareCompare .shareRow{
+   grid-template-columns:31mm minmax(20mm,1fr) 14mm!important;
+   column-gap:1.5mm!important;
+   min-height:3.2mm!important;
+ }
+ .onePageReport .supplierCard .shareCompare .shareName{font-size:6.1pt!important;line-height:1!important;white-space:nowrap!important}
+ .onePageReport .supplierCard .shareCompare .shareTrack{height:2.5mm!important}
+ .onePageReport .supplierCard .shareCompare .shareValue{font-size:8.4pt!important}
+ .kpiDelta{font-size:6.2pt;padding:.7mm 1.4mm;margin-top:1mm}
+}

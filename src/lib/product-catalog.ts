@@ -29,8 +29,8 @@ export const PRODUCT_CATALOG:ProductCatalogEntry[]=[
 {name:"Drygolin Oljemaling",supplier:"Jotun",image:"https://www.obsbygg.no/cdn-cgi/image/quality=80,width=900,format=auto/globalassets/productimages/914516_7029350249436_1.jpg?ref=A09CB4362C",aliases:["DRYGOLIN OLJEMALING"],category:"Maling / Dekkbeis / Beis"},
 {name:"Trebitt Oljebeis",supplier:"Jotun",image:"https://www.obsbygg.no/cdn-cgi/image/quality=80,width=900,format=auto/globalassets/productimages/1017080_7029350261735_.jpg?ref=A311889DBE",aliases:["TREBITT OLJEBEIS"],category:"Maling / Dekkbeis / Beis"},
 {name:"Trebitt Matt Oljebeis",supplier:"Jotun",image:"https://www.obsbygg.no/cdn-cgi/image/quality=80,width=900,format=auto/globalassets/productimages/1053921_7029350261728_.jpg?ref=C42BC0F2DF",aliases:["TREBITT MATT OLJEBEIS"],category:"Maling / Dekkbeis / Beis"},
-{name:"Visir Oljegrunning Pigmentert",supplier:"Jotun",aliases:["VISIR OLJEGR PIGMENTERT","VISIR OLJEGR PIGM","VISIR OLJEGRUNNING PIGMENTERT"],category:"Grunning"},
-{name:"Visir Oljegrunning Klar",supplier:"Jotun",aliases:["VISIR OLJEGR KLAR","VISIR OLJEGR KLAR 0","VISIR OLJEGRUNNING KLAR"],category:"Grunning"},
+{name:"Visir Oljegrunning Pigmentert",supplier:"Jotun",pageUrl:"https://www.obsbygg.no/maling/utemaling/grunning-utendors/2385521",aliases:["VISIR OLJEGR PIGMENTERT","VISIR OLJEGR PIGM","VISIR OLJEGRUNNING PIGMENTERT"],category:"Grunning"},
+{name:"Visir Oljegrunning Klar",supplier:"Jotun",pageUrl:"https://www.obsbygg.no/maling/utemaling/grunning-utendors/2385520",aliases:["VISIR OLJEGR KLAR","VISIR OLJEGR KLAR 0","VISIR OLJEGRUNNING KLAR"],category:"Grunning"},
 {name:"Drytech Murmaling",supplier:"Jotun",image:"https://www.obsbygg.no/cdn-cgi/image/quality=80,width=900,format=auto/globalassets/productimages/325579_7029350155102_.jpg?ref=3AE08BDDF9",aliases:["DRYTECH MURMALING"],category:"Murmaling"},
 {name:"Mur Original Akryl",supplier:"Jotun",image:"https://www.obsbygg.no/cdn-cgi/image/quality=80,width=900,format=auto/globalassets/productimages/325599_7029350154884_.jpg?ref=2B1E918A89",aliases:["MUR ORIGINAL AKRYL"],category:"Murmaling"}
 ];

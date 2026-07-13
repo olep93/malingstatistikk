@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { ensureSchema, sql } from '@/lib/server/db';
 import { isAdmin } from '@/lib/server/auth';
-import { findObsbyggImage } from '@/lib/server/product-images';
+import { catalogEntry } from '@/lib/product-catalog';
 
 export const maxDuration = 60;
 
@@ -13,7 +13,7 @@ export async function GET() {
     const rows = await q`SELECT report_data FROM paint_reports ORDER BY report_date ASC`;
     const products = await q`SELECT product_key,display_name,image_url,product_url,category FROM paint_products`;
     const productMap = new Map(products.map((x:any)=>[x.product_key,x]));
-    const reports = rows.map((r:any)=>{ const report=r.report_data; report.rows=(report.rows||[]).map((row:any)=>{const key=row.productKey||[row.supplier,row.product,row.size||''].join('|');const product=productMap.get(key);return {...row,productKey:key,product:product?.display_name||row.product,image:product?.image_url||row.image,productUrl:product?.product_url||row.productUrl,category:product?.category||row.category};}); return report; });
+    const reports = rows.map((r:any)=>{ const report=r.report_data; report.rows=(report.rows||[]).map((row:any)=>{const key=row.productKey||[row.supplier,row.product,row.size||''].join('|');const product=productMap.get(key);const known=catalogEntry(product?.display_name||row.product,row.rawName);return {...row,productKey:key,product:known?.name||product?.display_name||row.product,image:product?.image_url||known?.image||row.image,productUrl:product?.product_url||known?.pageUrl||row.productUrl,category:product?.category||known?.category||row.category};}); return report; });
     return NextResponse.json({ reports });
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Kunne ikke hente rapporter' }, { status: 500 }); }
 }
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     await ensureSchema();
     const form = await req.formData();
     const raw = String(form.get('report') || '');
+    if (!raw) return NextResponse.json({error:'Rapportdata mangler'}, {status:400});
     const report = JSON.parse(raw);
     const file = form.get('file');
     let blobUrl: string | null = null;
@@ -32,31 +33,21 @@ export async function POST(req: Request) {
       blobUrl = blob.url;
     }
 
-    // Hent produktbilder automatisk ved publisering. Kjente produkter løses umiddelbart
-    // fra produktbiblioteket; resterende produkter forsøkes slått opp på Obsbygg.no.
-    const unique = new Map<string,any>();
-    for (const row of report.rows || []) {
-      const key=[row.supplier,row.product,row.size||''].join('|');
-      if (!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo});
-    }
-    const enrichmentMap = new Map<string,any>();
-    const items=[...unique.values()];
-    for(let i=0;i<items.length;i+=4){
-      const batch=items.slice(i,i+4);
-      const results=await Promise.all(batch.map(async item=>{
-        try{return {key:item.productKey,result:await findObsbyggImage(item)}}catch{return {key:item.productKey,result:{found:false}}}
-      }));
-      for(const x of results) enrichmentMap.set(x.key,x.result);
-    }
-    report.rows=(report.rows||[]).map((row:any)=>{
-      const key=[row.supplier,row.product,row.size||''].join('|');
-      const e=enrichmentMap.get(key)||{};return {...row,productKey:key,product:e.displayName||row.product,image:e.imageUrl||row.image,productUrl:e.url||row.productUrl,category:e.category||row.category};
-    });
+    // Lagre rapporten først. Produktnavn og bilder berikes automatisk i små
+    // bakgrunnskall fra nettleseren etter at publiseringen er bekreftet.
+    // Dette hindrer at Vercel-funksjonen går på timeout ved mange produkter.
+    report.rows=(report.rows||[]).map((row:any)=>({
+      ...row,
+      productKey: row.productKey || [row.supplier,row.product,row.size||''].join('|')
+    }));
 
     const q = sql();
     await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at)
       VALUES(${report.date},${report.sourceName || 'Excel-rapport'},${blobUrl},${JSON.stringify(report)}::jsonb,now())
       ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name, blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url), report_data=excluded.report_data, updated_at=now()`;
-    return NextResponse.json({ok:true, report, imagesFound:[...enrichmentMap.values()].filter((x:any)=>x?.imageUrl).length, productsChecked:items.length});
-  } catch(e){ return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke lagre rapport'}, {status:500}); }
+    return NextResponse.json({ok:true, report, enrichmentPending:true});
+  } catch(e){
+    console.error('POST /api/reports failed', e);
+    return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke lagre rapport'}, {status:500});
+  }
 }
