@@ -26,3 +26,10 @@ Etter at variablene er lagt inn må prosjektet deployes på nytt.
 - Serverrute `/api/products/find-image` kan forsøke bildeoppslag hos Obsbygg.no.
 
 Databasetabellene opprettes automatisk ved første forespørsel.
+
+## V5.3
+- Korrekt Obs BYGG-logo i toppmenyen.
+- Andelssøyler har fast layout: etikett til venstre, grafisk søyle i midten og prosent til høyre.
+- Produktbilder hentes automatisk ved publisering av Excel-rapporten.
+- Kjente produkter kobles mot produktbiblioteket; manglende bilder forsøkes hentet fra Obsbygg.no og lagres i Neon.
+- Ingen manuell «Hent manglende bilder»-knapp.

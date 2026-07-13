@@ -43,3 +43,21 @@
 .productImage img{max-width:100%;max-height:100%;object-fit:contain}
 @media(max-width:900px){.brand{width:112px;min-width:112px;padding:6px 10px}.brand img{width:88px;height:48px}.shareLabel b{font-size:15px}}
 @media print{.shareCompare{gap:3mm;margin-top:4mm}.shareLabel span{font-size:8.5pt}.shareLabel b{font-size:12pt}.shareTrack{height:4mm}.shareDelta{display:none!important}}
+
+/* V5.3 – fast trekolonne-layout: tekst venstre, søyle midt, prosent høyre */
+.shareCompare{display:grid;gap:13px;margin-top:17px}
+.shareCompare .shareRow{display:grid!important;grid-template-columns:132px minmax(80px,1fr) 64px!important;align-items:center;gap:11px;height:auto!important;background:transparent!important;overflow:visible!important}
+.shareName{font-size:11px;font-weight:850;color:#33465c;line-height:1.1;white-space:nowrap}
+.shareValue{font-size:15px;font-weight:950;line-height:1;text-align:right;color:#245d9e;white-space:nowrap;font-variant-numeric:tabular-nums}
+.profitShare .shareValue{color:#18734d}
+.shareTrack{width:100%;height:12px;border-radius:999px;background:#e8edf3;overflow:hidden;box-shadow:inset 0 1px 2px rgba(9,35,65,.11)}
+.shareTrack i{display:block;height:100%;min-width:3px;border-radius:999px}
+.revenueShare .shareTrack i{background:linear-gradient(90deg,#2168b9,#72acec)}
+.profitShare .shareTrack i{background:linear-gradient(90deg,#17764e,#61bb86)}
+.brand{width:148px;min-width:148px;height:74px;padding:8px 20px;background:transparent;display:flex;align-items:center;justify-content:center}
+.brand img{width:108px;height:58px;max-width:108px;max-height:58px;object-fit:contain;filter:none!important}
+.panelIntro{margin:-12px 0 8px;color:var(--muted);font-size:13px}
+@media(max-width:1180px){.shareCompare .shareRow{grid-template-columns:112px minmax(65px,1fr) 58px;gap:8px}.shareName{font-size:10px}.shareValue{font-size:14px}}
+@media(max-width:900px){.shareCompare .shareRow{grid-template-columns:120px minmax(80px,1fr) 62px}.brand{width:112px;min-width:112px;height:62px;padding:5px 10px}.brand img{width:90px;height:48px}}
+@media(max-width:420px){.shareCompare .shareRow{grid-template-columns:105px minmax(55px,1fr) 56px;gap:7px}.shareName{white-space:normal}}
+@media print{.shareCompare .shareRow{grid-template-columns:34mm 1fr 18mm!important;gap:2.5mm}.shareName{font-size:8.5pt}.shareValue{font-size:11pt}.shareTrack{height:3.6mm}}
