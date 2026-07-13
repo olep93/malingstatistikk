@@ -1,3 +1,4 @@
+import {catalogEntry} from "./product-catalog";
 export type Supplier = "Infra"|"Butinox"|"Jotun";
 export type Period = "Dag"|"Uke"|"Måned";
 export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;size:string;supplier:Supplier;quantity:number;revenue:number;profit:number;margin:number;image?:string};
@@ -27,5 +28,5 @@ export const normalizeProduct=(raw:string)=>{
   if(product===n) product=n.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()).replace(/\bBx\b/,"Butinox").replace(/\bDryg\b/,"Drygolin");
   return {product,size};
 };
-export const imageForProduct=(p:string)=>{const names=["Butinox Futura 16","Butinox Futura Matt","Butinox Futura Selvrensende 12","Drygolin Nordic Extreme","Drygolin Optimal","Drygolin Power Clean","Infra Nordlys","Infra Premium Residence","Infra Superior"];const found=names.find(x=>p.toLowerCase().includes(x.toLowerCase()));return found?`/products/${encodeURIComponent(found)}.jpg`:undefined};
-export const aggregateProducts=(rows:ProductRow[])=>{const map=new Map<string,ProductRow>();rows.forEach(r=>{const key=[r.storeId,r.supplier,r.product,r.size].join("|");const x=map.get(key);if(x){x.quantity+=r.quantity;x.revenue+=r.revenue;x.profit+=r.profit;x.margin=x.revenue?x.profit/x.revenue*100:0}else map.set(key,{...r,image:r.image||imageForProduct(r.product)})});return [...map.values()]};
+export const imageForProduct=(p:string,rawName="")=>catalogEntry(p,rawName)?.image;
+export const aggregateProducts=(rows:ProductRow[])=>{const map=new Map<string,ProductRow>();rows.forEach(r=>{const key=[r.storeId,r.supplier,r.product,r.size].join("|");const x=map.get(key);if(x){x.quantity+=r.quantity;x.revenue+=r.revenue;x.profit+=r.profit;x.margin=x.revenue?x.profit/x.revenue*100:0}else map.set(key,{...r,image:r.image||imageForProduct(r.product,r.rawName)})});return [...map.values()]};

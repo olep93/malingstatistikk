@@ -9,7 +9,6 @@ export async function POST(req:Request){
     const {rows=[]}=await req.json();
     const unique = new Map<string,any>();
     for(const row of rows){
-      if(row.image) continue;
       const key=[row.supplier,row.product,row.size||''].join('|');
       if(!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,supplier:row.supplier,size:row.size,ean:row.itemNo});
     }
