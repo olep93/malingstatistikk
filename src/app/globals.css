@@ -61,3 +61,95 @@
 @media(max-width:900px){.shareCompare .shareRow{grid-template-columns:120px minmax(80px,1fr) 62px}.brand{width:112px;min-width:112px;height:62px;padding:5px 10px}.brand img{width:90px;height:48px}}
 @media(max-width:420px){.shareCompare .shareRow{grid-template-columns:105px minmax(55px,1fr) 56px;gap:7px}.shareName{white-space:normal}}
 @media print{.shareCompare .shareRow{grid-template-columns:34mm 1fr 18mm!important;gap:2.5mm}.shareName{font-size:8.5pt}.shareValue{font-size:11pt}.shareTrack{height:3.6mm}}
+
+/* V5.4: one unambiguous layout for supplier share bars. */
+.supplierCard .shareCompare{
+  display:grid!important;
+  gap:12px!important;
+  margin-top:16px!important;
+}
+.supplierCard .shareCompare .shareRow{
+  display:grid!important;
+  grid-template-columns:128px minmax(90px,1fr) 66px!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:22px!important;
+  height:auto!important;
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  border-radius:0!important;
+  overflow:visible!important;
+  position:static!important;
+}
+.supplierCard .shareCompare .shareName{
+  position:static!important;
+  inset:auto!important;
+  display:block!important;
+  color:#25384e!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  white-space:nowrap!important;
+  z-index:auto!important;
+}
+.supplierCard .shareCompare .shareTrack{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:12px!important;
+  min-width:0!important;
+  background:#e8eef4!important;
+  border:1px solid #d9e2eb!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+}
+.supplierCard .shareCompare .shareTrack i{
+  position:absolute!important;
+  display:block!important;
+  inset:0 auto 0 0!important;
+  height:100%!important;
+  min-width:0!important;
+  border-radius:999px!important;
+  z-index:1!important;
+}
+.supplierCard .shareCompare .revenueShare .shareTrack i{
+  background:linear-gradient(90deg,#1665bd,#67a0ec)!important;
+}
+.supplierCard .shareCompare .profitShare .shareTrack i{
+  background:linear-gradient(90deg,#16854d,#63b77e)!important;
+}
+.supplierCard .shareCompare .shareValue{
+  position:static!important;
+  inset:auto!important;
+  display:block!important;
+  text-align:right!important;
+  color:#24447d!important;
+  font-size:15px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  z-index:auto!important;
+}
+.supplierCard .shareCompare .profitShare .shareValue{color:#28784a!important}
+.brand img{filter:none!important;object-fit:contain!important}
+.productImage img{display:block;max-width:100%;object-fit:contain}
+
+@media(max-width:1180px){
+  .supplierCard .shareCompare .shareRow{grid-template-columns:112px minmax(65px,1fr) 60px!important;gap:8px!important}
+  .supplierCard .shareCompare .shareName{font-size:10px!important}
+  .supplierCard .shareCompare .shareValue{font-size:14px!important}
+}
+@media(max-width:900px){
+  .supplierCard .shareCompare .shareRow{grid-template-columns:120px minmax(80px,1fr) 62px!important}
+}
+@media(max-width:420px){
+  .supplierCard .shareCompare .shareRow{grid-template-columns:100px minmax(50px,1fr) 56px!important;gap:7px!important}
+  .supplierCard .shareCompare .shareName{white-space:normal!important}
+}
+@media print{
+  .supplierCard .shareCompare .shareRow{grid-template-columns:34mm 1fr 18mm!important;gap:2.5mm!important}
+  .supplierCard .shareCompare .shareName{font-size:8.5pt!important}
+  .supplierCard .shareCompare .shareValue{font-size:11pt!important}
+  .supplierCard .shareCompare .shareTrack{height:3.6mm!important}
+}
