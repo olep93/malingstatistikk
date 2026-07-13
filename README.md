@@ -1,23 +1,28 @@
-# Malingstatistikk V3
+# Malingstatistikk V5
 
-Next.js-app for daglig malingrapport basert på Excel-uttrekket «Salg og svinn i butikk».
+## Vercel-miljøvariabler
 
-## Funksjoner
-- Leser `.xlsx` direkte i nettleseren.
-- Summerer omsetning, fortjeneste og fortjenesteprosent per varehus og leverandør.
-- Samler ulike baser under samme produkt og spannstørrelse.
-- Valgbart fokusvarehus.
-- Rangering etter fortjenesteprosent, fortjeneste eller omsetning.
-- Produktkort med opplastede produktbilder.
-- Dag, uke og måned basert på rapporter lagret lokalt i nettleseren.
-- Separat utskriftsrapport på to A3-sider i liggende format.
-- Midlertidig admininnlogging: `Admin` / `92205203`.
+Neon-integrasjonen må levere én av: `DATABASE_URL`, `POSTGRES_URL` eller `STORAGE_URL`.
+Blob-integrasjonen leverer `BLOB_READ_WRITE_TOKEN` automatisk.
 
-## Vercel
-1. Legg innholdet i denne mappen direkte i GitHub-repositoryet.
-2. Importer repositoryet i Vercel.
-3. Framework: Next.js. Root directory: `./`.
-4. Ingen miljøvariabler kreves i V3.
+Legg i tillegg inn:
 
-## Viktig
-Denne versjonen bruker `localStorage`. Rapporter følger derfor nettleseren og enheten. Neste produksjonstrinn er Firebase Authentication og Firestore.
+- `ADMIN_USERNAME` – for eksempel `Admin`
+- `ADMIN_PASSWORD` – et nytt sterkt passord
+- `SESSION_SECRET` – minst 32 tilfeldige tegn
+
+Etter at variablene er lagt inn må prosjektet deployes på nytt.
+
+## V5
+
+- Rapporter lagres permanent i Neon.
+- Original Excel-fil lagres privat i Vercel Blob.
+- Opplasting på eksisterende dato erstatter dagen i stedet for å doble den.
+- Dager kan slettes fra admin; tilhørende Blob-fil slettes samtidig.
+- Admininnlogging bruker serversignert HttpOnly-cookie.
+- Dag, uke og måned summerer hvert varehus én gang.
+- Omsetningsandel og fortjenesteandel viser prosent direkte i søylene.
+- A3 bruker samme leverandørkort som dashboardet.
+- Serverrute `/api/products/find-image` kan forsøke bildeoppslag hos Obsbygg.no.
+
+Databasetabellene opprettes automatisk ved første forespørsel.
