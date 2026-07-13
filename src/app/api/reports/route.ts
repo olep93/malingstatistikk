@@ -11,9 +11,9 @@ export async function GET() {
     await ensureSchema();
     const q = sql();
     const rows = await q`SELECT report_data FROM paint_reports ORDER BY report_date ASC`;
-    const images = await q`SELECT product_key,image_url FROM paint_products WHERE image_url IS NOT NULL`;
-    const imageMap = new Map(images.map((x:any)=>[x.product_key,x.image_url]));
-    const reports = rows.map((r:any)=>{ const report=r.report_data; report.rows=(report.rows||[]).map((row:any)=>({ ...row, image: row.image || imageMap.get([row.supplier,row.product,row.size||''].join('|')) })); return report; });
+    const products = await q`SELECT product_key,display_name,image_url,product_url,category FROM paint_products`;
+    const productMap = new Map(products.map((x:any)=>[x.product_key,x]));
+    const reports = rows.map((r:any)=>{ const report=r.report_data; report.rows=(report.rows||[]).map((row:any)=>{const key=row.productKey||[row.supplier,row.product,row.size||''].join('|');const product=productMap.get(key);return {...row,productKey:key,product:product?.display_name||row.product,image:product?.image_url||row.image,productUrl:product?.product_url||row.productUrl,category:product?.category||row.category};}); return report; });
     return NextResponse.json({ reports });
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Kunne ikke hente rapporter' }, { status: 500 }); }
 }
@@ -37,26 +37,26 @@ export async function POST(req: Request) {
     const unique = new Map<string,any>();
     for (const row of report.rows || []) {
       const key=[row.supplier,row.product,row.size||''].join('|');
-      if (!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,supplier:row.supplier,size:row.size,ean:row.itemNo});
+      if (!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo});
     }
-    const imageMap = new Map<string,string>();
+    const enrichmentMap = new Map<string,any>();
     const items=[...unique.values()];
     for(let i=0;i<items.length;i+=4){
       const batch=items.slice(i,i+4);
       const results=await Promise.all(batch.map(async item=>{
         try{return {key:item.productKey,result:await findObsbyggImage(item)}}catch{return {key:item.productKey,result:{found:false}}}
       }));
-      for(const x of results) if((x.result as any).found && (x.result as any).imageUrl) imageMap.set(x.key,(x.result as any).imageUrl);
+      for(const x of results) enrichmentMap.set(x.key,x.result);
     }
     report.rows=(report.rows||[]).map((row:any)=>{
       const key=[row.supplier,row.product,row.size||''].join('|');
-      return {...row,image:row.image||imageMap.get(key)};
+      const e=enrichmentMap.get(key)||{};return {...row,productKey:key,product:e.displayName||row.product,image:e.imageUrl||row.image,productUrl:e.url||row.productUrl,category:e.category||row.category};
     });
 
     const q = sql();
     await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at)
       VALUES(${report.date},${report.sourceName || 'Excel-rapport'},${blobUrl},${JSON.stringify(report)}::jsonb,now())
       ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name, blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url), report_data=excluded.report_data, updated_at=now()`;
-    return NextResponse.json({ok:true, report, imagesFound:imageMap.size, productsChecked:items.length});
+    return NextResponse.json({ok:true, report, imagesFound:[...enrichmentMap.values()].filter((x:any)=>x?.imageUrl).length, productsChecked:items.length});
   } catch(e){ return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke lagre rapport'}, {status:500}); }
 }

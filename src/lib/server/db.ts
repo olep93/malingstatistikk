@@ -28,8 +28,13 @@ export async function ensureSchema() {
     ean text,
     image_url text,
     image_source text,
+    product_url text,
+    category text,
     image_approved boolean NOT NULL DEFAULT false,
     aliases jsonb NOT NULL DEFAULT '[]'::jsonb,
     updated_at timestamptz NOT NULL DEFAULT now()
   )`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS product_url text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS category text`;
 }
+
