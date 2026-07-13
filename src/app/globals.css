@@ -318,3 +318,194 @@
  .printSupplierGrid .supplierCard{border-radius:3mm!important;box-shadow:0 1.4mm 4mm rgba(8,42,82,.10)!important;background:linear-gradient(180deg,#fff,#f9fbfd)!important}.printSupplierGrid .supplierCard .shareCompare .shareRow{grid-template-columns:32mm minmax(28mm,1fr) 15mm!important;column-gap:2mm!important}.printSupplierGrid .supplierCard .shareCompare .shareName{font-size:6.3pt!important}.printSupplierGrid .supplierCard .shareCompare .shareValue{font-size:8.5pt!important}.printSupplierGrid .supplierCard .shareCompare .shareTrack{height:2.7mm!important}
  .printCategory{box-shadow:0 1mm 3mm rgba(8,42,82,.07)!important}.printProduct{background:linear-gradient(100deg,#f7fafc,#fff)!important}.otherStoresPanel{box-shadow:0 1mm 3mm rgba(8,42,82,.07)!important}.rankChip{box-shadow:0 .6mm 1.5mm rgba(8,42,82,.06)!important}
 }
+
+/* V7.1 – mobile-first refinement */
+@media (max-width: 760px){
+  html{font-size:15px}
+  body{padding-bottom:66px;overflow-x:hidden}
+  .app{overflow-x:hidden}
+  .topbar{
+    min-height:60px;height:60px;padding:0 12px;gap:8px;flex-wrap:nowrap;
+    border-bottom:1px solid rgba(255,255,255,.12)
+  }
+  .brand{width:auto;min-width:0;flex:1}
+  .brand img{width:122px;max-width:122px;max-height:38px;filter:brightness(0) invert(1)}
+  .printBtn{width:40px;height:40px;padding:0;border-radius:10px;font-size:0;flex:0 0 40px}
+  .printBtn svg{width:19px;height:19px}
+  .topbar nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:80;order:initial;width:100%;height:64px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:#071f3d;
+    border-top:1px solid rgba(255,255,255,.13);box-shadow:0 -6px 20px rgba(4,24,48,.18);
+    overflow:visible;padding-bottom:env(safe-area-inset-bottom)
+  }
+  .topbar nav button{
+    min-width:0;height:64px;padding:7px 3px 5px;display:flex;flex-direction:column;justify-content:center;
+    gap:3px;font-size:10px;line-height:1.05;white-space:normal;text-align:center;border-radius:0
+  }
+  .topbar nav button svg{width:19px;height:19px;flex:0 0 auto}
+  .topbar nav button.active{box-shadow:inset 0 3px var(--orange);background:rgba(255,255,255,.09)}
+
+  .toolbar{
+    margin:12px auto 0;padding:0 10px;display:grid;grid-template-columns:1fr;gap:9px;width:100%
+  }
+  .datePicker{width:100%;display:grid;grid-template-columns:42px 1fr 42px}
+  .datePicker button{min-width:0;padding:0;display:grid;place-items:center}
+  .datePicker label{min-width:0;justify-content:center;padding:0 7px}
+  .datePicker label svg{width:17px;height:17px;flex:0 0 auto}
+  .datePicker input{width:100%;min-width:0;text-align:center;font-size:14px;background:transparent}
+  .segments{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .segments button{padding:0 5px;font-size:13px}
+  .focusSelect{width:100%;margin:0;padding:7px 10px}
+  .focusSelect select{width:100%;min-width:0;font-size:15px;padding-top:2px}
+
+  .page{padding:12px 10px 28px;width:100%;max-width:100%}
+  .hero,.hero.compact{padding:19px 17px;border-radius:14px;border-left-width:5px;display:block}
+  .hero h1{font-size:clamp(24px,7vw,30px);line-height:1.05;margin:5px 0 7px;overflow-wrap:anywhere}
+  .hero p{font-size:13px;line-height:1.35}
+  .hero .primary{width:100%;margin-top:16px}
+  .eyebrow{font-size:10px;letter-spacing:1.25px;line-height:1.35}
+
+  .kpiGrid,.printKpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:11px 0}
+  .kpi{min-width:0;padding:13px 12px;border-radius:12px;border-top-width:4px}
+  .kpi span{font-size:9px;letter-spacing:.2px}
+  .kpi strong{font-size:clamp(20px,6vw,25px);line-height:1.05;margin:7px 0;white-space:nowrap;letter-spacing:-.5px}
+  .kpi small{font-size:10px;line-height:1.25;overflow-wrap:anywhere}
+  .kpi .delta,.delta{white-space:normal!important}
+
+  .supplierGrid{grid-template-columns:1fr;gap:10px;margin:11px 0}
+  .supplierCard{padding:15px 14px;border-radius:14px}
+  .supplierTitle{height:43px;padding-bottom:9px}
+  .supplierTitle img{max-width:118px;max-height:31px}
+  .infraWord{font-size:25px;line-height:29px;border-width:2px}
+  .supplierMain{gap:8px;padding:11px 0}
+  .supplierMain>div{padding:9px}
+  .supplierMain b{font-size:17px;white-space:nowrap}
+  .marginBadge{padding:9px 11px}
+  .marginBadge strong{font-size:23px;white-space:nowrap}
+  .supplierCard .shareCompare .shareRow{
+    grid-template-columns:108px minmax(0,1fr) 48px!important;column-gap:7px!important
+  }
+  .supplierCard .shareCompare .shareName{font-size:9.5px!important;white-space:normal!important;line-height:1.08!important}
+  .supplierCard .shareCompare .shareValue{font-size:12px!important;white-space:nowrap!important}
+  .supplierCard .shareCompare .shareTrack{height:10px!important}
+
+  .panel{padding:14px 12px;border-radius:13px}
+  .panelHead{display:block}
+  .panel h2,.sectionTitle h2{font-size:18px;line-height:1.15;margin:4px 0 12px}
+  .metricSwitch{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}
+  .metricSwitch button{padding:8px 4px;font-size:10px;min-width:0}
+  .rankingTable{gap:6px}
+  .rankingRow{
+    grid-template-columns:32px minmax(0,1fr) auto;grid-template-areas:"rank store margin" "rank revenue profit";
+    gap:3px 8px;padding:10px;border-radius:9px
+  }
+  .rankingRow>b{grid-area:rank;width:28px;height:28px;font-size:12px}
+  .rankingRow>strong{grid-area:store;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rankingRow>span:nth-of-type(1){grid-area:revenue;font-size:10px;color:var(--muted)}
+  .rankingRow>span:nth-of-type(2){grid-area:profit;font-size:10px;color:var(--muted);text-align:right}
+  .rankingRow>em{grid-area:margin;font-size:16px;white-space:nowrap}
+
+  .screenProducts{margin-top:12px}
+  .sectionTitle{display:block}
+  .productGrid,.productGrid.full{grid-template-columns:1fr;gap:10px;margin-top:10px}
+  .productCard{grid-template-columns:112px minmax(0,1fr);min-height:178px;border-radius:13px}
+  .rank{width:29px;height:29px;top:8px;left:8px;font-size:12px}
+  .productImage{padding:8px}
+  .productImage img{height:155px}
+  .productInfo{padding:15px 12px 12px;min-width:0}
+  .productInfo h3{font-size:16px;line-height:1.12;margin:7px 0 3px;overflow-wrap:anywhere}
+  .productInfo p{font-size:11px}
+  .productNumbers{margin-top:10px;gap:4px}
+  .productNumbers b{font-size:18px;white-space:nowrap}
+  .productNumbers span{font-size:11px}
+  .productMetricGrid{grid-template-columns:1fr!important;gap:5px!important}
+
+  .historyGrid{grid-template-columns:1fr;gap:8px}
+  .historyCard{padding:13px}
+  .adminGrid{grid-template-columns:1fr;gap:10px}
+  .auth{min-height:calc(100vh - 60px);padding:15px}
+  .authCard{padding:24px 18px;border-radius:15px}
+  .miniTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .miniTable>div{min-width:560px}
+  .serverBanner{margin:10px;border-radius:10px}
+  .noData{margin-top:0;padding:35px 15px}
+}
+
+@media (max-width: 390px){
+  .kpiGrid,.printKpis{grid-template-columns:1fr 1fr;gap:7px}
+  .kpi{padding:11px 9px}
+  .kpi strong{font-size:20px}
+  .supplierCard .shareCompare .shareRow{grid-template-columns:96px minmax(0,1fr) 44px!important}
+  .supplierCard .shareCompare .shareName{font-size:9px!important}
+  .productCard{grid-template-columns:98px minmax(0,1fr)}
+  .productImage img{height:140px}
+  .topbar nav button{font-size:9px}
+}
+
+/* V7.2 – stronger mobile layout + print mini charts */
+.executiveHero{grid-template-columns:1fr!important}
+
+@media (max-width:760px){
+  .topbar{position:sticky;top:0;z-index:100}
+  .brand img{object-fit:contain}
+  .toolbar{position:relative;z-index:10}
+  .hero.executiveHero{min-height:0!important;margin-top:2px}
+  .hero.executiveHero>div{min-width:0}
+  .hero.executiveHero h1,.hero.executiveHero p,.hero.executiveHero .eyebrow{max-width:100%}
+  .kpiGrid{align-items:stretch}
+  .executiveKpi{display:grid!important;grid-template-columns:40px minmax(0,1fr)!important;gap:9px!important;min-height:116px!important}
+  .executiveKpi .kpiIcon{width:38px!important;height:38px!important}
+  .executiveKpi .kpiBody{min-width:0}
+  .executiveKpi .kpiBody>strong{font-size:clamp(18px,5.2vw,24px)!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+  .executiveKpi .kpiDelta{display:flex!important;align-items:flex-start;flex-wrap:wrap;line-height:1.1}
+  .supplierCard{overflow:hidden}
+  .supplierMain{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .supplierMain>div{min-width:0}
+  .supplierMain b{font-size:16px!important;overflow:hidden;text-overflow:ellipsis}
+  .shareCompare{display:grid!important;gap:10px!important;margin-top:12px!important}
+  .shareRow{align-items:center!important}
+  .shareTrack{overflow:hidden!important}
+  .regionPanel{overflow:hidden}
+  .screenProducts .productGrid{grid-template-columns:1fr!important}
+  .adminReportRow{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+  .adminReportRow .dangerBtn{width:100%!important;justify-content:center!important}
+}
+
+@media (max-width:430px){
+  .kpiGrid{grid-template-columns:1fr!important}
+  .executiveKpi{min-height:92px!important;grid-template-columns:42px 1fr!important}
+  .toolbar{gap:7px}
+  .datePicker{height:44px}
+  .segments{height:42px}
+  .focusSelect{font-size:10px}
+  .supplierMain{grid-template-columns:1fr 1fr!important}
+  .supplierCard .shareCompare .shareRow{grid-template-columns:96px minmax(70px,1fr) 48px!important}
+  .productCard{grid-template-columns:92px minmax(0,1fr)!important}
+  .productImage img{height:126px!important}
+}
+
+@media print{
+  .executiveHero,.toolbar,.topbar,.screenProducts,.regionPanel{display:none!important}
+  .otherStoresPanel{display:flex!important;flex-direction:column!important;min-width:0!important;overflow:hidden!important}
+  .otherStoresGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:2mm!important;min-height:0!important;flex:1!important}
+  .otherStoreMini{display:flex!important;flex-direction:column!important;border:0.35mm solid #d9e2ec!important;border-radius:2.2mm!important;padding:2mm!important;background:#fff!important;overflow:hidden!important;min-width:0!important}
+  .otherStoreMini>header{display:flex!important;justify-content:space-between!important;align-items:center!important;border-bottom:.25mm solid #e3eaf2!important;padding-bottom:1mm!important;margin-bottom:1.2mm!important}
+  .otherStoreMini>header strong{font-size:6.6pt!important;color:#10244a!important}
+  .otherStoreMini>header span{font-size:6.5pt!important;color:#df8518!important;font-weight:900!important;white-space:nowrap!important}
+  .otherStoreRows{display:grid!important;gap:1.15mm!important;min-width:0!important}
+  .otherStoreRow{display:grid!important;grid-template-columns:8mm minmax(14mm,1fr) 11mm 18mm 18mm 12mm!important;gap:1mm!important;align-items:center!important;min-width:0!important}
+  .otherStoreRow>b{font-size:5.7pt!important;color:#0e2348!important}
+  .otherStoreMix{display:block!important;height:2.4mm!important;background:#edf2f7!important;border-radius:2mm!important;overflow:hidden!important;min-width:0!important}
+  .otherStoreMix i{display:block!important;height:100%!important;border-radius:inherit!important;background:linear-gradient(90deg,#5c75c7,#8da2ef)!important}
+  .otherStoreRow.infra .otherStoreMix i{background:linear-gradient(90deg,#6b4aa0,#aa8bd6)!important}
+  .otherStoreRow.butinox .otherStoreMix i{background:linear-gradient(90deg,#2f68c7,#6ea1f2)!important}
+  .otherStoreRow.jotun .otherStoreMix i{background:linear-gradient(90deg,#0a2858,#365d9c)!important}
+  .otherStoreRow>strong{font-size:5.9pt!important;text-align:right!important;color:#142a50!important;white-space:nowrap!important}
+  .otherStoreRow>span,.otherStoreRow>em,.otherStoreRow>small{font-size:5.1pt!important;text-align:right!important;white-space:nowrap!important;font-style:normal!important}
+  .otherStoreRow>em{color:#2b8d55!important;font-weight:800!important}
+  .otherStoreRow>small{color:#6c7b8e!important}
+  .printHeader.executivePrintHeader img{content:url('/logos/obsbygg-print.jpg')!important;background:#0d2b58!important;padding:1.4mm!important}
+  .printSupplierGrid .shareRow{grid-template-columns:31mm minmax(28mm,1fr) 16mm!important}
+  .printSupplierGrid .shareName{white-space:nowrap!important}
+  .printSupplierGrid .shareValue{white-space:nowrap!important;text-align:right!important}
+}
