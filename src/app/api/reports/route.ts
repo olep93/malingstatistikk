@@ -8,7 +8,10 @@ export async function GET() {
     await ensureSchema();
     const q = sql();
     const rows = await q`SELECT report_data FROM paint_reports ORDER BY report_date ASC`;
-    return NextResponse.json({ reports: rows.map((r:any)=>r.report_data) });
+    const images = await q`SELECT product_key,image_url FROM paint_products WHERE image_url IS NOT NULL`;
+    const imageMap = new Map(images.map((x:any)=>[x.product_key,x.image_url]));
+    const reports = rows.map((r:any)=>{ const report=r.report_data; report.rows=(report.rows||[]).map((row:any)=>({ ...row, image: row.image || imageMap.get([row.supplier,row.product,row.size||''].join('|')) })); return report; });
+    return NextResponse.json({ reports });
   } catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Kunne ikke hente rapporter' }, { status: 500 }); }
 }
 export async function POST(req: Request) {

@@ -4,3 +4,22 @@
 
 .adminArchive{margin-top:24px}.adminReportList{display:grid;gap:10px}.adminReportRow{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 16px;border:1px solid #dfe5ec;border-radius:14px;background:#fff}.adminReportRow>div{display:grid;gap:3px}.adminReportRow b{font-size:15px}.adminReportRow span{font-size:13px;color:#485565}.adminReportRow small{font-size:12px;color:#7a8491}.dangerBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #d82c2c;background:#fff;color:#b71919;border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer;white-space:nowrap}.dangerBtn:hover{background:#fff1f1}@media(max-width:700px){.adminReportRow{align-items:flex-start;flex-direction:column}.dangerBtn{width:100%}}
 .serverBanner{max-width:1370px;margin:14px auto 0;padding:12px 16px;border-radius:12px;background:#fff4dc;color:#714100;font-weight:800;border:1px solid #f3c76d}.shareCompare>div>span{display:flex!important;justify-content:space-between;align-items:center}.shareCompare>div>span b{font-size:12px;color:#14264f}.shareCompare>div:nth-child(2)>span b{color:#2e7d50}@media print{.shareCompare>div>span b{font-size:10pt!important}.shareCompare i{-webkit-print-color-adjust:exact;print-color-adjust:exact}.supplierCard,.kpi,.printHeader,.marginBadge{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* V5.1: tydelig sammenligning mellom omsetningsandel og fortjenesteandel */
+.shareCompare{gap:12px;margin-top:16px}
+.shareCompare .shareRow{height:auto;background:transparent;overflow:visible}
+.shareLabel{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11px;font-weight:900;color:#26384c}
+.shareLabel b{font-size:15px;color:var(--navy)}
+.shareTrack{height:18px;border-radius:999px;background:#e8eef4;overflow:hidden;box-shadow:inset 0 1px 2px rgba(7,31,61,.12)}
+.shareTrack i{display:block;height:100%;border-radius:999px;min-width:4px}
+.revenueShare .shareTrack i{background:linear-gradient(90deg,#1765b6,#59a2e9)}
+.profitShare .shareTrack i{background:linear-gradient(90deg,#188459,#62bb88)}
+.profitShare .shareLabel b{color:#17855b}
+.shareDelta{height:auto!important;display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:9px!important;font-size:10px;font-weight:800;background:#f3f6f9!important;overflow:visible!important}
+.shareDelta b{font-size:13px}.shareDelta.positive{color:#106b45;background:#eaf7f0!important}.shareDelta.negative{color:#a33b27;background:#fff0eb!important}
+.imageMessage{margin:0 0 14px;padding:11px 13px;border-radius:10px;background:#edf6ff;border:1px solid #bcdaf5;color:#164c7c;font-weight:700;font-size:13px}
+@media print{
+ .shareTrack{-webkit-print-color-adjust:exact;print-color-adjust:exact;height:5mm}
+ .shareLabel{font-size:9pt}.shareLabel b{font-size:12pt}
+ .shareDelta{font-size:8pt}.shareDelta b{font-size:10pt}
+}
