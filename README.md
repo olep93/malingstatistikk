@@ -12,3 +12,9 @@ Grafisk hovedoppgradering basert på Executive Dashboard-designet.
 
 ## Deploy
 Last opp innholdet i mappen direkte til roten av GitHub-repositoryet.
+
+## V7.3 – Performance & store switching
+- Product lists are pre-indexed per warehouse.
+- Switching focus warehouse remounts the product view with the correct warehouse key.
+- Product filters reset when the warehouse changes.
+- Derived rows and rankings are memoized to avoid unnecessary recalculation.
