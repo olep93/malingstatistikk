@@ -596,3 +596,90 @@
   .productMetricGrid span{font-size:6.5px!important;letter-spacing:0!important}
   .productMetricGrid b{font-size:11px!important}
 }
+
+/* V8 – Executive polish: supplier identity, mini dashboards, stronger contrast */
+:root{
+  --infra:#68459a;
+  --infra-soft:#efe8f7;
+  --butinox:#1769c2;
+  --butinox-soft:#e8f2ff;
+  --jotun:#f2b705;
+  --jotun-deep:#9a6d00;
+  --jotun-soft:#fff6cf;
+  --profit:#1d9658;
+  --revenue:#2268ca;
+}
+
+.supplierCard.infra{border-top:5px solid var(--infra)}
+.supplierCard.butinox{border-top:5px solid var(--butinox)}
+.supplierCard.jotun{border-top:5px solid var(--jotun)}
+.supplierCard.infra .marginBadge{background:linear-gradient(100deg,#4e2f7a,#7c5baa)}
+.supplierCard.butinox .marginBadge{background:linear-gradient(100deg,#0d4f9d,#2f7bd3)}
+.supplierCard.jotun .marginBadge{background:linear-gradient(100deg,#9b7000,#e4aa00);color:#fff}
+.supplierCard.infra .supplierTitle{background:linear-gradient(90deg,var(--infra-soft),#fff)}
+.supplierCard.butinox .supplierTitle{background:linear-gradient(90deg,var(--butinox-soft),#fff)}
+.supplierCard.jotun .supplierTitle{background:linear-gradient(90deg,var(--jotun-soft),#fff)}
+.supplierTitle{padding:8px 10px;border-radius:12px}
+.supplierTitle img{max-height:40px;max-width:112px;object-fit:contain}
+.infraWord{font-size:30px;color:var(--infra);letter-spacing:-1.2px}
+
+.executiveMini{border:1px solid #d6e0eb;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fbfe);box-shadow:0 8px 24px rgba(8,42,82,.08);overflow:hidden}
+.executiveMini>header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(100deg,#0a2854,#17508e);color:#fff}
+.executiveMini>header strong{font-size:15px;color:#fff}
+.executiveMini>header small{display:block;margin-top:2px;color:#dce9f7;font-size:10px}
+.executiveMini>header>span{font-weight:950;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;white-space:nowrap}
+.executiveMini>header>span.high{background:#daf3e4;color:#177443}
+.executiveMini>header>span.medium{background:#fff0cf;color:#9a6200}
+.executiveMini>header>span.low{background:#fee1de;color:#ae3c32}
+.executiveMini .otherStoreRows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px}
+.executiveMini .otherStoreRow{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid #dce5ef;border-radius:11px;background:#fff;min-width:0}
+.supplierMiniHead{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:7px}
+.supplierMiniHead>strong{font-size:11px;color:#193452;overflow:hidden;text-overflow:ellipsis}
+.supplierMiniHead>small{font-size:10px;font-weight:950;padding:3px 6px;border-radius:999px;white-space:nowrap}
+.supplierMiniHead>small.high{background:#dff3e7;color:#167442}.supplierMiniHead>small.medium{background:#fff0d9;color:#a86000}.supplierMiniHead>small.low{background:#fde3df;color:#b33b30}
+.supplierCode{display:grid;place-items:center;min-width:30px;height:24px;border-radius:7px;color:#fff;font-size:9px;background:var(--infra)}
+.otherStoreRow.butinox .supplierCode{background:var(--butinox)}
+.otherStoreRow.jotun .supplierCode{background:var(--jotun);color:#3d3100}
+.miniSharePair{display:grid;gap:7px}
+.miniSharePair>div{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:center}
+.miniSharePair span{font-size:8px;font-weight:800;color:#64778d;text-transform:uppercase;letter-spacing:.25px}
+.miniSharePair b{font-size:10px;color:#17375e}
+.miniTrack{grid-column:1/-1;display:block;height:7px;background:#e7edf3;border-radius:999px;overflow:hidden}
+.miniTrack em{display:block;height:100%;border-radius:999px}
+.otherStoreRow.infra .miniTrack.revenue em{background:linear-gradient(90deg,#5d3b8b,#a78acb)}
+.otherStoreRow.butinox .miniTrack.revenue em{background:linear-gradient(90deg,#135eb3,#72a7e9)}
+.otherStoreRow.jotun .miniTrack.revenue em{background:linear-gradient(90deg,#d79800,#f3c83f)}
+.miniTrack.profit em{background:linear-gradient(90deg,#16824b,#7ac492)}
+.miniStoreValues{display:flex;justify-content:space-between;gap:6px;border-top:1px solid #e6ecf2;padding-top:7px}
+.miniStoreValues span,.miniStoreValues em{font-size:9px;font-style:normal;font-weight:850;white-space:nowrap}
+.miniStoreValues span{color:#17375e}.miniStoreValues em{color:#1c8750}
+
+.productCard{border:1px solid #dce5ee}
+.productCard:hover{transform:translateY(-2px);box-shadow:0 20px 42px rgba(9,36,73,.15)}
+.productInfo h3{font-size:clamp(15px,1.2vw,20px);line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.productMetricGrid>div{border:1px solid #e4eaf0;background:linear-gradient(180deg,#fff,#f4f7fa)}
+.marginMetric.high{background:linear-gradient(180deg,#f5fcf8,#e7f7ed)}
+.marginMetric.medium{background:linear-gradient(180deg,#fffaf1,#fff0d8)}
+.marginMetric.low{background:linear-gradient(180deg,#fff7f6,#fde8e4)}
+
+@media(max-width:900px){
+  .executiveMini .otherStoreRows{grid-template-columns:1fr}
+  .executiveMini .otherStoreRow{padding:9px}
+}
+
+@media print{
+  .otherStoreLegend{display:none!important}
+  .executiveMini{display:grid!important;grid-template-rows:9mm 1fr!important;border:.35mm solid #d3deea!important;border-radius:2mm!important;box-shadow:0 .7mm 2mm rgba(8,42,82,.08)!important}
+  .executiveMini>header{padding:1.2mm 1.7mm!important;background:linear-gradient(100deg,#0a2854,#17508e)!important}
+  .executiveMini>header strong{font-size:6.8pt!important}.executiveMini>header small{font-size:4.5pt!important}.executiveMini>header>span{font-size:6.4pt!important;padding:.7mm 1.1mm!important}
+  .executiveMini .otherStoreRows{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:1mm!important;padding:1mm!important}
+  .executiveMini .otherStoreRow{display:flex!important;flex-direction:column!important;gap:.8mm!important;padding:1mm!important;border:.25mm solid #dde5ee!important;border-radius:1.3mm!important}
+  .supplierMiniHead{grid-template-columns:6mm 1fr auto!important;gap:.7mm!important}
+  .supplierCode{min-width:6mm!important;height:4.6mm!important;border-radius:1mm!important;font-size:4.8pt!important}
+  .supplierMiniHead>strong{font-size:5.1pt!important}.supplierMiniHead>small{font-size:4.6pt!important;padding:.45mm .7mm!important}
+  .miniSharePair{gap:.7mm!important}.miniSharePair>div{gap:.5mm!important}.miniSharePair span{font-size:4.2pt!important}.miniSharePair b{font-size:4.8pt!important}.miniTrack{height:1.6mm!important}
+  .miniStoreValues{padding-top:.65mm!important;gap:.6mm!important}.miniStoreValues span,.miniStoreValues em{font-size:4.5pt!important}
+  .printLowerGrid{grid-template-columns:minmax(0,2.1fr) minmax(0,1fr)!important}
+  .otherStoresGrid{gap:1.2mm!important}
+  .supplierCard.infra{border-top:1.2mm solid var(--infra)!important}.supplierCard.butinox{border-top:1.2mm solid var(--butinox)!important}.supplierCard.jotun{border-top:1.2mm solid var(--jotun)!important}
+}
