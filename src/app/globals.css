@@ -714,3 +714,126 @@
   .supplierMiniLogo{height:4.2mm!important;max-width:22mm!important;object-fit:contain!important;object-position:left center!important}
   .supplierMiniLogo.infra{width:17mm!important}.supplierMiniLogo.butinox{width:20mm!important}.supplierMiniLogo.jotun{width:18mm!important;height:4mm!important}
 }
+
+/* V8.2 – compact supplier mini dashboards sized for one-page A3 print */
+.executiveMini .otherStoreRows{
+  gap:8px;
+  padding:9px;
+}
+.executiveMini .otherStoreRow{
+  gap:6px;
+  padding:8px;
+  border-radius:9px;
+}
+.supplierMiniHead{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  min-height:24px;
+  gap:5px;
+}
+.supplierMiniLogo{
+  display:block;
+  width:auto!important;
+  max-width:68px!important;
+  height:18px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+}
+.supplierMiniLogo.infra{max-width:58px!important}
+.supplierMiniLogo.butinox{max-width:68px!important}
+.supplierMiniLogo.jotun{max-width:64px!important;height:18px!important}
+.supplierMiniHead>small{
+  font-size:9px;
+  line-height:1;
+  padding:3px 5px;
+}
+.miniSharePair{gap:5px}
+.miniSharePair>div{gap:3px}
+.miniSharePair span{font-size:7px;line-height:1.1;letter-spacing:.15px}
+.miniSharePair b{font-size:9px;line-height:1}
+.miniTrack{height:6px}
+.miniStoreValues{padding-top:5px;gap:4px}
+.miniStoreValues span,.miniStoreValues em{font-size:8px}
+
+@media(max-width:900px){
+  .supplierMiniLogo{max-width:62px!important;height:17px!important}
+  .supplierMiniLogo.infra{max-width:54px!important}
+  .supplierMiniLogo.butinox{max-width:62px!important}
+  .supplierMiniLogo.jotun{max-width:58px!important;height:16px!important}
+}
+
+@media print{
+  .printPage.onePageReport{
+    overflow:hidden!important;
+  }
+  .otherStoresPanel{
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  .otherStoresGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-template-rows:repeat(2,minmax(0,1fr))!important;
+    gap:1.1mm!important;
+    min-height:0!important;
+  }
+  .executiveMini{
+    grid-template-rows:8mm minmax(0,1fr)!important;
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  .executiveMini>header{
+    min-height:0!important;
+    padding:.9mm 1.35mm!important;
+  }
+  .executiveMini>header strong{font-size:6pt!important;line-height:1!important}
+  .executiveMini>header small{font-size:3.9pt!important;line-height:1.05!important;margin-top:.35mm!important}
+  .executiveMini>header>span{font-size:5.8pt!important;padding:.55mm .85mm!important}
+  .executiveMini .otherStoreRows{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:.65mm!important;
+    padding:.75mm!important;
+    min-height:0!important;
+  }
+  .executiveMini .otherStoreRow{
+    gap:.48mm!important;
+    padding:.65mm!important;
+    border-radius:1mm!important;
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  .supplierMiniHead{
+    min-height:3.6mm!important;
+    gap:.45mm!important;
+  }
+  .supplierMiniLogo{
+    width:auto!important;
+    max-width:13mm!important;
+    height:2.9mm!important;
+    object-fit:contain!important;
+    object-position:left center!important;
+  }
+  .supplierMiniLogo.infra{max-width:10.5mm!important}
+  .supplierMiniLogo.butinox{max-width:13mm!important}
+  .supplierMiniLogo.jotun{max-width:12mm!important;height:2.8mm!important}
+  .supplierMiniHead>small{
+    font-size:3.9pt!important;
+    padding:.35mm .55mm!important;
+    line-height:1!important;
+  }
+  .miniSharePair{gap:.42mm!important}
+  .miniSharePair>div{gap:.3mm!important}
+  .miniSharePair span{
+    font-size:3.35pt!important;
+    line-height:1!important;
+    letter-spacing:0!important;
+  }
+  .miniSharePair b{font-size:4.15pt!important;line-height:1!important}
+  .miniTrack{height:1.15mm!important}
+  .miniStoreValues{
+    padding-top:.42mm!important;
+    gap:.35mm!important;
+  }
+  .miniStoreValues span,.miniStoreValues em{
+    font-size:3.9pt!important;
+    line-height:1!important;
+  }
+}
