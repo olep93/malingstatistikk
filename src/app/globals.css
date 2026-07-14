@@ -552,3 +552,47 @@
 @media(max-width:700px){
   .topbar{height:58px;padding:0 10px;gap:6px;position:sticky}.brand{width:52px;flex:0 0 52px}.brand img{width:46px;max-height:42px}.topbar nav{position:fixed;left:0;right:0;bottom:0;height:62px;background:#071f3d;z-index:50;justify-content:space-around;box-shadow:0 -5px 18px rgba(4,22,48,.22)}.topbar nav button{flex:1;justify-content:center;flex-direction:column;gap:3px;padding:5px 2px;font-size:10px}.topbar nav button.active{box-shadow:inset 0 3px var(--orange)}.printBtn{margin-left:auto;padding:0 10px;font-size:11px;height:36px}.toolbar{padding:0 12px;margin-top:12px;display:grid;grid-template-columns:1fr;gap:8px}.datePicker{width:100%;display:grid;grid-template-columns:44px 1fr 44px}.datePicker label{justify-content:center}.datePicker input{width:130px}.segments{width:100%}.segments button{flex:1}.focusSelect{margin:0;width:100%}.focusSelect select{width:100%;min-width:0}.page{padding:12px 12px 86px}.executiveHero{padding:20px 18px;border-radius:15px}.executiveHero h1{font-size:27px;white-space:normal}.executiveHero p{font-size:13px}.kpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.executiveKpi{min-height:100px;grid-template-columns:38px minmax(0,1fr);gap:9px;padding:12px}.executiveKpi .kpiIcon{width:38px;height:38px}.executiveKpi strong{font-size:21px;white-space:nowrap}.executiveKpi .kpiDelta{font-size:8px;padding:4px 6px;white-space:nowrap}.executiveKpi .kpiDelta small{display:none}.supplierGrid{grid-template-columns:1fr;gap:10px;margin:12px 0}.supplierCard{padding:14px}.supplierMain{gap:8px;padding:11px 0}.supplierMain b{font-size:17px;white-space:nowrap}.supplierCard .shareCompare .shareRow{grid-template-columns:104px minmax(70px,1fr) 54px!important;gap:7px!important}.supplierCard .shareCompare .shareName{font-size:9px!important}.supplierCard .shareCompare .shareValue{font-size:12px!important}.regionPanel{padding:14px}.panelHead{display:block}.metricSwitch{margin-bottom:12px}.rankingRow{grid-template-columns:32px minmax(0,1fr) 74px!important;padding:10px;gap:7px}.rankingRow span:nth-of-type(2){display:none}.rankingRow em{font-size:15px}.screenProducts .productGrid,.productGrid.full{grid-template-columns:1fr}.productCard{grid-template-columns:38% 62%;min-height:210px}.productImage img{height:170px}.productInfo{padding:18px 12px 12px}.productInfo h3{font-size:16px}.productMetricGrid{grid-template-columns:1fr 1fr}.productMetricGrid .marginMetric{grid-column:1/-1}.historyGrid{grid-template-columns:1fr}.adminGrid{grid-template-columns:1fr}.hero.compact{padding:20px 18px}.adminReportRow{align-items:flex-start;gap:10px}.miniTable{overflow-x:auto}.miniTable>div{min-width:560px}.serverBanner{margin:10px 12px}.startupState{padding:40px 20px}
 }
+
+/* V7.5 – compact product metrics, rank KPI and guaranteed one-page A3 at browser scale 100% */
+.productMetricGrid{grid-template-columns:.72fr 1.12fr 1.08fr!important;gap:6px!important}
+.productMetricGrid>div{padding:8px 7px!important;overflow:hidden!important}
+.productMetricGrid span{font-size:8px!important;line-height:1.05!important;white-space:nowrap!important;letter-spacing:.15px!important}
+.productMetricGrid b{font-size:14px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.productMetricGrid small{font-size:8.5px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.productInfo h3{overflow-wrap:anywhere}
+.executiveKpi.navy.up{background:linear-gradient(145deg,#f3fff7,#e7f7ed)!important;border-color:#8fc9a5!important}
+.executiveKpi.navy.down{background:linear-gradient(145deg,#fff8f6,#fdebe7)!important;border-color:#e7a296!important}
+.executiveKpi.navy.flat{background:linear-gradient(145deg,#f7f9fc,#edf2f7)!important}
+
+@media print{
+  @page{size:A3 landscape;margin:0!important}
+  html,body{margin:0!important;padding:0!important;width:420mm!important;height:297mm!important;overflow:hidden!important;background:#fff!important}
+  .printPages{position:absolute!important;inset:0!important;width:420mm!important;height:297mm!important;overflow:hidden!important}
+  .printPage.onePageReport{zoom:.98!important;width:420mm!important;height:297mm!important;margin:0!important;page-break-after:avoid!important;break-after:avoid-page!important;overflow:hidden!important}
+}
+
+@media(max-width:1180px) and (min-width:701px){
+  .productMetricGrid{grid-template-columns:.68fr 1.08fr 1.04fr!important}
+  .productMetricGrid span{font-size:7.5px!important}
+  .productMetricGrid b{font-size:12.5px!important}
+}
+
+@media(max-width:700px){
+  .productMetricGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+  .productMetricGrid .marginMetric{grid-column:auto!important}
+  .productMetricGrid>div{padding:7px 5px!important}
+  .productMetricGrid span{font-size:7px!important}
+  .productMetricGrid b{font-size:12px!important}
+  .productMetricGrid small{font-size:7px!important}
+}
+
+@media(max-width:420px){
+  .productCard{grid-template-columns:86px minmax(0,1fr)!important;min-height:190px!important}
+  .productImage img{height:125px!important}
+  .productInfo{padding:12px 8px 9px!important}
+  .productInfo h3{font-size:15px!important;line-height:1.05!important}
+  .productMetricGrid{gap:4px!important}
+  .productMetricGrid>div{padding:6px 4px!important;border-radius:7px!important}
+  .productMetricGrid span{font-size:6.5px!important;letter-spacing:0!important}
+  .productMetricGrid b{font-size:11px!important}
+}
