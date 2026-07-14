@@ -509,3 +509,46 @@
   .printSupplierGrid .shareName{white-space:nowrap!important}
   .printSupplierGrid .shareValue{white-space:nowrap!important;text-align:right!important}
 }
+
+/* V7.4 – reliable one-page print, guaranteed logo and graphical store cards */
+.printObsLogo{display:none}
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  html,body{width:100%!important;min-width:0!important}
+  .printPages,.printPage,.printPage *{visibility:visible!important}
+  .printObsLogo{display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;width:25mm;height:21mm;padding:1.8mm 2.5mm;background:#fff;color:#0a2b5b;border-radius:2mm;line-height:.8;box-shadow:0 .7mm 2mm rgba(0,0,0,.12)}
+  .printObsLogo span{font-size:12.5pt!important;font-weight:950!important;letter-spacing:-.5pt!important;color:#0a2b5b!important;line-height:.8!important}
+  .printObsLogo b{font-size:14.5pt!important;font-weight:950!important;letter-spacing:-.5pt!important;color:#0a2b5b!important;line-height:.85!important}
+  .executivePrintHeader{grid-template-columns:29mm 1fr 62mm!important}
+  .executivePrintHeader>img{display:none!important}
+  .otherStoresPanel{background:linear-gradient(180deg,#fff,#f7faff)!important;border:.35mm solid #cfdae7!important}
+  .otherStoresPanel>header{background:linear-gradient(90deg,#f8fbff,#eef5fc)!important;border-radius:1.8mm!important;padding:1.4mm 2mm!important;margin-bottom:1.3mm!important}
+  .otherStoresGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1.6mm!important}
+  .otherStoreMini{padding:0!important;border:.35mm solid #d3deea!important;border-radius:2mm!important;background:#fff!important;box-shadow:0 .8mm 2.3mm rgba(8,42,82,.07)!important;display:grid!important;grid-template-rows:10mm 5mm 1fr!important;overflow:hidden!important}
+  .otherStoreMini>header{margin:0!important;padding:1.6mm 2mm!important;border:0!important;border-bottom:.25mm solid #dce5ef!important;background:linear-gradient(90deg,#0b2a56,#174b86)!important;color:#fff!important;border-radius:0!important}
+  .otherStoreMini>header>div{min-width:0}
+  .otherStoreMini>header strong{font-size:7.2pt!important;color:#fff!important;display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .otherStoreMini>header small{font-size:4.7pt!important;color:#dce9f7!important;display:block!important;margin-top:.5mm!important;white-space:nowrap!important}
+  .otherStoreMini>header>span{font-size:8.2pt!important;color:#ffb14e!important;background:rgba(255,255,255,.1)!important;padding:.8mm 1.2mm!important;border-radius:1.2mm!important}
+  .otherStoreLegend{display:grid!important;grid-template-columns:7mm minmax(22mm,1fr) 17mm 17mm 13mm!important;gap:.8mm!important;align-items:center!important;padding:.7mm 1.2mm!important;background:#edf3f9!important;border-bottom:.2mm solid #dce5ef!important}
+  .otherStoreLegend b{font-size:4.2pt!important;color:#5c7188!important;text-align:right!important;white-space:nowrap!important}
+  .otherStoreLegend b:first-child,.otherStoreLegend b:nth-child(2){text-align:left!important}
+  .otherStoreRows{display:grid!important;grid-template-rows:repeat(3,1fr)!important;gap:0!important;padding:0!important}
+  .otherStoreRow{display:grid!important;grid-template-columns:7mm minmax(22mm,1fr) 17mm 17mm 13mm!important;gap:.8mm!important;align-items:center!important;padding:.8mm 1.2mm!important;border-bottom:.2mm solid #e4ebf2!important;background:#fff!important}
+  .otherStoreRow:last-child{border-bottom:0!important}
+  .supplierCode{font-size:5.6pt!important;font-weight:950!important;padding:.7mm .5mm!important;border-radius:.9mm!important;text-align:center!important;color:#fff!important;background:#705398!important}
+  .otherStoreRow.butinox .supplierCode{background:#216bc2!important}.otherStoreRow.jotun .supplierCode{background:#112b52!important}
+  .otherStoreMix{height:3.3mm!important;background:#e5ecf4!important;border-radius:2mm!important;overflow:hidden!important;position:relative!important;display:block!important}
+  .otherStoreMix i{position:absolute!important;inset:0 auto 0 0!important;height:100%!important;background:linear-gradient(90deg,#7654a3,#ae93d4)!important;border-radius:2mm!important}
+  .otherStoreRow.butinox .otherStoreMix i{background:linear-gradient(90deg,#246bc7,#79a9ee)!important}.otherStoreRow.jotun .otherStoreMix i{background:linear-gradient(90deg,#0c315f,#4d77ad)!important}
+  .otherStoreMix strong{position:absolute!important;right:1mm!important;top:50%!important;transform:translateY(-50%)!important;font-size:4.8pt!important;color:#10294d!important;text-shadow:0 0 1mm #fff!important}
+  .otherStoreRow>span,.otherStoreRow>em,.otherStoreRow>small{font-size:4.8pt!important;text-align:right!important;white-space:nowrap!important;font-style:normal!important;color:#142b4d!important}
+  .otherStoreRow>em{color:#208553!important;font-weight:900!important}
+  .otherStoreRow>small{font-weight:950!important;padding:.7mm .8mm!important;border-radius:1mm!important;background:#eef2f6!important}
+  .otherStoreRow>small.high{background:#dff3e7!important;color:#167442!important}.otherStoreRow>small.medium{background:#fff0d9!important;color:#a86000!important}.otherStoreRow>small.low{background:#fde3df!important;color:#b33b30!important}
+}
+
+/* Mobile presentation: compact navigation, cards and stable numbers */
+@media(max-width:700px){
+  .topbar{height:58px;padding:0 10px;gap:6px;position:sticky}.brand{width:52px;flex:0 0 52px}.brand img{width:46px;max-height:42px}.topbar nav{position:fixed;left:0;right:0;bottom:0;height:62px;background:#071f3d;z-index:50;justify-content:space-around;box-shadow:0 -5px 18px rgba(4,22,48,.22)}.topbar nav button{flex:1;justify-content:center;flex-direction:column;gap:3px;padding:5px 2px;font-size:10px}.topbar nav button.active{box-shadow:inset 0 3px var(--orange)}.printBtn{margin-left:auto;padding:0 10px;font-size:11px;height:36px}.toolbar{padding:0 12px;margin-top:12px;display:grid;grid-template-columns:1fr;gap:8px}.datePicker{width:100%;display:grid;grid-template-columns:44px 1fr 44px}.datePicker label{justify-content:center}.datePicker input{width:130px}.segments{width:100%}.segments button{flex:1}.focusSelect{margin:0;width:100%}.focusSelect select{width:100%;min-width:0}.page{padding:12px 12px 86px}.executiveHero{padding:20px 18px;border-radius:15px}.executiveHero h1{font-size:27px;white-space:normal}.executiveHero p{font-size:13px}.kpiGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.executiveKpi{min-height:100px;grid-template-columns:38px minmax(0,1fr);gap:9px;padding:12px}.executiveKpi .kpiIcon{width:38px;height:38px}.executiveKpi strong{font-size:21px;white-space:nowrap}.executiveKpi .kpiDelta{font-size:8px;padding:4px 6px;white-space:nowrap}.executiveKpi .kpiDelta small{display:none}.supplierGrid{grid-template-columns:1fr;gap:10px;margin:12px 0}.supplierCard{padding:14px}.supplierMain{gap:8px;padding:11px 0}.supplierMain b{font-size:17px;white-space:nowrap}.supplierCard .shareCompare .shareRow{grid-template-columns:104px minmax(70px,1fr) 54px!important;gap:7px!important}.supplierCard .shareCompare .shareName{font-size:9px!important}.supplierCard .shareCompare .shareValue{font-size:12px!important}.regionPanel{padding:14px}.panelHead{display:block}.metricSwitch{margin-bottom:12px}.rankingRow{grid-template-columns:32px minmax(0,1fr) 74px!important;padding:10px;gap:7px}.rankingRow span:nth-of-type(2){display:none}.rankingRow em{font-size:15px}.screenProducts .productGrid,.productGrid.full{grid-template-columns:1fr}.productCard{grid-template-columns:38% 62%;min-height:210px}.productImage img{height:170px}.productInfo{padding:18px 12px 12px}.productInfo h3{font-size:16px}.productMetricGrid{grid-template-columns:1fr 1fr}.productMetricGrid .marginMetric{grid-column:1/-1}.historyGrid{grid-template-columns:1fr}.adminGrid{grid-template-columns:1fr}.hero.compact{padding:20px 18px}.adminReportRow{align-items:flex-start;gap:10px}.miniTable{overflow-x:auto}.miniTable>div{min-width:560px}.serverBanner{margin:10px 12px}.startupState{padding:40px 20px}
+}
