@@ -12,7 +12,7 @@ export async function parsePaintWorkbook(file:File,date:string):Promise<DailyRep
  for(let i=4;i<grid.length;i++){const row=grid[i]||[];const item=String(row[2]??"");const raw=String(row[3]??"");const storeId=String(row[0]??"");const store=shortStore(String(row[1]??""));
    if(item.toLowerCase()==="resultat"&&storeId&&store){const revenue=num(row[19]),profit=num(row[18]),quantity=num(row[16]);sourceTotals.push({storeId,store,quantity,revenue,profit,margin:revenue?profit/revenue*100:num(row[17])});continue}
    if(!storeId||!raw)continue;
-   for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;const n=normalizeProduct(raw);rows.push({storeId,store,itemNo:item,rawName:raw,product:n.product,productKey:[g.supplier,n.product,n.size].join("|"),size:n.size,supplier:g.supplier,category:categoryForProduct(n.product,raw),quantity:q,revenue,profit,margin:revenue?profit/revenue*100:num(row[g.m])})}
+   for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;const n=normalizeProduct(raw,item);rows.push({storeId,store,itemNo:item,rawName:raw,product:n.product,productKey:[g.supplier,n.canonicalKey].join("|"),size:n.size,supplier:g.supplier,category:n.category||categoryForProduct(n.product,raw),quantity:q,revenue,profit,margin:revenue?profit/revenue*100:num(row[g.m])})}
  }
  if(!rows.length) throw new Error("Fant ingen produktlinjer med salg.");
  return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals};
