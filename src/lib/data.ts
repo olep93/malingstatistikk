@@ -2,7 +2,7 @@ import {catalogEntry} from "./product-catalog";
 import {productReference} from "./product-reference";
 
 export type Supplier = "Infra"|"Butinox"|"Jotun";
-export type Period = "Dag"|"Uke"|"Måned";
+export type Period = "Dag"|"Uke"|"Måned"|"Hittil i år"|"År";
 export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
 export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};

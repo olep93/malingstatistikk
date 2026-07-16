@@ -838,3 +838,18 @@
   }
 }
 .historyImport{margin-top:24px}.historyImportGrid{display:grid;grid-template-columns:minmax(280px,1fr) auto;gap:20px;align-items:center}.historyImportActions{display:flex;gap:12px;flex-wrap:wrap}.historyImportActions button{min-width:190px}@media(max-width:760px){.historyImportGrid{grid-template-columns:1fr}.historyImportActions{display:grid;grid-template-columns:1fr}.historyImportActions button{width:100%}}
+
+/* V9.3 period controls */
+.periodSelect{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 12px;min-height:44px;color:var(--muted);font-size:11px;font-weight:800}
+.periodSelect span{white-space:nowrap}
+.periodSelect select{border:0;background:transparent;color:var(--text);font-weight:800;outline:0;min-width:145px}
+.segments{flex-wrap:nowrap}
+@media(max-width:900px){
+  .periodSelect{width:100%;justify-content:space-between}
+  .periodSelect select{min-width:0;flex:1;text-align:right}
+  .segments{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;width:100%;overflow:visible}
+  .segments button{padding:0 4px!important;font-size:11px!important;line-height:1.05}
+}
+@media(max-width:560px){
+  .segments button{font-size:10px!important}
+}
