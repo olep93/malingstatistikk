@@ -1,4 +1,5 @@
-import {handleUpload,type HandleUploadBody} from '@vercel/blob/client';
+import {issueSignedToken} from '@vercel/blob';
+import {handleUploadPresigned,type HandleUploadPresignedBody} from '@vercel/blob/client';
 import {NextResponse} from 'next/server';
 import {getSession} from '@/lib/server/auth';
 
@@ -15,34 +16,39 @@ export async function POST(request:Request):Promise<NextResponse>{
   try{
     const session=await getSession();
     if(!session)return NextResponse.json({error:'Innloggingen er utløpt. Logg inn på nytt og prøv igjen.'},{status:401});
+    if(!['admin','leader'].includes(session.role))return NextResponse.json({error:'Du har ikke tilgang til historikkimport.'},{status:403});
 
-    const token=process.env.BLOB_READ_WRITE_TOKEN;
-    if(!token){
-      return NextResponse.json({
-        error:'Vercel Blob er ikke koblet til denne deploymenten. Koble et Blob-lager til prosjektet og kontroller at BLOB_READ_WRITE_TOKEN finnes for Production, Preview og Development, og deploy deretter på nytt.'
-      },{status:503});
-    }
-
-    const body=(await request.json()) as HandleUploadBody;
-    const jsonResponse=await handleUpload({
-      token,
+    const body=(await request.json()) as HandleUploadPresignedBody;
+    const jsonResponse=await handleUploadPresigned({
       body,
       request,
-      onBeforeGenerateToken:async(pathname)=>{
+      webhookPublicKey:process.env.BLOB_WEBHOOK_PUBLIC_KEY,
+      getSignedToken:async(pathname)=>{
         if(!/\.xls(x)?$/i.test(pathname))throw new Error('Bare .xlsx og .xls støttes');
-        return {
+        const token=await issueSignedToken({
+          pathname,
+          operations:['put'],
           allowedContentTypes:EXCEL_TYPES,
           maximumSizeInBytes:100*1024*1024,
-          addRandomSuffix:true,
-          tokenPayload:JSON.stringify({username:session.username})
+          validUntil:Date.now()+60*60*1000
+        });
+        return {
+          token,
+          urlOptions:{
+            allowedContentTypes:EXCEL_TYPES,
+            maximumSizeInBytes:100*1024*1024,
+            validUntil:Date.now()+15*60*1000,
+            addRandomSuffix:true,
+            allowOverwrite:false
+          }
         };
       }
     });
     return NextResponse.json(jsonResponse);
   }catch(error){
     const raw=error instanceof Error?error.message:String(error);
-    const message=/token|credential|blob/i.test(raw)
-      ? `Vercel Blob kunne ikke utstede opplastingstoken. Kontroller BLOB_READ_WRITE_TOKEN i Vercel og deploy på nytt. Teknisk melding: ${raw}`
+    const message=/oidc|store.?id|blob/i.test(raw)
+      ? `Vercel Blob kunne ikke opprette en sikker opplastingsadresse. Kontroller at Blob-lageret er koblet til prosjektet og at BLOB_STORE_ID, BLOB_WEBHOOK_PUBLIC_KEY og Vercels systemvariabler er tilgjengelige. Teknisk melding: ${raw}`
       : raw;
     return NextResponse.json({error:message},{status:400});
   }

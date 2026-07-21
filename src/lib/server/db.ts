@@ -47,6 +47,11 @@ export async function ensureSchema() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS subgroup text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS subgroup_locked boolean NOT NULL DEFAULT false`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS area text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS first_seen_at date`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS last_seen_at date`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS report_count integer NOT NULL DEFAULT 0`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS merged_into text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS review_reason text`;
   await q`CREATE TABLE IF NOT EXISTS paint_tags (
     id bigserial PRIMARY KEY,
     area text NOT NULL,
@@ -107,6 +112,18 @@ export async function ensureSchema() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_area_subgroup_idx ON paint_products(area,subgroup)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_merged_into_idx ON paint_products(merged_into)`;
+  await q`CREATE TABLE IF NOT EXISTS paint_product_changes (
+    id bigserial PRIMARY KEY,
+    product_key text NOT NULL,
+    changed_by text,
+    field_name text NOT NULL,
+    old_value text,
+    new_value text,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`;
+  await q`CREATE INDEX IF NOT EXISTS paint_product_changes_product_idx ON paint_product_changes(product_key,created_at DESC)`;
   await q`CREATE TABLE IF NOT EXISTS app_users (
     id bigserial PRIMARY KEY,
     username text NOT NULL UNIQUE,
