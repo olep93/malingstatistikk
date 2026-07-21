@@ -18,8 +18,10 @@ export async function ensureSchema() {
     blob_url text,
     report_data jsonb NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    uploaded_by text
   )`;
+  await q`ALTER TABLE paint_reports ADD COLUMN IF NOT EXISTS uploaded_by text`;
   await q`CREATE TABLE IF NOT EXISTS paint_products (
     product_key text PRIMARY KEY,
     display_name text NOT NULL,
@@ -36,5 +38,42 @@ export async function ensureSchema() {
   )`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS product_url text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS category text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS source_name text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS website_name text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS lookup_status text NOT NULL DEFAULT 'pending'`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS last_fetched_at timestamptz`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS display_name_locked boolean NOT NULL DEFAULT false`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS subgroup text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS subgroup_locked boolean NOT NULL DEFAULT false`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS area text`;
+  await q`CREATE TABLE IF NOT EXISTS paint_tags (
+    id bigserial PRIMARY KEY,
+    area text NOT NULL,
+    name text NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE(area,name)
+  )`;
+  await q`INSERT INTO paint_tags(area,name) VALUES
+    ('interior','Tak'),('interior','Supermatt'),('interior','Matt'),('interior','Silkematt'),('interior','Tre & Panel'),('interior','Grunning'),('interior','Sparkel'),('interior','Lakk'),
+    ('terrace','Vanntynnet'),('terrace','Terrassemaling'),('terrace','Oljebasert'),
+    ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Diverse')
+    ON CONFLICT(area,name) DO NOTHING`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
+  await q`CREATE TABLE IF NOT EXISTS app_users (
+    id bigserial PRIMARY KEY,
+    username text NOT NULL UNIQUE,
+    display_name text NOT NULL,
+    role text NOT NULL CHECK (role IN ('admin','leader')),
+    password_hash text NOT NULL,
+    password_salt text NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    last_login_at timestamptz
+  )`;
+  await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_lower_idx ON app_users(lower(username))`;
 }
-

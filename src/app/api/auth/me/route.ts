@@ -1,3 +1,3 @@
 import { NextResponse } from 'next/server';
-import { isAdmin } from '@/lib/server/auth';
-export async function GET(){ return NextResponse.json({authenticated: await isAdmin()}); }
+import { getSession } from '@/lib/server/auth';
+export async function GET(){ const session=await getSession(); return NextResponse.json({authenticated:Boolean(session),username:session?.username,role:session?.role}); }
