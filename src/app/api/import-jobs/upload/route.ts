@@ -8,15 +8,27 @@ const EXCEL_TYPES=[
   'application/octet-stream'
 ];
 
+export const runtime='nodejs';
+export const dynamic='force-dynamic';
+
 export async function POST(request:Request):Promise<NextResponse>{
-  const body=(await request.json()) as HandleUploadBody;
   try{
+    const session=await getSession();
+    if(!session)return NextResponse.json({error:'Innloggingen er utløpt. Logg inn på nytt og prøv igjen.'},{status:401});
+
+    const token=process.env.BLOB_READ_WRITE_TOKEN;
+    if(!token){
+      return NextResponse.json({
+        error:'Vercel Blob er ikke koblet til denne deploymenten. Koble et Blob-lager til prosjektet og kontroller at BLOB_READ_WRITE_TOKEN finnes for Production, Preview og Development, og deploy deretter på nytt.'
+      },{status:503});
+    }
+
+    const body=(await request.json()) as HandleUploadBody;
     const jsonResponse=await handleUpload({
+      token,
       body,
       request,
       onBeforeGenerateToken:async(pathname)=>{
-        const session=await getSession();
-        if(!session)throw new Error('Ikke innlogget');
         if(!/\.xls(x)?$/i.test(pathname))throw new Error('Bare .xlsx og .xls støttes');
         return {
           allowedContentTypes:EXCEL_TYPES,
@@ -24,11 +36,14 @@ export async function POST(request:Request):Promise<NextResponse>{
           addRandomSuffix:true,
           tokenPayload:JSON.stringify({username:session.username})
         };
-      },
-      onUploadCompleted:async()=>{}
+      }
     });
     return NextResponse.json(jsonResponse);
   }catch(error){
-    return NextResponse.json({error:error instanceof Error?error.message:String(error)},{status:400});
+    const raw=error instanceof Error?error.message:String(error);
+    const message=/token|credential|blob/i.test(raw)
+      ? `Vercel Blob kunne ikke utstede opplastingstoken. Kontroller BLOB_READ_WRITE_TOKEN i Vercel og deploy på nytt. Teknisk melding: ${raw}`
+      : raw;
+    return NextResponse.json({error:message},{status:400});
   }
 }
