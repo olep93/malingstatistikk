@@ -67,7 +67,7 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   const g=vgr.toUpperCase(),n=raw.toUpperCase();
   if(g.includes("EKSTERIØRMALING"))return {area:"exterior",subgroup:"Eksteriør"};
   if(g.includes("TERRASSEBEIS")){
-    const subgroup=/BUTINOX.*TERRASSEMALING/.test(n)?"Terrassemaling":/(BUTINOX.*TERRASSEBEIS|INFRA.*3\s*ÅR.*TERRASSEBEIS|JOTUN.*TRANSPARENT.*TERRASSEBEIS|JOTUN.*TREBITT.*TERRASSEBEIS.*FERDIGBLANDET|INFRA.*TREOLJE)/.test(n)?"Vanntynnet":"Oljebasert";return {area:"terrace",subgroup};
+    const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEB|OLJEBAS|\bOB\b/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
   }
   // SAP-varegruppe 0687 Bygningstape inneholder maskerings- og malertape
   // i den nye BI-rapporten. Hele varegruppen føres derfor som Tape.
