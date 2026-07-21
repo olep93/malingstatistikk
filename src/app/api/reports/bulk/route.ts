@@ -5,8 +5,8 @@ import {ensureSchema,sql} from "@/lib/server/db";
 import {aggregateProducts,canonicalizeRow,DailyReport} from "@/lib/data";
 import {parsePaintHistoryWorkbook} from "@/lib/parser";
 
-export const maxDuration=300;
-const DB_CHUNK_SIZE=8;
+export const maxDuration=60;
+const DB_CHUNK_SIZE=1;
 
 async function storeReports(reports:DailyReport[],mode:string,session:{username:string},blobUrl:string|null){
   const q=sql();
