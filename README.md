@@ -1,3 +1,7 @@
+# Malingstatistikk V10.11
+
+Ny Produktmaster med Admin-styrte tags, live redigering og låst klassifisering. Terrassebeis følger avtalte regler: fem navngitte serier som Vanntynnet, Butinox Terrassemaling som Terrassemaling og øvrige terrasseprodukter som Oljebasert.
+
 # Malingstatistikk V10.10.1
 
 Denne versjonen inkluderer gjenopptakbar dagsimport, produktregister med scroll og prioritert kontroll, rollebasert tilgang (Admin/Leder), brukeradministrasjon kun for Admin og kompakt rapportarkiv gruppert som År → Måned → Uke → Dag.
