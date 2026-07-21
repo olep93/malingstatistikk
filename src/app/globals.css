@@ -1030,3 +1030,51 @@
 @media(max-width:900px){.serverJobSteps{grid-template-columns:1fr 1fr}.serverJobActions button{flex:1 1 100%}}
 
 .productAudit{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px;margin:14px 0;border:1px solid #cfe0f2;border-radius:14px;background:#f6faff}.productAudit div{display:flex;flex-direction:column;gap:4px}.productAudit b{font-size:16px}.productAudit span{color:#526b86;font-size:13px}.productAudit button{white-space:nowrap}@media(max-width:760px){.productAudit{align-items:stretch;flex-direction:column}}
+
+/* V10.12.1 – mobile-first stabilization and timeout-safe history analysis */
+@media(max-width:700px){
+ html,body{max-width:100%;overflow-x:hidden}
+ .page{padding:10px 8px 34px!important}
+ .panel{padding:14px!important;border-radius:14px!important;overflow:hidden}
+ .panelHead{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important}
+ .panelHead h2{font-size:20px!important;line-height:1.18!important;margin:3px 0 5px!important}
+ .panelIntro{font-size:12px!important;line-height:1.45!important;overflow-wrap:anywhere}
+ .panelHead>button{width:100%!important;min-height:44px!important}
+ .serverJobUpload{display:flex!important;flex-direction:column!important;gap:10px!important}
+ .serverJobUpload .drop{min-height:135px!important;padding:16px 10px!important;text-align:center!important}
+ .serverJobUpload .drop b{font-size:14px!important;overflow-wrap:anywhere;max-width:100%}
+ .serverJobUpload .drop span{font-size:11px!important}
+ .serverJobUpload .primary{width:100%!important;min-height:52px!important;padding:12px!important}
+ .operationStatus{align-items:flex-start!important;padding:12px!important;gap:9px!important}
+ .operationStatus span{display:block!important;font-size:12px!important;line-height:1.4!important;overflow-wrap:anywhere;word-break:break-word}
+ .serverJobCard{padding:12px!important;border-radius:12px!important}
+ .serverJobCard header{display:flex!important;flex-direction:column!important;gap:6px!important}
+ .serverJobCard header b,.serverJobCard header span,.serverJobCard header small{white-space:normal!important;overflow-wrap:anywhere;word-break:break-word}
+ .serverJobCard header b{font-size:13px!important}
+ .serverJobCard header span,.serverJobCard header small{font-size:11px!important}
+ .serverJobSteps{display:flex!important;flex-direction:column!important;gap:7px!important;margin:11px 0!important}
+ .jobStep{padding:9px 10px!important;min-width:0!important}
+ .jobStep>span{width:25px!important;height:25px!important;flex:0 0 25px!important}
+ .jobStep b{font-size:13px!important}.jobStep small{font-size:11px!important;white-space:normal!important}
+ .serverJobActions{display:flex!important;flex-direction:column!important;gap:8px!important}
+ .serverJobActions button{width:100%!important;flex:none!important;min-height:46px!important;white-space:normal!important;padding:10px!important}
+ .serverJobActions .iconOnly{width:100%!important}
+ .productAudit,.tagManager{padding:12px!important}
+ .registryStats{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
+ .registryStats button{min-width:0!important;padding:9px 6px!important;font-size:11px!important}
+ .registryToolbar{gap:8px!important}.registryToolbar input{font-size:16px!important}
+ .masterTable{border:0!important;overflow:visible!important;background:transparent!important}
+ .masterTable .registryTableHead{display:none!important}
+ .masterTable .registryTableBody{min-width:0!important;max-height:none!important;overflow:visible!important;display:grid!important;gap:10px!important}
+ .masterTable .registryTableRow{min-width:0!important;display:grid!important;grid-template-columns:1fr!important;gap:7px!important;padding:12px!important;border:1px solid #dbe3ee!important;border-radius:12px!important;background:#fff!important}
+ .masterTable .registryTableRow>*{width:100%!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
+ .masterTable .registryTableRow code{font-size:11px!important}
+ .masterTable .registryTableRow input,.masterTable .registryTableRow select{font-size:16px!important;min-height:43px!important}
+ .masterTable .registrySave{min-height:43px!important}
+ .tagPills{max-height:180px!important;overflow:auto!important}
+ .newUserForm{grid-template-columns:1fr!important}
+ .toolbar{padding:0 8px!important;gap:8px!important}
+ .datePicker,.segments{max-width:100%;overflow-x:auto}
+ .hero{padding:18px 15px!important}.hero h1{font-size:23px!important}
+ .kpiGrid,.productHighlights{grid-template-columns:1fr!important}
+}
