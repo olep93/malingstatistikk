@@ -1,3 +1,13 @@
+## V10.11.1 – Serverlagrede importjobber og produktmaster
+
+- Serverlagrede, gjenopptakbare importjobber i Neon
+- Fortsett produktsynkronisering og rapportimport fra en annen enhet
+- Admin-endringer av produktnavn lagres automatisk ved utfokus
+- Admin-endringer av tag lagres umiddelbart
+- Permanente, egendefinerte tags
+- Gjenopprettede eksteriørtags: Maling / Dekkbeis / Beis, Vindu / Dør og Murmaling
+- Terrasseklassifisering: definerte vanntynnede produkter, Butinox Terrassemaling og øvrige som oljebasert
+
 # Malingstatistikk V10.11
 
 Ny Produktmaster med Admin-styrte tags, live redigering og låst klassifisering. Terrassebeis følger avtalte regler: fem navngitte serier som Vanntynnet, Butinox Terrassemaling som Terrassemaling og øvrige terrasseprodukter som Oljebasert.

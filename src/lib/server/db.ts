@@ -58,7 +58,8 @@ export async function ensureSchema() {
   await q`INSERT INTO paint_tags(area,name) VALUES
     ('interior','Tak'),('interior','Supermatt'),('interior','Matt'),('interior','Silkematt'),('interior','Tre & Panel'),('interior','Grunning'),('interior','Sparkel'),('interior','Lakk'),
     ('terrace','Vanntynnet'),('terrace','Terrassemaling'),('terrace','Oljebasert'),
-    ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Diverse')
+    ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Diverse'),
+    ('exterior','Maling / Dekkbeis / Beis'),('exterior','Vindu / Dør'),('exterior','Murmaling')
     ON CONFLICT(area,name) DO NOTHING`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
@@ -76,4 +77,41 @@ export async function ensureSchema() {
     last_login_at timestamptz
   )`;
   await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_lower_idx ON app_users(lower(username))`;
+
+  await q`CREATE TABLE IF NOT EXISTS paint_import_jobs (
+    id bigserial PRIMARY KEY,
+    source_name text NOT NULL,
+    status text NOT NULL DEFAULT 'staging',
+    total_days integer NOT NULL DEFAULT 0,
+    staged_days integer NOT NULL DEFAULT 0,
+    total_products integer NOT NULL DEFAULT 0,
+    synced_products integer NOT NULL DEFAULT 0,
+    imported_days integer NOT NULL DEFAULT 0,
+    failed_products integer NOT NULL DEFAULT 0,
+    failed_days integer NOT NULL DEFAULT 0,
+    created_by text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`;
+  await q`CREATE TABLE IF NOT EXISTS paint_import_job_days (
+    job_id bigint NOT NULL REFERENCES paint_import_jobs(id) ON DELETE CASCADE,
+    report_date date NOT NULL,
+    report_data jsonb NOT NULL,
+    status text NOT NULL DEFAULT 'staged',
+    error text,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY(job_id,report_date)
+  )`;
+  await q`CREATE TABLE IF NOT EXISTS paint_import_job_products (
+    job_id bigint NOT NULL REFERENCES paint_import_jobs(id) ON DELETE CASCADE,
+    product_key text NOT NULL,
+    product_data jsonb NOT NULL,
+    status text NOT NULL DEFAULT 'pending',
+    error text,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY(job_id,product_key)
+  )`;
+  await q`CREATE INDEX IF NOT EXISTS paint_import_job_products_status_idx ON paint_import_job_products(job_id,status)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_import_job_days_status_idx ON paint_import_job_days(job_id,status)`;
+
 }
