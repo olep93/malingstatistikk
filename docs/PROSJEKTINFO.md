@@ -23,3 +23,12 @@
 - `docs/screenshots/bi-portal-eksport-excel.png`
 
 Excel-formatet er den autoritative importkilden. PDF og CSV skal ikke brukes til den daglige importen.
+
+
+## V10.3 – produktnormalisering
+
+- Interiør- og terrasseprodukter får kundevennlige visningsnavn fra et lokalt, varenummerstyrt produktregister/regellag.
+- A-, B-, C- og hvitbase summeres som samme produkt når produktserie og spannstørrelse er lik.
+- Obsbygg.no brukes som referanse for kundevennlige navn og bilder, men dashboardet er ikke avhengig av live oppslag ved visning.
+- Eksempler: `Butinox Elegant Matt`, `TreStjerner Gulvmaling Matt`, `LADY Pure Color` og `Trebitt Terrassebeis`.
+- Produktserie og spannstørrelse holdes adskilt, slik at 2,7 L og 9 L fortsatt vises som separate produktlinjer.

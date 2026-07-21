@@ -67,7 +67,7 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   const g=vgr.toUpperCase(),n=raw.toUpperCase();
   if(g.includes("EKSTERIØRMALING"))return {area:"exterior",subgroup:"Eksteriør"};
   if(g.includes("TERRASSEBEIS")){
-    const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEBAS/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
+    const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEB|OLJEBAS|\bOB\b/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
   }
   if(g.includes("MALERVERKTØY")) {
     const subgroup=/PENSEL/.test(n)?"Pensler":/RULL/.test(n)?"Ruller":/TAPE|MASKER/.test(n)?"Tape":/DEKK|PLAST|FOLIE|PAPP|DUK/.test(n)?"Tildekning":"Diverse";return {area:"tools",subgroup};
@@ -76,7 +76,7 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   if(g.includes("SPARKEL"))return {area:"interior",subgroup:"Sparkel"};
   if(g.includes("LAKK"))return {area:"interior",subgroup:"Lakk"};
   if(g.includes("INTERIØRMALING")){
-    const subgroup=/TAK/.test(n)?"Tak":/SUPERMATT|PURE COLOR/.test(n)?"Supermatt":/SILKEMATT/.test(n)?"Silkematt":/PANEL|TRE|LIST|DØR|DOR/.test(n)?"Tre & Panel":/GRUNN/.test(n)?"Grunning":"Matt";return {area:"interior",subgroup};
+    const subgroup=/TAK/.test(n)?"Tak":/SUPERMATT|PURE COLOR/.test(n)?"Supermatt":/SILKEMATT|KLASSISK SM/.test(n)?"Silkematt":/PANEL|TRE|LIST|DØR|DOR/.test(n)?"Tre & Panel":/GRUNN/.test(n)?"Grunning":"Matt";return {area:"interior",subgroup};
   }
   return undefined;
 }
