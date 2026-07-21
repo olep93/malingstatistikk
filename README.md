@@ -36,3 +36,20 @@ Last opp innholdet i mappen direkte til roten av GitHub-repositoryet.
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
 - `LINN_PASSWORD` (valgfri overstyring av testpassordet)
+
+## V10.1.1 – navigasjonskontrast
+
+- Undermenyen Dashboard / Produktsalg / Historikk har fått tydelig mørk tekst på lyse knapper.
+- Aktiv visning markeres med mørk blå bakgrunn, hvit tekst og oransje understrek.
+- Valgt vareområde vises i et eget tydelig informasjonsfelt.
+- Mobilvisningen har horisontal rulling uten at kontrasten forsvinner.
+
+
+## V10.2 – Datatest for alle hovedområder
+
+- Én Excel-opplasting leser nå Eksteriørmaling, Interiørmaling, Terrasse og Malerverktøy.
+- Vareområde Maling summerer alle fire områder.
+- SAP-varegruppene 0677, 0678, 0689, 0662, 0682, 0686 og 0680 klassifiseres ved import.
+- Fugemasse/kit (0685) importeres ikke som eget område i denne testversjonen.
+- Undergrupper er første testklassifisering og skal kvalitetssikres mot produktregisteret.
+- En ny opplasting på en eksisterende dato erstatter dagsrapporten og lagrer alle områdene.

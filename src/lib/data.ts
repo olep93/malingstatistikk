@@ -1,10 +1,11 @@
 import {catalogEntry} from "./product-catalog";
 import {productReference} from "./product-reference";
 
-export type Supplier = "Infra"|"Butinox"|"Jotun";
+export type Supplier = "Infra"|"Butinox"|"Jotun"|"Jordan"|"Øvrig";
+export type ProductArea = "exterior"|"interior"|"terrace"|"tools";
 export type Period = "Dag"|"Uke"|"Måned"|"Hittil i år"|"År";
 export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
-export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;quantity:number;revenue:number;profit:number;margin:number;image?:string};
+export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;area?:ProductArea;subgroup?:string;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
 export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[];uploadedBy?:string;uploadedAt?:string};
 
@@ -13,6 +14,8 @@ export const supplierFromVendor=(vendor:string):Supplier|undefined=>{
   if(v.includes("GJØCO")) return "Infra";
   if(v.includes("SCANOX")) return "Butinox";
   if(v.includes("JOTUN")) return "Jotun";
+  if(v.includes("ORKLA")||v.includes("JORDAN")) return "Jordan";
+  return "Øvrig";
 };
 
 const titleCase=(value:string)=>value.toLowerCase().replace(/(^|\s|\/|-)\S/g,c=>c.toUpperCase())
@@ -110,7 +113,7 @@ export const imageForProduct=(p:string,rawName="")=>catalogEntry(p,rawName)?.ima
 
 export const canonicalizeRow=(row:ProductRow):ProductRow=>{
   const normalized=normalizeProduct(row.rawName||row.product,row.itemNo);
-  const productKey=[row.supplier,normalized.canonicalKey].join("|");
+  const productKey=[row.area||"exterior",row.subgroup||"",row.supplier,normalized.canonicalKey].join("|");
   return {
     ...row,
     product:normalized.product,

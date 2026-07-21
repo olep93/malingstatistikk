@@ -15,7 +15,8 @@ const isoDate=(v:unknown)=>{
   return /^\d{4}-\d{2}-\d{2}$/.test(text)?text:"";
 };
 
-type Supplier="Infra"|"Butinox"|"Jotun";
+type Supplier="Infra"|"Butinox"|"Jotun"|"Jordan"|"Øvrig";
+type ProductArea="exterior"|"interior"|"terrace"|"tools";
 type LegacyParsed={kind:"legacy";grid:unknown[][];groups:{supplier:Supplier;q:number;m:number;p:number;r:number}[];dateCol:number;itemCol:number;nameCol:number};
 type FlatParsed={kind:"flat";grid:unknown[][];headerRow:number;cols:{storeId:number;store:number;date:number;item:number;name:number;vgrName:number;vendorName:number;q:number;m:number;p:number;r:number}};
 type ParsedGrid=LegacyParsed|FlatParsed;
@@ -62,9 +63,27 @@ async function workbookGrid(file:File):Promise<ParsedGrid>{
   return {kind:"legacy",grid,groups,dateCol,itemCol,nameCol:itemCol+1};
 }
 
-function addRow(target:ProductRow[],args:{storeId:string;store:string;item:string;raw:string;supplier:Supplier;q:number;revenue:number;profit:number;margin:number}){
+function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|undefined{
+  const g=vgr.toUpperCase(),n=raw.toUpperCase();
+  if(g.includes("EKSTERIØRMALING"))return {area:"exterior",subgroup:"Eksteriør"};
+  if(g.includes("TERRASSEBEIS")){
+    const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEBAS/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
+  }
+  if(g.includes("MALERVERKTØY")) {
+    const subgroup=/PENSEL/.test(n)?"Pensler":/RULL/.test(n)?"Ruller":/TAPE|MASKER/.test(n)?"Tape":/DEKK|PLAST|FOLIE|PAPP|DUK/.test(n)?"Tildekning":"Diverse";return {area:"tools",subgroup};
+  }
+  if(g.includes("VASK")&&g.includes("RENS"))return {area:"tools",subgroup:"Rensemidler"};
+  if(g.includes("SPARKEL"))return {area:"interior",subgroup:"Sparkel"};
+  if(g.includes("LAKK"))return {area:"interior",subgroup:"Lakk"};
+  if(g.includes("INTERIØRMALING")){
+    const subgroup=/TAK/.test(n)?"Tak":/SUPERMATT|PURE COLOR/.test(n)?"Supermatt":/SILKEMATT/.test(n)?"Silkematt":/PANEL|TRE|LIST|DØR|DOR/.test(n)?"Tre & Panel":/GRUNN/.test(n)?"Grunning":"Matt";return {area:"interior",subgroup};
+  }
+  return undefined;
+}
+
+function addRow(target:ProductRow[],args:{storeId:string;store:string;item:string;raw:string;supplier:Supplier;area:ProductArea;subgroup:string;q:number;revenue:number;profit:number;margin:number}){
   const n=normalizeProduct(args.raw,args.item);
-  target.push({storeId:args.storeId,store:args.store,itemNo:args.item,rawName:args.raw,product:n.product,productKey:[args.supplier,n.canonicalKey].join("|"),size:n.size,supplier:args.supplier,category:n.category||categoryForProduct(n.product,args.raw),quantity:args.q,revenue:args.revenue,profit:args.profit,margin:args.revenue?args.profit/args.revenue*100:args.margin});
+  target.push({storeId:args.storeId,store:args.store,itemNo:args.item,rawName:args.raw,product:n.product,productKey:[args.area,args.subgroup,args.supplier,n.canonicalKey].join("|"),size:n.size,supplier:args.supplier,area:args.area,subgroup:args.subgroup,category:n.category||categoryForProduct(n.product,args.raw),quantity:args.q,revenue:args.revenue,profit:args.profit,margin:args.revenue?args.profit/args.revenue*100:args.margin});
 }
 
 function parseRows(parsed:ParsedGrid,forcedDate?:string){
@@ -79,11 +98,10 @@ function parseRows(parsed:ParsedGrid,forcedDate?:string){
       const item=String(row[c.item]??"").trim(),raw=String(row[c.name]??"").trim();
       const vgr=String(row[c.vgrName]??"").trim();
       const supplier=supplierFromVendor(String(row[c.vendorName]??""));
-      // Første testutgave beholder dagens eksteriørdashboard urørt. De øvrige
-      // varegruppene ligger i samme eksport og aktiveres i neste områdemodul.
-      if(!storeId||!store||!item||!raw||!supplier||!/eksteriørmaling/i.test(vgr))continue;
+      const classification=classify(vgr,raw);
+      if(!storeId||!store||!item||!raw||!supplier||!classification)continue;
       const target=rowsByDate.get(reportDate)||[];
-      addRow(target,{storeId,store,item,raw,supplier,q:num(row[c.q]),margin:num(row[c.m]),profit:num(row[c.p]),revenue:num(row[c.r])});
+      addRow(target,{storeId,store,item,raw,supplier,area:classification.area,subgroup:classification.subgroup,q:num(row[c.q]),margin:num(row[c.m]),profit:num(row[c.p]),revenue:num(row[c.r])});
       rowsByDate.set(reportDate,target);
     }
     return {rowsByDate,sourceTotalsByDate};
@@ -97,11 +115,11 @@ function parseRows(parsed:ParsedGrid,forcedDate?:string){
     if(item.toLowerCase()==="resultat"&&storeId&&store){const revenue=num(row[19]),profit=num(row[18]),quantity=num(row[16]);const totals=sourceTotalsByDate.get(reportDate)||[];totals.push({storeId,store,quantity,revenue,profit,margin:revenue?profit/revenue*100:num(row[17])});sourceTotalsByDate.set(reportDate,totals);continue;}
     if(!storeId||!raw||!item)continue;
     const target=rowsByDate.get(reportDate)||[];
-    for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;addRow(target,{storeId,store,item,raw,supplier:g.supplier,q,revenue,profit,margin:num(row[g.m])});}
+    for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;addRow(target,{storeId,store,item,raw,supplier:g.supplier,area:"exterior",subgroup:"Eksteriør",q,revenue,profit,margin:num(row[g.m])});}
     rowsByDate.set(reportDate,target);
   }
   return {rowsByDate,sourceTotalsByDate};
 }
 
-export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);const rows=[...rowsByDate.values()].flat();if(!rows.length)throw new Error("Fant ingen produktlinjer for Eksteriørmaling med Jotun, Butinox eller Infra.");return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};}
+export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);const rows=[...rowsByDate.values()].flat();if(!rows.length)throw new Error("Fant ingen produktlinjer i de valgte varegruppene.");return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};}
 export async function parsePaintHistoryWorkbook(file:File):Promise<DailyReport[]>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed);const reports=[...rowsByDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]}));if(!reports.length)throw new Error("Fant ingen daterte produktlinjer.");return reports;}
