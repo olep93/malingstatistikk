@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 import { createSession, setSessionCookie } from '@/lib/server/auth';
 export async function POST(req: Request) {
   const { username, password } = await req.json();
-  const expectedUser = process.env.ADMIN_USERNAME || 'Admin';
-  const expectedPass = process.env.ADMIN_PASSWORD;
-  if (!expectedPass) return NextResponse.json({ error: 'ADMIN_PASSWORD mangler i Vercel.' }, { status: 500 });
-  if (username !== expectedUser || password !== expectedPass) return NextResponse.json({ error: 'Feil brukernavn eller passord.' }, { status: 401 });
-  await setSessionCookie(await createSession());
-  return NextResponse.json({ ok: true });
+  const users = [
+    { username: process.env.ADMIN_USERNAME || 'Admin', password: process.env.ADMIN_PASSWORD },
+    { username: 'Linn', password: process.env.LINN_PASSWORD || '40857084' }
+  ];
+  const matched = users.find(user => user.username.toLowerCase() === String(username || '').trim().toLowerCase() && user.password === password);
+  if (!matched) return NextResponse.json({ error: 'Feil brukernavn eller passord.' }, { status: 401 });
+  await setSessionCookie(await createSession(matched.username));
+  return NextResponse.json({ ok: true, username: matched.username });
 }

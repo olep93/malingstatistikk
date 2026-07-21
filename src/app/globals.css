@@ -853,3 +853,33 @@
 @media(max-width:560px){
   .segments button{font-size:10px!important}
 }
+
+/* V10 kontrollpanel og kompakt historikk */
+.monthSelectors{display:flex;gap:10px}
+.historyTree{display:grid;gap:10px;margin-top:18px}
+.historyLevel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.historyLevel>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;background:#fff}
+.historyLevel>summary::-webkit-details-marker{display:none}
+.historyLevel>summary svg{width:18px;height:18px;transition:transform .18s ease}
+.historyLevel[open]>summary svg{transform:rotate(180deg)}
+.historyLevel>summary span{margin-left:auto;color:var(--muted);font-size:12px}
+.historyLevel.year>summary{background:#0b2850;color:#fff}
+.historyLevel.year>summary span{color:#cfdaea}
+.historyLevel.month{margin:10px;border-color:#cbd7e4}
+.historyLevel.month>summary{background:#f5f8fc}
+.historyLevel.week{margin:8px 12px 12px}
+.historyLevel.week>summary{padding:11px 13px;background:#fafbfd}
+.historyDays{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 12px 12px}
+.reportSourcePanel{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:20px;box-shadow:0 8px 24px rgba(6,31,61,.06)}
+.reportSourcePanel h2{margin:4px 0 5px}.reportSourcePanel p{margin:0 0 14px;color:var(--muted)}
+.reportLink{text-decoration:none;width:max-content}
+.reportNote{margin-top:16px;padding:14px;border-radius:12px;background:#fff7e8;border:1px solid #f6c982;color:#7c4a00}
+.reportNote b{display:block;margin-bottom:10px}
+.reportNote img{display:block;width:min(100%,980px);border:1px solid #d8e1eb;border-radius:8px;background:#fff}
+.dateUploadStatus{display:flex;align-items:flex-start;gap:10px;margin:10px 0 16px;padding:12px;border-radius:10px;border:1px solid}
+.dateUploadStatus .statusDot{width:12px;height:12px;border-radius:50%;margin-top:3px;flex:0 0 12px}
+.dateUploadStatus b,.dateUploadStatus span,.dateUploadStatus small{display:block}
+.dateUploadStatus span,.dateUploadStatus small{margin-top:3px;font-size:12px}
+.dateUploadStatus.available{background:#edf9f2;border-color:#8ac8a5;color:#176b43}.dateUploadStatus.available .statusDot{background:#20a362}
+.dateUploadStatus.exists{background:#fff1f1;border-color:#e4a0a0;color:#992b2b}.dateUploadStatus.exists .statusDot{background:#d64545}
+@media(max-width:900px){.monthSelectors{width:100%;display:grid;grid-template-columns:1fr 1fr}.historyDays{grid-template-columns:1fr}.reportLink{width:100%}}

@@ -18,3 +18,21 @@ Last opp innholdet i mappen direkte til roten av GitHub-repositoryet.
 - Switching focus warehouse remounts the product view with the correct warehouse key.
 - Product filters reset when the warehouse changes.
 - Derived rows and rankings are memoized to avoid unnecessary recalculation.
+
+## Første testutgave – juli 2026
+
+- Kontrollpanel med lenke til Coop BI-rapport og datoinstruks.
+- Grønn/rød kontroll av om valgt rapportdato allerede finnes.
+- Opplastingsmetadata (`uploaded_by`, tidspunkt) og ekstra adminbruker `Linn`.
+- Historikk som År → Måned → Uke → Dag.
+- Måned velges med separat år- og månedsmeny.
+- Parser støtter både tidligere Excel-format og nytt BO-format med kolonnene Butikk, Dato, Varenr/navn, Vare VGR, Leverandør, Ant solgt, BTO og Oms.
+
+### Miljøvariabler
+
+- `DATABASE_URL` / `POSTGRES_URL`
+- `BLOB_READ_WRITE_TOKEN`
+- `SESSION_SECRET` (minst 24 tegn)
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `LINN_PASSWORD` (valgfri overstyring av testpassordet)

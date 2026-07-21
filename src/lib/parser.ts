@@ -12,84 +12,96 @@ const isoDate=(v:unknown)=>{
   const text=String(v??"").trim();
   const no=text.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
   if(no)return `${no[3]}-${no[2].padStart(2,"0")}-${no[1].padStart(2,"0")}`;
-  const iso=text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return iso?text:"";
+  return /^\d{4}-\d{2}-\d{2}$/.test(text)?text:"";
 };
 
-type ParsedGrid={grid:unknown[][];groups:{supplier:"Infra"|"Butinox"|"Jotun";q:number;m:number;p:number;r:number}[];dateCol:number;itemCol:number;nameCol:number};
+type Supplier="Infra"|"Butinox"|"Jotun";
+type LegacyParsed={kind:"legacy";grid:unknown[][];groups:{supplier:Supplier;q:number;m:number;p:number;r:number}[];dateCol:number;itemCol:number;nameCol:number};
+type FlatParsed={kind:"flat";grid:unknown[][];headerRow:number;cols:{storeId:number;store:number;date:number;item:number;name:number;vgrName:number;vendorName:number;q:number;m:number;p:number;r:number}};
+type ParsedGrid=LegacyParsed|FlatParsed;
 
+const norm=(v:unknown)=>String(v??"").trim().toLowerCase();
 async function workbookGrid(file:File):Promise<ParsedGrid>{
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
-  if(grid.length<5)throw new Error("Fant ikke forventet tabell i Excel-filen.");
+  if(grid.length<3)throw new Error("Fant ikke forventet tabell i Excel-filen.");
+
+  // Ny BO-rapport: én rad med måltall, neste rad med dimensjonsoverskrifter.
+  for(let headerRow=0;headerRow<Math.min(8,grid.length);headerRow++){
+    const h=(grid[headerRow]||[]).map(norm);
+    const storeId=h.findIndex(x=>x==="butikk");
+    const date=h.findIndex(x=>x==="dato");
+    const item=h.findIndex(x=>x.includes("varenr"));
+    const vgrName=h.findIndex(x=>x.includes("vare vgr"));
+    const vendorName=h.findIndex(x=>x==="leverandør");
+    if(storeId>=0&&date>=0&&item>=0&&vgrName>=0&&vendorName>=0){
+      const metricRow=(grid[Math.max(0,headerRow-1)]||[]).map(norm);
+      const q=metricRow.findIndex(x=>x.includes("ant solgt"));
+      const m=metricRow.findIndex(x=>x.includes("bto %"));
+      const p=metricRow.findIndex(x=>x.includes("bto kr"));
+      const r=metricRow.findIndex(x=>x==="oms"||x.startsWith("oms "));
+      if(q<0||p<0||r<0)throw new Error("Fant dimensjonene, men ikke kolonnene Ant solgt, BTO kr og Oms.");
+      return {kind:"flat",grid,headerRow,cols:{storeId,store:storeId+1,date,item,name:item+1,vgrName:vgrName+1,vendorName:vendorName+1,q,m,p,r}};
+    }
+  }
+
+  // Eldre rapportformat med én kolonnegruppe per leverandør.
   const vendors=grid[1]||[],metrics=grid[2]||[],header=grid[3]||[];
-  const groups:{supplier:"Infra"|"Butinox"|"Jotun";q:number;m:number;p:number;r:number}[]=[];
+  const groups:{supplier:Supplier;q:number;m:number;p:number;r:number}[]=[];
   for(let c=0;c<metrics.length;c++){
     const supplier=supplierFromVendor(String(vendors[c]||""));
-    if(supplier&&String(metrics[c]||"").toLowerCase().includes("ant solgt"))groups.push({supplier,q:c,m:c+1,p:c+2,r:c+3});
+    if(supplier&&norm(metrics[c]).includes("ant solgt"))groups.push({supplier,q:c,m:c+1,p:c+2,r:c+3});
   }
-  if(!groups.length)throw new Error("Leverandørkolonnene ble ikke gjenkjent.");
-  const normalized=header.map(v=>String(v??"").trim().toLowerCase());
+  if(!groups.length)throw new Error("Rapportformatet ble ikke gjenkjent.");
+  const normalized=header.map(norm);
   const dateCol=normalized.findIndex(v=>v.includes("dato"));
   const itemHeader=normalized.findIndex(v=>v.includes("varenr")||v.includes("varenummer"));
   const itemCol=itemHeader>=0?itemHeader:dateCol>=0?dateCol+1:2;
-  const nameCol=itemCol+1;
-  return {grid,groups,dateCol,itemCol,nameCol};
+  return {kind:"legacy",grid,groups,dateCol,itemCol,nameCol:itemCol+1};
+}
+
+function addRow(target:ProductRow[],args:{storeId:string;store:string;item:string;raw:string;supplier:Supplier;q:number;revenue:number;profit:number;margin:number}){
+  const n=normalizeProduct(args.raw,args.item);
+  target.push({storeId:args.storeId,store:args.store,itemNo:args.item,rawName:args.raw,product:n.product,productKey:[args.supplier,n.canonicalKey].join("|"),size:n.size,supplier:args.supplier,category:n.category||categoryForProduct(n.product,args.raw),quantity:args.q,revenue:args.revenue,profit:args.profit,margin:args.revenue?args.profit/args.revenue*100:args.margin});
 }
 
 function parseRows(parsed:ParsedGrid,forcedDate?:string){
-  const {grid,groups,dateCol,itemCol,nameCol}=parsed;
   const rowsByDate=new Map<string,ProductRow[]>();
   const sourceTotalsByDate=new Map<string,SourceTotal[]>();
-  for(let i=4;i<grid.length;i++){
-    const row=grid[i]||[];
-    const reportDate=forcedDate||isoDate(dateCol>=0?row[dateCol]:undefined);
-    if(!reportDate)continue;
-    const item=String(row[itemCol]??"").trim();
-    const raw=String(row[nameCol]??"").trim();
-    const storeId=String(row[0]??"").trim();
-    const store=shortStore(String(row[1]??""));
-    if(item.toLowerCase()==="resultat"&&storeId&&store){
-      const revenue=num(row[19]),profit=num(row[18]),quantity=num(row[16]);
-      const totals=sourceTotalsByDate.get(reportDate)||[];
-      totals.push({storeId,store,quantity,revenue,profit,margin:revenue?profit/revenue*100:num(row[17])});
-      sourceTotalsByDate.set(reportDate,totals);
-      continue;
+  if(parsed.kind==="flat"){
+    const {grid,headerRow,cols:c}=parsed;
+    for(let i=headerRow+1;i<grid.length;i++){
+      const row=grid[i]||[];
+      const reportDate=forcedDate||isoDate(row[c.date]); if(!reportDate)continue;
+      const storeId=String(row[c.storeId]??"").trim(),store=shortStore(String(row[c.store]??""));
+      const item=String(row[c.item]??"").trim(),raw=String(row[c.name]??"").trim();
+      const vgr=String(row[c.vgrName]??"").trim();
+      const supplier=supplierFromVendor(String(row[c.vendorName]??""));
+      // Første testutgave beholder dagens eksteriørdashboard urørt. De øvrige
+      // varegruppene ligger i samme eksport og aktiveres i neste områdemodul.
+      if(!storeId||!store||!item||!raw||!supplier||!/eksteriørmaling/i.test(vgr))continue;
+      const target=rowsByDate.get(reportDate)||[];
+      addRow(target,{storeId,store,item,raw,supplier,q:num(row[c.q]),margin:num(row[c.m]),profit:num(row[c.p]),revenue:num(row[c.r])});
+      rowsByDate.set(reportDate,target);
     }
+    return {rowsByDate,sourceTotalsByDate};
+  }
+
+  const {grid,groups,dateCol,itemCol,nameCol}=parsed;
+  for(let i=4;i<grid.length;i++){
+    const row=grid[i]||[];const reportDate=forcedDate||isoDate(dateCol>=0?row[dateCol]:undefined);if(!reportDate)continue;
+    const item=String(row[itemCol]??"").trim(),raw=String(row[nameCol]??"").trim();
+    const storeId=String(row[0]??"").trim(),store=shortStore(String(row[1]??""));
+    if(item.toLowerCase()==="resultat"&&storeId&&store){const revenue=num(row[19]),profit=num(row[18]),quantity=num(row[16]);const totals=sourceTotalsByDate.get(reportDate)||[];totals.push({storeId,store,quantity,revenue,profit,margin:revenue?profit/revenue*100:num(row[17])});sourceTotalsByDate.set(reportDate,totals);continue;}
     if(!storeId||!raw||!item)continue;
     const target=rowsByDate.get(reportDate)||[];
-    for(const g of groups){
-      const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);
-      if(!q&&!revenue&&!profit)continue;
-      const n=normalizeProduct(raw,item);
-      target.push({storeId,store,itemNo:item,rawName:raw,product:n.product,productKey:[g.supplier,n.canonicalKey].join("|"),size:n.size,supplier:g.supplier,category:n.category||categoryForProduct(n.product,raw),quantity:q,revenue,profit,margin:revenue?profit/revenue*100:num(row[g.m])});
-    }
+    for(const g of groups){const q=num(row[g.q]),revenue=num(row[g.r]),profit=num(row[g.p]);if(!q&&!revenue&&!profit)continue;addRow(target,{storeId,store,item,raw,supplier:g.supplier,q,revenue,profit,margin:num(row[g.m])});}
     rowsByDate.set(reportDate,target);
   }
   return {rowsByDate,sourceTotalsByDate};
 }
 
-export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{
-  const parsed=await workbookGrid(file);
-  const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);
-  const rows=[...rowsByDate.values()].flat();
-  if(!rows.length)throw new Error("Fant ingen produktlinjer med salg.");
-  return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};
-}
-
-export async function parsePaintHistoryWorkbook(file:File):Promise<DailyReport[]>{
-  const parsed=await workbookGrid(file);
-  if(parsed.dateCol<0)throw new Error("Historikkfilen mangler en gjenkjennelig datokolonne.");
-  const {rowsByDate,sourceTotalsByDate}=parseRows(parsed);
-  const reports=[...rowsByDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({
-    date,
-    createdAt:new Date().toISOString(),
-    sourceName:file.name,
-    rows:aggregateProducts(rows),
-    sourceTotals:sourceTotalsByDate.get(date)||[]
-  }));
-  if(!reports.length)throw new Error("Fant ingen daterte produktlinjer med salg.");
-  return reports;
-}
+export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);const rows=[...rowsByDate.values()].flat();if(!rows.length)throw new Error("Fant ingen produktlinjer for Eksteriørmaling med Jotun, Butinox eller Infra.");return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};}
+export async function parsePaintHistoryWorkbook(file:File):Promise<DailyReport[]>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed);const reports=[...rowsByDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]}));if(!reports.length)throw new Error("Fant ingen daterte produktlinjer.");return reports;}

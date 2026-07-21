@@ -6,7 +6,7 @@ export type Period = "Dag"|"Uke"|"Måned"|"Hittil i år"|"År";
 export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
 export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
-export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[]};
+export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[];uploadedBy?:string;uploadedAt?:string};
 
 export const supplierFromVendor=(vendor:string):Supplier|undefined=>{
   const v=(vendor||"").toUpperCase();

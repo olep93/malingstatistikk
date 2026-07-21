@@ -18,8 +18,10 @@ export async function ensureSchema() {
     blob_url text,
     report_data jsonb NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    uploaded_by text
   )`;
+  await q`ALTER TABLE paint_reports ADD COLUMN IF NOT EXISTS uploaded_by text`;
   await q`CREATE TABLE IF NOT EXISTS paint_products (
     product_key text PRIMARY KEY,
     display_name text NOT NULL,

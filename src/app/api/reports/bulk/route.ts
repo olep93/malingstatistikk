@@ -1,6 +1,6 @@
 import {NextResponse} from "next/server";
 import {put} from "@vercel/blob";
-import {isAdmin} from "@/lib/server/auth";
+import {getSession} from "@/lib/server/auth";
 import {ensureSchema,sql} from "@/lib/server/db";
 import {aggregateProducts,canonicalizeRow} from "@/lib/data";
 import {parsePaintHistoryWorkbook} from "@/lib/parser";
@@ -10,7 +10,8 @@ export const maxDuration=300;
 const CHUNK_SIZE=8;
 
 export async function POST(req:Request){
-  if(!(await isAdmin()))return NextResponse.json({error:"Ikke innlogget"},{status:401});
+  const session=await getSession();
+  if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});
   try{
     await ensureSchema();
     const form=await req.formData();
@@ -26,7 +27,8 @@ export async function POST(req:Request){
 
     const prepared=reports.map(input=>{
       const report={...input,rows:aggregateProducts((input.rows||[]).map(row=>canonicalizeRow(row)))};
-      return {report_date:report.date,source_name:report.sourceName||"Historikkimport",blob_url:blob.url,report_data:report};
+      report.uploadedBy=session.username;report.uploadedAt=new Date().toISOString();
+      return {report_date:report.date,source_name:report.sourceName||"Historikkimport",blob_url:blob.url,report_data:report,uploaded_by:session.username};
     });
     const selected=mode==="replace"?prepared:prepared.filter(row=>!existingDates.has(row.report_date));
     const skipped=prepared.length-selected.length;
@@ -35,10 +37,10 @@ export async function POST(req:Request){
     let written=0;
     for(let i=0;i<selected.length;i+=CHUNK_SIZE){
       const chunk=selected.slice(i,i+CHUNK_SIZE);
-      await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at)
-        SELECT x.report_date::date,x.source_name,x.blob_url,x.report_data,now()
-        FROM jsonb_to_recordset(${JSON.stringify(chunk)}::jsonb) AS x(report_date text,source_name text,blob_url text,report_data jsonb)
-        ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name,blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url),report_data=excluded.report_data,updated_at=now()`;
+      await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at,uploaded_by)
+        SELECT x.report_date::date,x.source_name,x.blob_url,x.report_data,now(),x.uploaded_by
+        FROM jsonb_to_recordset(${JSON.stringify(chunk)}::jsonb) AS x(report_date text,source_name text,blob_url text,report_data jsonb,uploaded_by text)
+        ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name,blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url),report_data=excluded.report_data,updated_at=now(),uploaded_by=excluded.uploaded_by`;
       written+=chunk.length;
     }
 
