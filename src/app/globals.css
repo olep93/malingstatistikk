@@ -981,3 +981,6 @@
 
 /* V10.5: sletting av valgt rapportdag */
 .dateDeleteBtn{margin-top:10px;width:max-content}
+
+/* V10.6 product registry */
+.registryStats{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.registryStats span{background:#f3f6f9;border:1px solid #dce4eb;border-radius:10px;padding:10px 14px}.registryTable{display:grid;gap:6px;max-height:620px;overflow:auto}.registryHead,.registryRow{display:grid;grid-template-columns:1.2fr 1.2fr 1.2fr .55fr;gap:12px;align-items:center;padding:10px 12px}.registryHead{position:sticky;top:0;background:#12365b;color:white;border-radius:8px;z-index:1}.registryRow{border:1px solid #e1e7ec;border-radius:8px;background:white}.registryRow div{min-width:0}.registryRow small{display:block;color:#677786;margin-top:3px;white-space:normal}.registryRow input{width:100%;padding:8px;border:1px solid #cbd5df;border-radius:6px}.registryStatus{display:inline-block;padding:5px 8px;border-radius:999px;font-size:.78rem;font-weight:700}.registryStatus.found{background:#dff3e4;color:#17652b}.registryStatus.not_found,.registryStatus.pending{background:#fff0d6;color:#8a5200}@media(max-width:850px){.registryHead{display:none}.registryRow{grid-template-columns:1fr}.registryRow>div{padding-bottom:6px;border-bottom:1px solid #edf1f4}.registryRow>div:last-child{border-bottom:0}}

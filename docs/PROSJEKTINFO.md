@@ -45,3 +45,21 @@ Excel-formatet er den autoritative importkilden. PDF og CSV skal ikke brukes til
 - Varegruppe 0687 Bygningstape er lagt til i BI-uttrekket og importeres som Malerverktøy → Tape.
 - Kontrollpanelet bruker ny BI-lenke/bokmerke.
 - Eksisterende valgt dato kan slettes direkte i opplastingsdelen.
+
+## V10.6 – Produktregister og Obsbygg-cache
+
+Ved publisering samler appen alle unike produktnøkler fra Excel-filen og sjekker dem mot Neon-tabellen `paint_products`.
+
+- Lagrede produktdata yngre enn 90 dager brukes direkte.
+- Bare nye eller utdaterte produkter søkes opp på Obsbygg.no.
+- SAP-navn lagres som `source_name`.
+- Navn fra nettsiden lagres som `website_name`.
+- Dashboardnavnet lagres som `display_name`.
+- Manuelt endrede navn beskyttes med `display_name_locked`.
+- Oppslagsstatus og tidspunkt lagres i `lookup_status` og `last_fetched_at`.
+- Rapporten publiseres først når produktsynkroniseringen er ferdig.
+
+API:
+- `POST /api/products/sync` – synkroniserer produktgrupper i små puljer.
+- `GET /api/products/registry` – viser produktregisteret.
+- `PATCH /api/products/registry` – låser et manuelt visningsnavn.

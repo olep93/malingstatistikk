@@ -12,7 +12,7 @@ export async function GET() {
     await ensureSchema();
     const q = sql();
     const rows = await q`SELECT report_data,uploaded_by,created_at,updated_at FROM paint_reports ORDER BY report_date ASC`;
-    const products = await q`SELECT product_key,display_name,image_url,product_url,category FROM paint_products`;
+    const products = await q`SELECT product_key,display_name,website_name,image_url,product_url,category,lookup_status FROM paint_products`;
     const productMap = new Map(products.map((x:any)=>[x.product_key,x]));
     const reports = rows.map((r:any)=>{
       const report={...r.report_data,uploadedBy:r.uploaded_by||r.report_data?.uploadedBy||'Ukjent bruker',uploadedAt:(r.updated_at||r.created_at)?.toISOString?.()||String(r.updated_at||r.created_at||r.report_data?.createdAt||'')};
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at,uploaded_by)
       VALUES(${report.date},${report.sourceName || 'Excel-rapport'},${blobUrl},${JSON.stringify(report)}::jsonb,now(),${session.username})
       ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name, blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url), report_data=excluded.report_data, updated_at=now(),uploaded_by=excluded.uploaded_by`;
-    return NextResponse.json({ok:true, report, enrichmentPending:true});
+    return NextResponse.json({ok:true, report, enrichmentPending:false});
   } catch(e){
     console.error('POST /api/reports failed', e);
     return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke lagre rapport'}, {status:500});
