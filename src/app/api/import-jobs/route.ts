@@ -1,9 +1,6 @@
 import {NextResponse} from 'next/server';
-import {put} from '@vercel/blob';
 import {getSession,isAuthenticated} from '@/lib/server/auth';
 import {ensureSchema,sql} from '@/lib/server/db';
-
-export const maxDuration=60;
 
 export async function GET(){
   if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
@@ -20,13 +17,16 @@ export async function POST(req:Request){
   if(!session)return NextResponse.json({error:'Ikke innlogget'},{status:401});
   try{
     await ensureSchema();
-    const form=await req.formData();
-    const file=form.get('file');
-    if(!(file instanceof File)||!file.size)return NextResponse.json({error:'Excel-fil mangler'},{status:400});
-    if(!/\.xls(x)?$/i.test(file.name))return NextResponse.json({error:'Bare .xlsx og .xls støttes'},{status:400});
-    const blob=await put(`excel/import-jobs/${Date.now()}-${file.name}`,file,{access:'private',addRandomSuffix:true});
+    const body=await req.json();
+    const sourceName=String(body?.sourceName||'').trim();
+    const blobUrl=String(body?.blobUrl||'').trim();
+    const blobSize=Number(body?.blobSize||0);
+    if(!sourceName||!blobUrl||!blobSize)return NextResponse.json({error:'Filinformasjon mangler'},{status:400});
+    if(!/\.xls(x)?$/i.test(sourceName))return NextResponse.json({error:'Bare .xlsx og .xls støttes'},{status:400});
+    if(blobSize>100*1024*1024)return NextResponse.json({error:'Filen er større enn 100 MB'},{status:400});
+    if(!/^https:\/\/.*\.blob\.vercel-storage\.com\//i.test(blobUrl))return NextResponse.json({error:'Ugyldig Blob-adresse'},{status:400});
     const q=sql();
-    const rows=await q`INSERT INTO paint_import_jobs(source_name,status,created_by,blob_url,blob_size) VALUES(${file.name},'uploaded',${session.username},${blob.url},${file.size}) RETURNING id::text`;
+    const rows=await q`INSERT INTO paint_import_jobs(source_name,status,created_by,blob_url,blob_size) VALUES(${sourceName},'uploaded',${session.username},${blobUrl},${blobSize}) RETURNING id::text`;
     return NextResponse.json({ok:true,id:rows[0].id});
-  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke laste opp serverjobben'},{status:500})}
+  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke opprette serverjobben'},{status:500})}
 }
