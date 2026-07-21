@@ -82,3 +82,12 @@ Last opp innholdet i mappen direkte til roten av GitHub-repositoryet.
 - SAP-varegruppe 0687 Bygningstape er inkludert og klassifiseres som Malerverktøy → Tape.
 - BI-lenken i Kontrollpanel er oppdatert til den nye rapportbokmerken.
 - Valgt eksisterende rapportdag kan slettes direkte ved datovelgeren før ny opplasting.
+
+
+## V10.11.2 – Restore eksteriørtagger
+
+- Gjenoppretter de godkjente eksteriørtaggene: Maling / Dekkbeis / Beis, Vindu / Dør og Murmaling.
+- Migrerer eksisterende produkter fra den historiske varenummer/EAN-listen i `product-reference.ts`.
+- Beholder alle Admin-låste endringer.
+- Eldre rader med kategori, men uten `area`/`subgroup`, migreres automatisk.
+- Eksteriør-dropdown viser alltid de tre godkjente taggene.

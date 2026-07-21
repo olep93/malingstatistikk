@@ -4,7 +4,7 @@ import {ensureSchema,sql} from '@/lib/server/db';
 
 export async function GET(){
   if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
-  try{await ensureSchema();const q=sql();const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at FROM paint_products ORDER BY updated_at DESC LIMIT 5000`;return NextResponse.json({products});}
+  try{await ensureSchema();const q=sql();const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,category,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at FROM paint_products ORDER BY updated_at DESC LIMIT 5000`;return NextResponse.json({products});}
   catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke hente produktregister'},{status:500})}
 }
 export async function PATCH(req:Request){

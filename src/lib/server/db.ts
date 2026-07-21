@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import {PRODUCT_REFERENCE} from '@/lib/product-reference';
 
 function connectionString() {
   return process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.STORAGE_URL || '';
@@ -61,6 +62,48 @@ export async function ensureSchema() {
     ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Diverse'),
     ('exterior','Maling / Dekkbeis / Beis'),('exterior','Vindu / Dør'),('exterior','Murmaling')
     ON CONFLICT(area,name) DO NOTHING`;
+
+  // Restore the original exterior product classification. The historical product
+  // reference was built from the approved Excel list and remains the source of
+  // truth for exterior tags. This migration is idempotent and never overwrites
+  // an Admin-locked tag.
+  const exteriorMappings = Object.entries(PRODUCT_REFERENCE).map(([itemNo, product]) => ({
+    item_no: itemNo,
+    ean: product.ean || '',
+    subgroup: product.category === 'Vindu / Dør'
+      ? 'Vindu / Dør'
+      : product.category === 'Murmaling'
+        ? 'Murmaling'
+        : 'Maling / Dekkbeis / Beis'
+  }));
+  await q`WITH mappings AS (
+    SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
+      AS x(item_no text, ean text, subgroup text)
+  )
+  UPDATE paint_products p
+  SET area='exterior',
+      subgroup=m.subgroup,
+      category=m.subgroup,
+      updated_at=now()
+  FROM mappings m
+  WHERE COALESCE(p.subgroup_locked,false)=false
+    AND (p.ean=m.ean OR p.ean=m.item_no)`;
+
+  // Older database rows already contain the approved category in `category`, but
+  // predate the new area/subgroup columns. Promote those values as well.
+  await q`UPDATE paint_products
+    SET area='exterior',
+        subgroup=CASE
+          WHEN category='Vindu / Dør' THEN 'Vindu / Dør'
+          WHEN category='Murmaling' THEN 'Murmaling'
+          ELSE 'Maling / Dekkbeis / Beis'
+        END,
+        updated_at=now()
+    WHERE COALESCE(subgroup_locked,false)=false
+      AND (area IS NULL OR area='' OR area='exterior')
+      AND category IS NOT NULL
+      AND category<>''
+      AND (subgroup IS NULL OR subgroup='')`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
