@@ -1,3 +1,12 @@
+# Malingstatistikk V10.10.1
+
+Denne versjonen inkluderer gjenopptakbar dagsimport, produktregister med scroll og prioritert kontroll, rollebasert tilgang (Admin/Leder), brukeradministrasjon kun for Admin og kompakt rapportarkiv gruppert som År → Måned → Uke → Dag.
+
+## Roller
+- **Admin:** Alle funksjoner, brukeradministrasjon og sletting av rapportdager.
+- **Leder:** Dashboard, rapportimport, historikkimport, produktsynkronisering og produktregister. Kan ikke administrere brukere eller slette rapportdager.
+- Eksisterende **Linn** migreres/opprettes som Leder.
+
 # Malingstatistikk V7 – Executive Edition
 
 Grafisk hovedoppgradering basert på Executive Dashboard-designet.

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { isAdmin } from '@/lib/server/auth';
+import { isAuthenticated } from '@/lib/server/auth';
 import { findObsbyggImage } from '@/lib/server/product-images';
 
 export const maxDuration = 60;
 export async function POST(req:Request){
-  if(!(await isAdmin())) return NextResponse.json({error:'Ikke innlogget'},{status:401});
+  if(!(await isAuthenticated())) return NextResponse.json({error:'Ikke innlogget'},{status:401});
   try{
     const {rows=[]}=await req.json();
     const unique = new Map<string,any>();

@@ -47,4 +47,17 @@ export async function ensureSchema() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
+  await q`CREATE TABLE IF NOT EXISTS app_users (
+    id bigserial PRIMARY KEY,
+    username text NOT NULL UNIQUE,
+    display_name text NOT NULL,
+    role text NOT NULL CHECK (role IN ('admin','leader')),
+    password_hash text NOT NULL,
+    password_salt text NOT NULL,
+    is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    last_login_at timestamptz
+  )`;
+  await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_lower_idx ON app_users(lower(username))`;
 }

@@ -1008,3 +1008,16 @@
 .registryTableRow.needsReview{background:#fff9ed;border-left:4px solid #e29a16}
 .registryTableRow.needsReview em{font-weight:800;color:#9a5b00}
 @media(max-width:900px){.registryToolbar{align-items:stretch;flex-direction:column}.registryToolbar label{max-width:none}.registryToolbar span{padding-bottom:0}.registryTable{overflow-x:auto!important}.registryTableBody{min-width:900px;max-height:560px;overflow-y:auto;overflow-x:hidden}}
+
+/* V10.10.1b – roller, brukere og kompakt rapportarkiv */
+.sessionRole{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:7px 10px;border-radius:999px;background:#edf4ff;color:#153b72;font-size:.82rem;font-weight:700}
+.userManagement{margin-top:24px}
+.newUserForm{display:grid;grid-template-columns:1.2fr 1fr 1fr .8fr auto;gap:12px;align-items:end;padding:16px;margin:14px 0;border:1px solid #dce4ef;border-radius:14px;background:#f8fafc}
+.newUserForm label{display:grid;gap:6px;font-size:.8rem;font-weight:700;color:#334155}
+.newUserForm input,.newUserForm select,.userTable input,.userTable select{width:100%;min-height:39px;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff;color:#0f172a}
+.userTableWrap{max-height:560px;overflow:auto;border:1px solid #dce4ef;border-radius:12px}
+.userTable{display:grid;grid-template-columns:minmax(190px,1.5fr) 120px 140px minmax(160px,1fr) 180px;gap:12px;align-items:center;padding:11px 13px;border-bottom:1px solid #e7edf4;min-width:850px;background:#fff}
+.userTableHead{position:sticky;top:0;z-index:2;background:#f1f5f9;color:#334155;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+.userTable>div:first-child{display:grid;gap:4px}.userTable small{color:#64748b}.activeToggle{display:flex;align-items:center;gap:8px;font-weight:700;color:#334155}.activeToggle input{width:17px;min-height:17px}.userActions{display:flex;gap:8px}.iconOnly{padding:9px!important;min-width:40px!important}
+.adminArchiveTree{display:grid;gap:9px;max-height:760px;overflow:auto;padding-right:5px}.adminArchiveTree .historyLevel{margin:0}.archiveOpen{display:flex;align-items:center;gap:12px;flex:1;text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer}.archiveOpen>div{display:grid;gap:3px}.archiveOpen:hover b{text-decoration:underline}.adminArchive .adminReportList{max-height:none;overflow:visible}
+@media(max-width:900px){.newUserForm{grid-template-columns:1fr 1fr}.newUserForm .successBtn{grid-column:1/-1}.userTableWrap{overflow:auto}.adminArchiveTree{max-height:640px}}
