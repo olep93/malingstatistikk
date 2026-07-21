@@ -12,7 +12,7 @@ export async function GET() {
     await ensureSchema();
     const q = sql();
     const rows = await q`SELECT report_data,uploaded_by,created_at,updated_at FROM paint_reports ORDER BY report_date ASC`;
-    const products = await q`SELECT product_key,display_name,website_name,image_url,product_url,category,lookup_status FROM paint_products`;
+    const products = await q`SELECT product_key,display_name,website_name,image_url,product_url,category,subgroup,lookup_status FROM paint_products`;
     const productMap = new Map(products.map((x:any)=>[x.product_key,x]));
     const reports = rows.map((r:any)=>{
       const report={...r.report_data,uploadedBy:r.uploaded_by||r.report_data?.uploadedBy||'Ukjent bruker',uploadedAt:(r.updated_at||r.created_at)?.toISOString?.()||String(r.updated_at||r.created_at||r.report_data?.createdAt||'')};
@@ -25,7 +25,8 @@ export async function GET() {
           product:product?.display_name||row.product,
           image:product?.image_url||known?.image||row.image,
           productUrl:product?.product_url||known?.pageUrl||row.productUrl,
-          category:row.category||product?.category||known?.category
+          category:row.category||product?.category||known?.category,
+          subgroup:row.area==='exterior'?row.subgroup:(product?.subgroup||row.subgroup)
         };
       });
       report.rows=aggregateProducts(canonicalRows);

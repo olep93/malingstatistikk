@@ -10,7 +10,7 @@ export async function POST(req:Request){
     const unique = new Map<string,any>();
     for(const row of rows){
       const key=row.productKey||[row.supplier,row.product,row.size||''].join('|');
-      if(!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo});
+      if(!unique.has(key)) unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo,area:row.area,subgroup:row.subgroup});
     }
     const items=[...unique.values()].slice(0,8);
     const results=[];

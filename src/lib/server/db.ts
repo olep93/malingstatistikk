@@ -43,6 +43,8 @@ export async function ensureSchema() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS lookup_status text NOT NULL DEFAULT 'pending'`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS last_fetched_at timestamptz`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS display_name_locked boolean NOT NULL DEFAULT false`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS subgroup text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
 }
