@@ -22,7 +22,7 @@ export async function GET() {
         const known=catalogEntry(product?.display_name||row.product,row.rawName);
         return {
           ...row,
-          product:row.product,
+          product:product?.display_name||row.product,
           image:product?.image_url||known?.image||row.image,
           productUrl:product?.product_url||known?.pageUrl||row.productUrl,
           category:row.category||product?.category||known?.category

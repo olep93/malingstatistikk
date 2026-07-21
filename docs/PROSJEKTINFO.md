@@ -32,3 +32,10 @@ Excel-formatet er den autoritative importkilden. PDF og CSV skal ikke brukes til
 - Obsbygg.no brukes som referanse for kundevennlige navn og bilder, men dashboardet er ikke avhengig av live oppslag ved visning.
 - Eksempler: `Butinox Elegant Matt`, `TreStjerner Gulvmaling Matt`, `LADY Pure Color` og `Trebitt Terrassebeis`.
 - Produktserie og spannstørrelse holdes adskilt, slik at 2,7 L og 9 L fortsatt vises som separate produktlinjer.
+
+
+## V10.4
+- Eksportbildet vises i Kontrollpanel sammen med datofilterbildet.
+- Malerverktøy bruker «artikler»/«stk.» i stedet for «spann».
+- Maskeringsblad klassifiseres ikke lenger som tape. Tape krever eksplisitt tape-navn i kildedata.
+- Produktnavn som blir funnet på Obsbygg.no brukes som visningsnavn etter automatisk produktberikelse.

@@ -44,7 +44,47 @@ export const categoryForProduct=(product:string,rawName=""):ProductCategory=>{
   return "Annet";
 };
 
+
+const normalizeToolProduct=(raw:string)=>{
+  const n=(raw||"").toUpperCase().replace(/\./g," ").replace(/\s+/g," ").trim();
+  const rules:[RegExp,string][]=[
+    [/JORDAN MASKERINGSBLAD/,"Jordan Maskeringsblad"],
+    [/JORDAN ENK(?:EL)?\.?ARB(?:EID)? LANG (\d+) MM/,"Jordan Enkel Arbeid Langpensel $1 mm"],
+    [/JORDAN STREKP .*?(\d+\/\d+|\d+)$/, "Jordan Strekpensel $1"],
+    [/JORDAN HOBBYP .*3STK/,"Jordan Hobbypensel 3-pakning"],
+    [/JORDAN MINIR .*SKU/,"Jordan Minirull skum"],
+    [/JORDAN MINIR BØYLE/,"Jordan Minirullbøyle"],
+    [/JORDAN RULLES? PERF U (\d+)CM/,"Jordan Perfect rull $1 cm"],
+    [/JORDAN MALER ULT (\d+)CM 3/,"Jordan Ultimate malerull $1 cm 3-pakning"],
+    [/JORDAN MALER ULT (\d+)CM/,"Jordan Ultimate malerull $1 cm"],
+    [/JORDAN MALER PERF MINI (\d+)CM/,"Jordan Perfect minirull $1 cm"],
+    [/JORDAN MALER PERF (\d+)CM/,"Jordan Perfect malerull $1 cm"],
+    [/JORDAN RULLESETT (\d+)CM ULTIMATE/,"Jordan Ultimate rullesett $1 cm"],
+    [/PENSEL SKRÅ ULT (\d+)MM/,"Jordan Ultimate skråpensel $1 mm"],
+    [/INTERIØRPENSEL FLAT (\d+)MM/,"Jordan Interiørpensel flat $1 mm"],
+    [/EKSTERIØRPENSEL (\d+)MM VINKLET/,"Jordan Eksteriørpensel vinklet $1 mm"],
+    [/UTEPENSEL VINKLET ULT (\d+) MM/,"Jordan Ultimate utepensel vinklet $1 mm"],
+    [/TILDEKNINGSMATTE (.+)/,"Tildekningsmatte $1"],
+    [/DEKNINGSFOLIE (.+)/,"Dekningsfolie $1"],
+    [/INFRA RØREPINNE NR11 STOR/,"Infra Rørepinne stor"],
+    [/INFRA RØREPINNE NR1 LITEN/,"Infra Rørepinne liten"],
+    [/INFRA PENSELSETT UTE/,"Infra Penselsett ute"],
+    [/INFRA PENSELSETT INNE/,"Infra Penselsett inne"],
+    [/TAPETRULLES M\/PENS 4D INFRA/,"Infra Tapetsett med rulle og pensel"],
+    [/TAPET KIT KNIV\+SVAMP/,"Tapetsett med kniv og svamp"],
+  ];
+  for(const [rx,name] of rules){const m=n.match(rx);if(m)return name.replace(/\$(\d+)/g,(_,i)=>m[Number(i)]||"");}
+  if(!/JORDAN|PENSEL|RULL|BØYLE|MALER|TILDEKN|DEKNINGS|FOLIE|TAPE|MASKERING|SPARKEL|SKRAPE|RØREPINNE|KOST|HANSKE|BØTTE|KAR/.test(n))return undefined;
+  return titleCase(n
+    .replace(/\bULT\b/g,"Ultimate").replace(/\bPERF\b/g,"Perfect")
+    .replace(/\bMINIR\b/g,"Minirull").replace(/\bMALERULLKAR\b/g,"Malerullkar")
+    .replace(/\bMALERULLBØTTE\b/g,"Malerullbøtte")
+    .replace(/\b(\d+)CM\b/g,"$1 cm").replace(/\b(\d+)MM\b/g,"$1 mm"));
+};
+
 export const normalizeProduct=(raw:string,itemNo?:string)=>{
+  const toolName=normalizeToolProduct(raw);
+  if(toolName){return {product:toolName,size:"",category:"Annet" as ProductCategory,canonicalKey:`${canonicalSlug(toolName)}|`};}
   const reference=productReference(itemNo);
   if(reference){
     return {

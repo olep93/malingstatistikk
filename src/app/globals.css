@@ -974,3 +974,6 @@
 .areaBreakdownCard>small{color:#68758a}
 .areaBreakdownCard>div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e9edf4;padding-top:9px;margin-top:4px}
 .areaBreakdownCard>div b{color:#2d8a57}.areaBreakdownCard>div em{font-style:normal;color:#51617a;font-size:12px;text-align:right}
+
+/* V10.4: tydelig eksportveiledning */
+.reportGuideImages{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}.reportGuideImages figure{margin:0;background:#fff;border:1px solid #dce3ea;border-radius:12px;overflow:hidden}.reportGuideImages img{display:block;width:100%;height:auto;max-height:360px;object-fit:contain;background:#f4f6f8}.reportGuideImages figcaption{padding:10px 12px;font-weight:700;color:#17365d}@media(max-width:800px){.reportGuideImages{grid-template-columns:1fr}}

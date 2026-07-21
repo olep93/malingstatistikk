@@ -70,7 +70,14 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
     const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEB|OLJEBAS|\bOB\b/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
   }
   if(g.includes("MALERVERKTØY")) {
-    const subgroup=/PENSEL/.test(n)?"Pensler":/RULL/.test(n)?"Ruller":/TAPE|MASKER/.test(n)?"Tape":/DEKK|PLAST|FOLIE|PAPP|DUK/.test(n)?"Tildekning":"Diverse";return {area:"tools",subgroup};
+    // Maskeringsblad er et skjære-/hjelpeverktøy, ikke maskeringstape.
+    // Tape krever derfor et eksplisitt tape-produktnavn.
+    const subgroup=/MASKERINGSTAPE|MASK\.?\s*TAPE|MALERTAPE|PRECISION TAPE|SCOTCH.*TAPE/.test(n)?"Tape"
+      :/DEKK|TILDEKN|PLAST|FOLIE|PAPP|DUK|MASKERINGSPAPIR/.test(n)?"Tildekning"
+      :/PENSEL|STREKP|KOST|FORDRIVER/.test(n)?"Pensler"
+      :/RULL|MINIR|BØYLE|RULLESETT|MALERULL/.test(n)?"Ruller"
+      :"Diverse";
+    return {area:"tools",subgroup};
   }
   if(g.includes("VASK")&&g.includes("RENS"))return {area:"tools",subgroup:"Rensemidler"};
   if(g.includes("SPARKEL"))return {area:"interior",subgroup:"Sparkel"};
