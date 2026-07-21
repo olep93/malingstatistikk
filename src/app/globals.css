@@ -1078,3 +1078,49 @@
  .hero{padding:18px 15px!important}.hero h1{font-size:23px!important}
  .kpiGrid,.productHighlights{grid-template-columns:1fr!important}
 }
+
+/* V11 – Mobile First revamp */
+.mobileAreaPicker{display:none}
+@media (max-width:760px){
+  html,body{background:#eef3f8!important;color:var(--text);min-height:100%;overflow-x:hidden}
+  .app{min-height:100dvh;background:#eef3f8!important;padding-bottom:92px}
+  .v10Topbar{position:sticky!important;top:0!important;z-index:50!important;min-height:0!important;height:auto!important;background:#071f3d!important;overflow:visible!important}
+  .topbarPrimary{height:58px!important;min-height:58px!important;display:grid!important;grid-template-columns:1fr auto!important;padding:0 12px!important;gap:8px!important;background:#071f3d!important}
+  .v10Topbar .brand{width:98px!important;min-width:98px!important;height:58px!important;padding:5px 0!important}
+  .v10Topbar .brand img{width:88px!important;height:48px!important}
+  .areaNav{display:none!important}
+  .topbarActions{margin-left:0!important;display:flex!important;gap:7px!important}
+  .utilityBtn{height:38px!important;padding:0 11px!important;font-size:12px!important;border-radius:9px!important}
+  .utilityBtn svg{width:16px;height:16px}
+  .topbarActions .printBtn{display:none!important}
+  .v10Topbar .topbarSecondary{height:auto!important;min-height:0!important;background:#fff!important;padding:8px 10px 9px!important;border-bottom:1px solid #d7e0ea!important;box-shadow:0 4px 14px rgba(7,31,61,.12)!important;display:block!important;overflow:visible!important}
+  .mobileAreaPicker{display:grid!important;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;width:100%;margin:0 0 8px;padding:9px 11px;background:#f2f6fa;border:1px solid #d4dee8;border-radius:10px}
+  .mobileAreaPicker span{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
+  .mobileAreaPicker select{width:100%;min-width:0;border:0;background:transparent;color:#0b2850;font-size:16px;font-weight:900;outline:0;text-align:right}
+  .v10Topbar .topbarSecondary .viewNav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:80!important;height:78px!important;padding:8px 8px calc(8px + env(safe-area-inset-bottom))!important;background:#fff!important;border-top:1px solid #cfd9e5!important;box-shadow:0 -7px 22px rgba(7,31,61,.16)!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:8px!important;overflow:visible!important}
+  .v10Topbar .topbarSecondary .viewNav button{height:58px!important;min-width:0!important;padding:5px 4px!important;border:1px solid #d8e1eb!important;border-radius:13px!important;background:#fff!important;color:#173354!important;display:flex!important;flex-direction:column!important;gap:2px!important;align-items:center!important;justify-content:center!important;font-size:12px!important;box-shadow:0 2px 8px rgba(7,31,61,.06)!important}
+  .v10Topbar .topbarSecondary .viewNav button svg{width:22px!important;height:22px!important}
+  .v10Topbar .topbarSecondary .viewNav button.active{background:#102b52!important;color:#fff!important;border-color:#102b52!important;box-shadow:inset 0 -4px #f58220,0 3px 10px rgba(7,31,61,.2)!important}
+  .selectedAreaLabel{display:none!important}
+  main{display:block!important;visibility:visible!important;opacity:1!important;min-height:calc(100dvh - 150px)!important;background:#eef3f8!important;overflow:visible!important}
+  .toolbar{position:relative!important;z-index:1!important;margin:10px 0 0!important;padding:0 10px!important;display:grid!important;grid-template-columns:1fr!important;gap:8px!important;background:transparent!important}
+  .page{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:100%!important;margin:0!important;padding:12px 10px 24px!important;background:#eef3f8!important;overflow:visible!important}
+  .hero,.hero.compact{display:block!important;min-height:0!important;padding:18px 16px!important;border-radius:14px!important}
+  .hero h1{font-size:23px!important;line-height:1.15!important}.hero p{font-size:13px!important;line-height:1.45!important}
+  .kpiGrid,.productHighlights,.printKpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .kpi{min-width:0!important;padding:13px 12px!important}.kpi strong{font-size:19px!important;overflow-wrap:anywhere}.kpi small{font-size:10px!important}
+  .supplierGrid,.productGrid,.productGrid.full,.historyGrid,.adminGrid{grid-template-columns:1fr!important;gap:11px!important}
+  .supplierCard{padding:15px!important}.supplierTitle img{max-width:120px!important}
+  .productCard{grid-template-columns:105px minmax(0,1fr)!important;min-height:165px!important}.productImage img{height:140px!important}.productInfo{padding:15px 12px 12px!important}.productInfo h3{font-size:17px!important;overflow-wrap:anywhere}
+  .historyTree{gap:8px!important}.historyLevel.month{margin:8px!important}.historyLevel.week{margin:7px 8px 9px!important}.historyDays{grid-template-columns:1fr!important;padding:0 8px 9px!important}
+  .panel{padding:14px 12px!important;border-radius:13px!important}.panelHead{flex-direction:column!important;align-items:stretch!important}.panelHead>button{width:100%!important}
+  .reportSourcePanel{padding:14px 12px!important}.reportGuideImages{grid-template-columns:1fr!important}.reportGuideImages img{max-height:230px!important}
+  .serverJobSteps{grid-template-columns:1fr!important}.serverJobActions{display:grid!important;grid-template-columns:1fr!important}.serverJobActions button{width:100%!important}
+  .masterTable .registryTableBody{max-height:none!important;overflow:visible!important}.masterTable .registryTableRow{grid-template-columns:1fr!important;min-width:0!important}
+  .segments{display:grid!important;grid-template-columns:repeat(5,minmax(68px,1fr))!important;overflow-x:auto!important}.segments button{font-size:10px!important}
+}
+@media (max-width:390px){
+  .kpiGrid,.productHighlights,.printKpis{grid-template-columns:1fr!important}
+  .topbarPrimary{grid-template-columns:88px 1fr!important}.utilityBtn{font-size:11px!important;padding:0 9px!important}
+  .productCard{grid-template-columns:92px minmax(0,1fr)!important}.productImage img{height:122px!important}
+}
