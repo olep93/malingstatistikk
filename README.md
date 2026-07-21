@@ -49,7 +49,13 @@ Last opp innholdet i mappen direkte til roten av GitHub-repositoryet.
 
 - Én Excel-opplasting leser nå Eksteriørmaling, Interiørmaling, Terrasse og Malerverktøy.
 - Vareområde Maling summerer alle fire områder.
-- SAP-varegruppene 0677, 0678, 0689, 0662, 0682, 0686 og 0680 klassifiseres ved import.
+- SAP-varegruppene 0677, 0678, 0689, 0662, 0682, 0686, 0687 og 0680 klassifiseres ved import.
 - Fugemasse/kit (0685) importeres ikke som eget område i denne testversjonen.
 - Undergrupper er første testklassifisering og skal kvalitetssikres mot produktregisteret.
 - En ny opplasting på en eksisterende dato erstatter dagsrapporten og lagrer alle områdene.
+
+
+## V10.5
+- SAP-varegruppe 0687 Bygningstape er inkludert og klassifiseres som Malerverktøy → Tape.
+- BI-lenken i Kontrollpanel er oppdatert til den nye rapportbokmerken.
+- Valgt eksisterende rapportdag kan slettes direkte ved datovelgeren før ny opplasting.

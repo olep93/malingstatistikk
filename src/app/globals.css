@@ -977,3 +977,7 @@
 
 /* V10.4: tydelig eksportveiledning */
 .reportGuideImages{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}.reportGuideImages figure{margin:0;background:#fff;border:1px solid #dce3ea;border-radius:12px;overflow:hidden}.reportGuideImages img{display:block;width:100%;height:auto;max-height:360px;object-fit:contain;background:#f4f6f8}.reportGuideImages figcaption{padding:10px 12px;font-weight:700;color:#17365d}@media(max-width:800px){.reportGuideImages{grid-template-columns:1fr}}
+
+
+/* V10.5: sletting av valgt rapportdag */
+.dateDeleteBtn{margin-top:10px;width:max-content}

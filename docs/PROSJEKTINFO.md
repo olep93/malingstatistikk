@@ -3,8 +3,8 @@
 ## BI-rapport
 
 - **Malnavn i BI Portal:** `Maling statistikk til vercel DSG`
-- **Rapportlenke:** https://bi.coop.no/BOE/OpenDocument/opendoc/openDocument.jsp?sIDType=CUID&iDocID=AWy2QvRaEdFMmgGWQNqOsek&BOOKMARK=ATcOyK.4pEFEo.P.L8EaIT4
-- **Varegrupper:** 0677, 0685, 0678, 0680, 0662, 0686, 0689 og 0682.
+- **Rapportlenke:** https://bi.coop.no/BOE/OpenDocument/opendoc/openDocument.jsp?sIDType=CUID&iDocID=AWy2QvRaEdFMmgGWQNqOsek&BOOKMARK=AYaB3u8gVmJGqv2jSPK8iAs
+- **Varegrupper:** 0677, 0685, 0678, 0680, 0662, 0686, 0687, 0689 og 0682.
 
 ## Daglig oppdatering
 
@@ -39,3 +39,9 @@ Excel-formatet er den autoritative importkilden. PDF og CSV skal ikke brukes til
 - Malerverktøy bruker «artikler»/«stk.» i stedet for «spann».
 - Maskeringsblad klassifiseres ikke lenger som tape. Tape krever eksplisitt tape-navn i kildedata.
 - Produktnavn som blir funnet på Obsbygg.no brukes som visningsnavn etter automatisk produktberikelse.
+
+
+## V10.5
+- Varegruppe 0687 Bygningstape er lagt til i BI-uttrekket og importeres som Malerverktøy → Tape.
+- Kontrollpanelet bruker ny BI-lenke/bokmerke.
+- Eksisterende valgt dato kan slettes direkte i opplastingsdelen.

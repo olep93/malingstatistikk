@@ -69,9 +69,12 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   if(g.includes("TERRASSEBEIS")){
     const subgroup=/MALING/.test(n)?"Terrassemaling":/OLJE|OLJEB|OLJEBAS|\bOB\b/.test(n)?"Oljebasert":"Vanntynnet";return {area:"terrace",subgroup};
   }
+  // SAP-varegruppe 0687 Bygningstape inneholder maskerings- og malertape
+  // i den nye BI-rapporten. Hele varegruppen føres derfor som Tape.
+  if(g.includes("0687")||g.includes("BYGNINGSTAPE"))return {area:"tools",subgroup:"Tape"};
   if(g.includes("MALERVERKTØY")) {
     // Maskeringsblad er et skjære-/hjelpeverktøy, ikke maskeringstape.
-    // Tape krever derfor et eksplisitt tape-produktnavn.
+    // Innen selve malerverktøygruppen kreves fortsatt et eksplisitt tape-navn.
     const subgroup=/MASKERINGSTAPE|MASK\.?\s*TAPE|MALERTAPE|PRECISION TAPE|SCOTCH.*TAPE/.test(n)?"Tape"
       :/DEKK|TILDEKN|PLAST|FOLIE|PAPP|DUK|MASKERINGSPAPIR/.test(n)?"Tildekning"
       :/PENSEL|STREKP|KOST|FORDRIVER/.test(n)?"Pensler"
