@@ -134,8 +134,14 @@ export async function ensureSchema() {
     failed_days integer NOT NULL DEFAULT 0,
     created_by text,
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    blob_url text,
+    blob_size bigint,
+    analyzed_at timestamptz
   )`;
+  await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS blob_url text`;
+  await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS blob_size bigint`;
+  await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS analyzed_at timestamptz`;
   await q`CREATE TABLE IF NOT EXISTS paint_import_job_days (
     job_id bigint NOT NULL REFERENCES paint_import_jobs(id) ON DELETE CASCADE,
     report_date date NOT NULL,
