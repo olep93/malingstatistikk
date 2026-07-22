@@ -4,6 +4,14 @@ Alle vesentlige endringer i Malingstatistikk dokumenteres her.
 
 Formatet følger prinsippene i Keep a Changelog, og prosjektet bruker semantisk versjonering.
 
+## [13.0.1] - 2026-07-22
+
+### Fixed
+- Topp 10 i A4-rapporten vises nå i fast rekkefølge: 1–5 i venstre kolonne og 6–10 i høyre kolonne.
+- Produktrekkefølgen kan ikke lenger endres av CSS-gridens automatiske plassering.
+- Produkthøyden er komprimert og låst slik at fem produkter får plass i hver kolonne på alle rapportsider.
+- Rapporten viser tydelig når valgt periode faktisk har færre enn ti produkter med salg.
+
 ## [13.0.0] - 2026-07-22
 
 ### Added

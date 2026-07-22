@@ -1220,3 +1220,30 @@
   .a4MetricList b{display:block!important;margin-top:1mm!important;font-size:11pt!important;color:#102a49!important}
   .a4MetricList small{display:block!important;margin-top:.6mm!important;font-size:6.5pt!important;color:#16875c!important;font-weight:800!important}
 }
+
+/* V13.0.1 – deterministic top-10 print order and guaranteed five rows per column */
+@media print {
+  .a4ProductsPanel {
+    height: 110mm !important;
+    flex: 0 0 110mm !important;
+    overflow: hidden !important;
+  }
+  .a4ProductsGrid {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important;
+    gap: 5mm !important;
+    align-items: start !important;
+  }
+  .a4ProductColumn {
+    display: grid !important;
+    grid-template-rows: repeat(5, 18mm) !important;
+    min-width: 0 !important;
+  }
+  .a4Product {
+    min-height: 18mm !important;
+    height: 18mm !important;
+    padding: .8mm 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
