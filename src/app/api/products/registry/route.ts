@@ -54,7 +54,33 @@ export async function PATCH(req:Request){
       if(!tag.length)return NextResponse.json({error:`Taggen «${newTag}» finnes ikke. Oppdater taglisten og prøv igjen.`},{status:400});
       newArea=String(tag[0].area);newTag=String(tag[0].name);
     }
-    await q`UPDATE paint_products SET display_name=${newName},display_name_locked=true,subgroup=${newTag||null},subgroup_locked=${Boolean(newTag)},area=${newArea||null},category=CASE WHEN ${newArea}='exterior' THEN ${newTag||null} ELSE category END,lookup_status=CASE WHEN ${newTag||null} IS NULL THEN 'pending' ELSE COALESCE(NULLIF(lookup_status,'pending'),'found') END,review_reason=CASE WHEN ${newTag||null} IS NULL THEN 'Mangler tag' ELSE null END,audit_status=CASE WHEN ${newTag||null} IS NULL OR ${newArea||null} IS NULL THEN 'review' ELSE 'ok' END,aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb) FROM jsonb_array_elements(COALESCE(aliases,'[]'::jsonb)||jsonb_build_array(${old.display_name},${newName},${newTag})) v),updated_at=now() WHERE product_key=${productKey}`;
+    // Alle verdier typesettes i en CTE. Det hindrer PostgreSQL-feilen
+    // «could not determine data type of parameter $7» når en valgfri verdi er null.
+    await q`WITH input AS (
+      SELECT
+        ${newName}::text AS display_name,
+        ${newTag || null}::text AS subgroup,
+        ${Boolean(newTag)}::boolean AS subgroup_locked,
+        ${newArea || null}::text AS area,
+        ${String(old.display_name || '')}::text AS old_display_name,
+        ${productKey}::text AS product_key
+    )
+    UPDATE paint_products p SET
+      display_name=i.display_name,
+      display_name_locked=true,
+      subgroup=i.subgroup,
+      subgroup_locked=i.subgroup_locked,
+      area=i.area,
+      category=CASE WHEN i.area='exterior' THEN i.subgroup ELSE p.category END,
+      lookup_status=CASE WHEN i.subgroup IS NULL THEN 'pending' ELSE COALESCE(NULLIF(p.lookup_status,'pending'),'found') END,
+      review_reason=CASE WHEN i.subgroup IS NULL THEN 'Mangler tag' ELSE null END,
+      audit_status=CASE WHEN i.subgroup IS NULL OR i.area IS NULL THEN 'review' ELSE 'ok' END,
+      aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb)
+        FROM jsonb_array_elements(COALESCE(p.aliases,'[]'::jsonb)||jsonb_build_array(i.old_display_name,i.display_name,i.subgroup)) v
+        WHERE v <> 'null'::jsonb AND v <> '""'::jsonb),
+      updated_at=now()
+    FROM input i WHERE p.product_key=i.product_key`;
+
     const changes=[['display_name',old.display_name,newName],['subgroup',old.subgroup,newTag],['area',old.area,newArea]].filter(([,a,b])=>String(a||'')!==String(b||''));
     for(const [field,oldValue,newValue] of changes)await q`INSERT INTO paint_product_changes(product_key,changed_by,field_name,old_value,new_value) VALUES(${productKey},${session?.username||'admin'},${field},${oldValue||null},${newValue||null})`;
     return NextResponse.json({ok:true,product:{product_key:productKey,display_name:newName,subgroup:newTag,area:newArea}});

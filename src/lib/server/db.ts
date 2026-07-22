@@ -33,6 +33,7 @@ async function runSchemaMigration() {
   )`;
   await q`CREATE INDEX IF NOT EXISTS paint_report_rows_period_idx ON paint_report_rows(report_date,area,store_id)`;
   await q`CREATE INDEX IF NOT EXISTS paint_report_rows_product_idx ON paint_report_rows(product_key)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_report_rows_fast_period_idx ON paint_report_rows(report_date,store_id,area,subgroup,supplier) INCLUDE (quantity,revenue,profit)`;
   await q`CREATE TABLE IF NOT EXISTS paint_products (
     product_key text PRIMARY KEY,
     display_name text NOT NULL,

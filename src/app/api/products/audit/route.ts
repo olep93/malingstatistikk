@@ -1,9 +1,13 @@
 import {NextResponse} from 'next/server';
 import {getSession,isAdmin,isAuthenticated} from '@/lib/server/auth';
 import {ensureSchema,sql} from '@/lib/server/db';
+import {findObsbyggImage} from '@/lib/server/product-images';
+import {classifyProduct} from '@/lib/server/product-classifier';
 
-const STAGES=['names','aliases','mark','clear'] as const;
+const STAGES=['lookup','names','classify','aliases','mark','clear'] as const;
 type Stage=(typeof STAGES)[number];
+
+type BatchResult={cursor:string|null;scanned:number;changed:number};
 
 async function stats(){
   const q=sql();
@@ -42,38 +46,74 @@ export async function POST(request:Request){
     const stage=(STAGES.includes(body.stage)?body.stage:'names') as Stage;
     const cursor=String(body.cursor||'');
     const limit=Math.min(Math.max(Number(body.limit)||75,10),200);
-    let changed=0,lastCursor=cursor;
+    let result:BatchResult={cursor:null,scanned:0,changed:0};
 
-    if(stage==='names'){
-      const rows=await q`WITH target AS (
+    if(stage==='lookup'){
+      const products=await q`SELECT product_key,ean,source_name,display_name,supplier,size,area,subgroup,lookup_status,last_fetched_at
+        FROM paint_products WHERE merged_into IS NULL AND product_key>${cursor}
+        ORDER BY product_key LIMIT ${Math.min(limit,5)}`;
+      let changed=0;
+      for(const p of products as any[]){
+        const before=String(p.lookup_status||'');
+        const result=await findObsbyggImage({productKey:p.product_key,ean:p.ean||undefined,productName:p.display_name||p.source_name||'Ukjent produkt',rawName:p.source_name||undefined,supplier:p.supplier||'Ukjent',size:p.size||undefined,area:p.area||undefined,subgroup:p.subgroup||undefined},{force:false});
+        if(result.found||before!==String(result.status||''))changed++;
+      }
+      result={cursor:products.at(-1)?.product_key||cursor,scanned:products.length,changed};
+    }else if(stage==='names'){
+      const rows=await q`WITH target AS MATERIALIZED (
         SELECT product_key FROM paint_products
         WHERE merged_into IS NULL AND product_key>${cursor}
-          AND COALESCE(display_name_locked,false)=false
-          AND website_name IS NOT NULL AND website_name<>''
-          AND display_name IS DISTINCT FROM website_name
         ORDER BY product_key LIMIT ${limit}
       ), changed AS (
         UPDATE paint_products p SET display_name=p.website_name,updated_at=now()
-        FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
-      ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
+        FROM target t WHERE p.product_key=t.product_key
+          AND COALESCE(p.display_name_locked,false)=false
+          AND p.website_name IS NOT NULL AND p.website_name<>''
+          AND p.display_name IS DISTINCT FROM p.website_name
+        RETURNING p.product_key
+      ) SELECT
+        (SELECT max(product_key) FROM target)::text cursor,
+        (SELECT count(*) FROM target)::int scanned,
+        (SELECT count(*) FROM changed)::int changed`;
+      result=rows[0] as BatchResult;
+    }else if(stage==='classify'){
+      const products=await q`SELECT product_key,source_name,website_name,display_name,supplier,category,area,subgroup,subgroup_locked
+        FROM paint_products WHERE merged_into IS NULL AND product_key>${cursor}
+        ORDER BY product_key LIMIT ${limit}`;
+      let changed=0;
+      for(const p of products as any[]){
+        if(p.subgroup_locked)continue;
+        const c=classifyProduct({area:p.area,subgroup:p.subgroup,category:p.category,sourceName:p.source_name,websiteName:p.website_name,displayName:p.display_name,supplier:p.supplier});
+        if(c.confidence==='low'||!c.area||!c.subgroup)continue;
+        const tag=await q`SELECT name FROM paint_tags WHERE is_active=true AND area=${c.area} AND lower(name)=lower(${c.subgroup}) LIMIT 1`;
+        if(!tag.length)continue;
+        const rows=await q`UPDATE paint_products SET area=${c.area},subgroup=${tag[0].name},category=CASE WHEN ${c.area}='exterior' THEN ${tag[0].name} ELSE category END,
+          audit_status='ok',audit_reasons='[]'::jsonb,review_reason=NULL,updated_at=now()
+          WHERE product_key=${p.product_key} AND (area IS DISTINCT FROM ${c.area} OR subgroup IS DISTINCT FROM ${tag[0].name}) RETURNING product_key`;
+        changed+=rows.length;
+      }
+      result={cursor:products.at(-1)?.product_key||cursor,scanned:products.length,changed};
     }else if(stage==='aliases'){
-      const rows=await q`WITH target AS (
+      const rows=await q`WITH target AS MATERIALIZED (
         SELECT product_key FROM paint_products
         WHERE merged_into IS NULL AND product_key>${cursor}
-          AND (aliases IS NULL OR NOT (aliases @> jsonb_build_array(COALESCE(NULLIF(source_name,''),display_name))))
         ORDER BY product_key LIMIT ${limit}
       ), changed AS (
         UPDATE paint_products p SET aliases=(
           SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb)
           FROM jsonb_array_elements(COALESCE(p.aliases,'[]'::jsonb)||jsonb_build_array(NULLIF(p.source_name,''),NULLIF(p.website_name,''),NULLIF(p.display_name,''),NULLIF(p.ean,''))) v
           WHERE v <> 'null'::jsonb AND v <> '""'::jsonb
-        ),updated_at=now() FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
-      ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
+        ),updated_at=now()
+        FROM target t WHERE p.product_key=t.product_key
+          AND (p.aliases IS NULL OR NOT (COALESCE(p.aliases,'[]'::jsonb) @> jsonb_build_array(COALESCE(NULLIF(p.source_name,''),NULLIF(p.display_name,''),NULLIF(p.website_name,''),NULLIF(p.ean,'')))))
+        RETURNING p.product_key
+      ) SELECT
+        (SELECT max(product_key) FROM target)::text cursor,
+        (SELECT count(*) FROM target)::int scanned,
+        (SELECT count(*) FROM changed)::int changed`;
+      result=rows[0] as BatchResult;
     }else if(stage==='mark'){
-      // Full tilstandsberegning: status og årsaker erstattes med dagens sannhet.
-      const rows=await q`WITH target AS (
+      const rows=await q`WITH target AS MATERIALIZED (
         SELECT product_key FROM paint_products WHERE merged_into IS NULL AND product_key>${cursor}
         ORDER BY product_key LIMIT ${limit}
       ), calculated AS (
@@ -97,27 +137,38 @@ export async function POST(request:Request){
           lookup_status=CASE WHEN c.status='ok' THEN COALESCE(NULLIF(p.lookup_status,'pending'),'found') ELSE p.lookup_status END,
           updated_at=now()
         FROM calculated c WHERE p.product_key=c.product_key
+          AND (p.audit_status,p.audit_reasons,p.review_reason) IS DISTINCT FROM
+              (c.status,to_jsonb(c.reasons),CASE WHEN array_length(c.reasons,1)>0 THEN array_to_string(c.reasons,' · ') ELSE NULL END)
         RETURNING p.product_key
-      ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
+      ) SELECT
+        (SELECT max(product_key) FROM target)::text cursor,
+        (SELECT count(*) FROM target)::int scanned,
+        (SELECT count(*) FROM changed)::int changed`;
+      result=rows[0] as BatchResult;
     }else{
-      // En siste passering fjerner utdaterte varsler på produkter som nå er OK.
-      const rows=await q`WITH target AS (
+      const rows=await q`WITH target AS MATERIALIZED (
         SELECT product_key FROM paint_products
-        WHERE merged_into IS NULL AND product_key>${cursor} AND audit_status='ok'
-          AND (review_reason IS NOT NULL OR audit_reasons<>'[]'::jsonb)
+        WHERE merged_into IS NULL AND product_key>${cursor}
         ORDER BY product_key LIMIT ${limit}
       ), changed AS (
         UPDATE paint_products p SET review_reason=NULL,audit_reasons='[]'::jsonb,updated_at=now()
-        FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
-      ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
+        FROM target t WHERE p.product_key=t.product_key AND p.audit_status='ok'
+          AND (p.review_reason IS NOT NULL OR p.audit_reasons<>'[]'::jsonb)
+        RETURNING p.product_key
+      ) SELECT
+        (SELECT max(product_key) FROM target)::text cursor,
+        (SELECT count(*) FROM target)::int scanned,
+        (SELECT count(*) FROM changed)::int changed`;
+      result=rows[0] as BatchResult;
     }
 
-    const done=changed<limit;
+    const scanned=Number(result?.scanned||0);
+    const changed=Number(result?.changed||0);
+    const lastCursor=String(result?.cursor||cursor);
+    const done=scanned<limit;
     if(done&&stage==='clear')await q`INSERT INTO paint_product_changes(product_key,changed_by,field_name,old_value,new_value)
       SELECT product_key,${session?.username||'admin'},'audit',null,'Produktmaster audit fullført'
       FROM paint_products WHERE merged_into IS NULL LIMIT 1`;
-    return NextResponse.json({ok:true,stage,cursor:lastCursor,changed,done,audit:done&&stage==='clear'?await stats():undefined});
+    return NextResponse.json({ok:true,stage,cursor:lastCursor,scanned,changed,done,audit:done&&stage==='clear'?await stats():undefined});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke rydde produktmasteren'},{status:500})}
 }
