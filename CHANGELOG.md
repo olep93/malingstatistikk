@@ -1,5 +1,13 @@
 # Changelog
 
+## 13.1.0 – Product Master-pilot
+- Erstatter den synlige flertrinns-auditen med Produktmaster-dashboard.
+- Nye produkter, manglende informasjon, godkjente produkter og alle produkter er egne visninger.
+- Manuelt nettsøk utføres kun ved behov.
+- Admin kan angi navn, vareområde, tag, bilde-URL og laste opp bilde.
+- Godkjente produkter brukes videre uten automatiske gjentatte oppslag.
+
+
 Alle vesentlige endringer i Malingstatistikk dokumenteres her.
 
 Formatet følger prinsippene i Keep a Changelog, og prosjektet bruker semantisk versjonering.
