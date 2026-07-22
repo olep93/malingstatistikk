@@ -25,6 +25,14 @@ async function runSchemaMigration() {
     uploaded_by text
   )`;
   await q`ALTER TABLE paint_reports ADD COLUMN IF NOT EXISTS uploaded_by text`;
+  await q`CREATE TABLE IF NOT EXISTS paint_report_rows (
+    report_date date NOT NULL REFERENCES paint_reports(report_date) ON DELETE CASCADE,
+    store_id text NOT NULL, store_name text NOT NULL, product_key text NOT NULL, item_no text, raw_name text, product_name text NOT NULL, size text, supplier text NOT NULL, category text, area text, subgroup text,
+    quantity numeric NOT NULL DEFAULT 0, revenue numeric NOT NULL DEFAULT 0, profit numeric NOT NULL DEFAULT 0, image_url text, product_url text, source_updated_at timestamptz NOT NULL,
+    PRIMARY KEY(report_date,store_id,product_key)
+  )`;
+  await q`CREATE INDEX IF NOT EXISTS paint_report_rows_period_idx ON paint_report_rows(report_date,area,store_id)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_report_rows_product_idx ON paint_report_rows(product_key)`;
   await q`CREATE TABLE IF NOT EXISTS paint_products (
     product_key text PRIMARY KEY,
     display_name text NOT NULL,

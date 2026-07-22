@@ -61,12 +61,13 @@ export async function POST(request:Request){
       const rows=await q`WITH target AS (
         SELECT product_key FROM paint_products
         WHERE merged_into IS NULL AND product_key>${cursor}
-          AND (aliases IS NULL OR aliases='[]'::jsonb)
+          AND (aliases IS NULL OR NOT (aliases @> jsonb_build_array(COALESCE(NULLIF(source_name,''),display_name))))
         ORDER BY product_key LIMIT ${limit}
       ), changed AS (
         UPDATE paint_products p SET aliases=(
-          SELECT COALESCE(jsonb_agg(DISTINCT to_jsonb(v)),'[]'::jsonb)
-          FROM unnest(ARRAY[NULLIF(p.source_name,''),NULLIF(p.website_name,''),NULLIF(p.display_name,''),NULLIF(p.ean,'')]) v WHERE v IS NOT NULL
+          SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb)
+          FROM jsonb_array_elements(COALESCE(p.aliases,'[]'::jsonb)||jsonb_build_array(NULLIF(p.source_name,''),NULLIF(p.website_name,''),NULLIF(p.display_name,''),NULLIF(p.ean,''))) v
+          WHERE v <> 'null'::jsonb AND v <> '""'::jsonb
         ),updated_at=now() FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
       ) SELECT product_key FROM changed ORDER BY product_key`;
       changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
@@ -78,7 +79,6 @@ export async function POST(request:Request){
       ), calculated AS (
         SELECT p.product_key,
           ARRAY_REMOVE(ARRAY[
-            CASE WHEN p.website_name IS NULL OR p.website_name='' THEN 'Mangler nettsidenavn' END,
             CASE WHEN p.subgroup IS NULL OR p.subgroup='' THEN 'Mangler tag' END,
             CASE WHEN p.area IS NULL OR p.area='' THEN 'Mangler vareområde' END,
             CASE WHEN p.display_name IS NULL OR p.display_name='' THEN 'Mangler produktnavn' END
@@ -86,7 +86,7 @@ export async function POST(request:Request){
           CASE
             WHEN (p.website_name IS NOT NULL AND p.website_name<>'' AND COALESCE(p.display_name_locked,false)=false AND p.display_name IS DISTINCT FROM p.website_name)
               OR p.aliases IS NULL OR p.aliases='[]'::jsonb THEN 'auto_fixable'
-            WHEN p.website_name IS NULL OR p.website_name='' OR p.subgroup IS NULL OR p.subgroup='' OR p.area IS NULL OR p.area='' OR p.display_name IS NULL OR p.display_name='' THEN 'review'
+            WHEN p.subgroup IS NULL OR p.subgroup='' OR p.area IS NULL OR p.area='' OR p.display_name IS NULL OR p.display_name='' THEN 'review'
             ELSE 'ok' END status
         FROM paint_products p JOIN target t ON t.product_key=p.product_key
       ), changed AS (

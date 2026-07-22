@@ -29,7 +29,7 @@ export async function GET(){
         report_count=GREATEST(paint_products.report_count,excluded.report_count),
         aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb) FROM jsonb_array_elements(COALESCE(paint_products.aliases,'[]'::jsonb)||COALESCE(excluded.aliases,'[]'::jsonb)) v),
         updated_at=now()`;
-    const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,category,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at,aliases,first_seen_at,last_seen_at,report_count,merged_into,review_reason FROM paint_products WHERE merged_into IS NULL ORDER BY CASE WHEN lookup_status<>'found' OR subgroup IS NULL OR subgroup='' THEN 0 ELSE 1 END,updated_at DESC LIMIT 20000`;
+    const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,category,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at,aliases,first_seen_at,last_seen_at,report_count,merged_into,review_reason,audit_status,audit_reasons FROM paint_products WHERE merged_into IS NULL ORDER BY CASE WHEN lookup_status<>'found' OR subgroup IS NULL OR subgroup='' THEN 0 ELSE 1 END,updated_at DESC LIMIT 20000`;
     return NextResponse.json({products});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke hente produktregister'},{status:500})}
 }
@@ -41,18 +41,20 @@ export async function PATCH(req:Request){
     const {productKey,displayName,subgroup,area}=await req.json();
     if(!productKey)return NextResponse.json({error:'Produktnøkkel kreves'},{status:400});
     await ensureSchema();const q=sql();
-    const oldRows=await q`SELECT display_name,subgroup,area FROM paint_products WHERE product_key=${productKey}`;
+    const oldRows=await q`SELECT display_name,subgroup,area,category FROM paint_products WHERE product_key=${productKey}`;
     if(!oldRows.length)return NextResponse.json({error:'Produktet finnes ikke'},{status:404});
     const old=oldRows[0];
+    const normalizeArea=(value:unknown)=>{const v=String(value||'').trim().toLocaleLowerCase('nb-NO');if(['exterior','eksteriør','eksterior','eksteriørmaling'].includes(v))return'exterior';if(['interior','interiør','interiørmaling'].includes(v))return'interior';if(['terrace','terrasse'].includes(v))return'terrace';if(['tools','malerverktøy'].includes(v))return'tools';return String(value||'').trim()};
     const newName=displayName===undefined?old.display_name:String(displayName).trim();
-    const newTag=subgroup===undefined?old.subgroup:String(subgroup).trim();
-    const newArea=area===undefined?old.area:String(area).trim();
+    let newTag=subgroup===undefined?String(old.subgroup||''):String(subgroup).trim();
+    let newArea=normalizeArea(area===undefined?(old.area||(['Maling / Dekkbeis / Beis','Vindu / Dør','Murmaling'].includes(old.category)?'exterior':'')):area);
     if(!newName)return NextResponse.json({error:'Produktnavn kan ikke være tomt'},{status:400});
     if(newTag){
-      const valid=await q`SELECT 1 FROM paint_tags WHERE area=${newArea} AND name=${newTag} AND is_active=true`;
-      if(!valid.length)return NextResponse.json({error:'Valgt tag finnes ikke for dette området'},{status:400});
+      const tag=await q`SELECT area,name FROM paint_tags WHERE is_active=true AND lower(name)=lower(${newTag}) ORDER BY CASE WHEN area=${newArea} THEN 0 ELSE 1 END LIMIT 1`;
+      if(!tag.length)return NextResponse.json({error:`Taggen «${newTag}» finnes ikke. Oppdater taglisten og prøv igjen.`},{status:400});
+      newArea=String(tag[0].area);newTag=String(tag[0].name);
     }
-    await q`UPDATE paint_products SET display_name=${newName},display_name_locked=true,subgroup=${newTag||null},subgroup_locked=true,area=${newArea||null},lookup_status=CASE WHEN ${newTag||null} IS NULL THEN 'pending' ELSE lookup_status END,review_reason=CASE WHEN ${newTag||null} IS NULL THEN 'Mangler tag' ELSE null END,aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb) FROM jsonb_array_elements(COALESCE(aliases,'[]'::jsonb)||jsonb_build_array(${old.display_name},${newName})) v),updated_at=now() WHERE product_key=${productKey}`;
+    await q`UPDATE paint_products SET display_name=${newName},display_name_locked=true,subgroup=${newTag||null},subgroup_locked=${Boolean(newTag)},area=${newArea||null},category=CASE WHEN ${newArea}='exterior' THEN ${newTag||null} ELSE category END,lookup_status=CASE WHEN ${newTag||null} IS NULL THEN 'pending' ELSE COALESCE(NULLIF(lookup_status,'pending'),'found') END,review_reason=CASE WHEN ${newTag||null} IS NULL THEN 'Mangler tag' ELSE null END,audit_status=CASE WHEN ${newTag||null} IS NULL OR ${newArea||null} IS NULL THEN 'review' ELSE 'ok' END,aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb) FROM jsonb_array_elements(COALESCE(aliases,'[]'::jsonb)||jsonb_build_array(${old.display_name},${newName},${newTag})) v),updated_at=now() WHERE product_key=${productKey}`;
     const changes=[['display_name',old.display_name,newName],['subgroup',old.subgroup,newTag],['area',old.area,newArea]].filter(([,a,b])=>String(a||'')!==String(b||''));
     for(const [field,oldValue,newValue] of changes)await q`INSERT INTO paint_product_changes(product_key,changed_by,field_name,old_value,new_value) VALUES(${productKey},${session?.username||'admin'},${field},${oldValue||null},${newValue||null})`;
     return NextResponse.json({ok:true,product:{product_key:productKey,display_name:newName,subgroup:newTag,area:newArea}});
