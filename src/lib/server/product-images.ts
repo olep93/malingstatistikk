@@ -1,13 +1,14 @@
 import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
+import { cleanProductName, decodeHtmlEntities } from '../text';
 
-const NORMALIZATION_VERSION=2;
-const decodeHtml=(s:string)=>s.replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&#x2F;/gi,'/').replace(/\\u0026/g,'&').replace(/\\\//g,'/');
+const NORMALIZATION_VERSION=3;
+const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>!href?'':href.startsWith('//')?`https:${href}`:href.startsWith('http')?href:`https://www.obsbygg.no${href.startsWith('/')?'':'/'}${href}`;
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
 type Input={ean?:string;productName:string;productKey:string;supplier:string;size?:string;rawName?:string;area?:string;subgroup?:string};
 type Result={found:boolean;imageUrl?:string;displayName?:string;websiteName?:string;url?:string;category?:string;subgroup?:string;source?:string;status?:string};
-const cleanTitle=(title:string)=>decodeHtml(title).replace(/\s*[|–-]\s*Obs BYGG.*$/i,'').replace(/\s*\|\s*Coop.*$/i,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+const cleanTitle=(title:string)=>cleanProductName(title);
 
 function customerName(title:string,fallback:string,area?:string){
  const clean=cleanTitle(title||fallback)

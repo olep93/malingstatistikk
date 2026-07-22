@@ -4,6 +4,7 @@ import {ensureSchema,sql} from '@/lib/server/db';
 import {getSession} from '@/lib/server/auth';
 import {aggregateProducts,canonicalizeRow} from '@/lib/data';
 import {rangeFor,refreshReportCache,ReportPeriod,invalidateReportCache} from '@/lib/server/report-cache';
+import {cleanProductName} from '@/lib/text';
 
 export const maxDuration=60;
 const isoDate=(v:unknown)=>String(v||'').slice(0,10);
@@ -27,7 +28,7 @@ async function loadFastReport(date:string,period:ReportPeriod){
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
- return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',rawName:r.raw_name||r.product_name,product:r.product_name,size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}))};
+ return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}))};
 }
 
 export async function GET(req:Request){
