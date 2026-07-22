@@ -52,6 +52,9 @@ export async function ensureSchema() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS report_count integer NOT NULL DEFAULT 0`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS merged_into text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS review_reason text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_status text NOT NULL DEFAULT 'review'`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_reasons jsonb NOT NULL DEFAULT '[]'::jsonb`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_audit_status_idx ON paint_products(audit_status)`;
   await q`CREATE TABLE IF NOT EXISTS paint_tags (
     id bigserial PRIMARY KEY,
     area text NOT NULL,
