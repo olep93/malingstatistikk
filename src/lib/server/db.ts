@@ -11,7 +11,9 @@ export function sql() {
   return neon(url);
 }
 
-export async function ensureSchema() {
+let schemaPromise: Promise<void> | null = null;
+
+async function runSchemaMigration() {
   const q = sql();
   await q`CREATE TABLE IF NOT EXISTS paint_reports (
     report_date date PRIMARY KEY,
@@ -183,4 +185,36 @@ export async function ensureSchema() {
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_products_status_idx ON paint_import_job_products(job_id,status)`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_days_status_idx ON paint_import_job_days(job_id,status)`;
 
+}
+
+function isConcurrentSchemaRace(error: unknown) {
+  const value = error as { code?: string; constraint?: string; message?: string };
+  return value?.code === '23505' && (
+    value?.constraint === 'pg_class_relname_nsp_index' ||
+    String(value?.message || '').includes('pg_class_relname_nsp_index')
+  );
+}
+
+async function migrateWithRetry() {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await runSchemaMigration();
+      return;
+    } catch (error) {
+      if (!isConcurrentSchemaRace(error) || attempt === 3) throw error;
+      // En annen serverless-instans oppretter samme tabell eller indeks akkurat nå.
+      // Alle migrasjonene er idempotente, så vent kort og kjør dem på nytt.
+      await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+    }
+  }
+}
+
+export async function ensureSchema() {
+  if (!schemaPromise) {
+    schemaPromise = migrateWithRetry().catch((error) => {
+      schemaPromise = null;
+      throw error;
+    });
+  }
+  return schemaPromise;
 }

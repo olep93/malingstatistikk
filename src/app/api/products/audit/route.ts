@@ -56,9 +56,7 @@ export async function POST(request:Request){
         UPDATE paint_products p SET display_name=p.website_name,updated_at=now()
         FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
       ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;
-      const lastRow=rows.at(-1);
-      if(lastRow)lastCursor=lastRow.product_key;
+      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
     }else if(stage==='aliases'){
       const rows=await q`WITH target AS (
         SELECT product_key FROM paint_products
@@ -71,9 +69,7 @@ export async function POST(request:Request){
           FROM unnest(ARRAY[NULLIF(p.source_name,''),NULLIF(p.website_name,''),NULLIF(p.display_name,''),NULLIF(p.ean,'')]) v WHERE v IS NOT NULL
         ),updated_at=now() FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
       ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;
-      const lastRow=rows.at(-1);
-      if(lastRow)lastCursor=lastRow.product_key;
+      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
     }else if(stage==='mark'){
       // Full tilstandsberegning: status og årsaker erstattes med dagens sannhet.
       const rows=await q`WITH target AS (
@@ -103,9 +99,7 @@ export async function POST(request:Request){
         FROM calculated c WHERE p.product_key=c.product_key
         RETURNING p.product_key
       ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;
-      const lastRow=rows.at(-1);
-      if(lastRow)lastCursor=lastRow.product_key;
+      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
     }else{
       // En siste passering fjerner utdaterte varsler på produkter som nå er OK.
       const rows=await q`WITH target AS (
@@ -117,9 +111,7 @@ export async function POST(request:Request){
         UPDATE paint_products p SET review_reason=NULL,audit_reasons='[]'::jsonb,updated_at=now()
         FROM target t WHERE p.product_key=t.product_key RETURNING p.product_key
       ) SELECT product_key FROM changed ORDER BY product_key`;
-      changed=rows.length;
-      const lastRow=rows.at(-1);
-      if(lastRow)lastCursor=lastRow.product_key;
+      changed=rows.length;const lastRow=rows.at(-1);if(lastRow)lastCursor=String(lastRow.product_key);
     }
 
     const done=changed<limit;
