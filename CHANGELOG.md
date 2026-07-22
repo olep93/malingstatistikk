@@ -1,0 +1,33 @@
+# Changelog
+
+Alle vesentlige endringer i Malingstatistikk dokumenteres her.
+
+Formatet følger prinsippene i Keep a Changelog, og prosjektet bruker semantisk versjonering.
+
+## [13.0.0] - 2026-07-22
+
+### Added
+
+- Ny ryddet prosjektbaseline med én README og én changelog.
+- Topp 10 produkter på hver A4-rapportside.
+- Dedikert rapportoppsett for Malerverktøy.
+- Operative nøkkeltall for Malerverktøy: solgte enheter, snitt omsetning per enhet, snitt fortjeneste per enhet, beste kategori og kategori med lavest margin.
+- Sidenummer i rapportfot.
+
+### Changed
+
+- Underkategorier følger nå samme visuelle og økonomiske mal som leverandørmiks.
+- Underkategorier viser omsetningsandel, omsetning i kroner, fortjeneste i kroner og fortjenesteprosent.
+- Produktradene i rapporten er komprimert kontrollert for å utnytte A4-siden uten å redusere lesbarheten.
+- Pakkeversjon oppdatert til 13.0.0.
+
+### Removed
+
+- Historiske README-filer fra V8–V12.
+- Utdatert `docs/PROSJEKTINFO.md`.
+- Lokal TypeScript build-cache.
+- Leverandørmiks og KPI-en «Største leverandør» fra Malerverktøy-rapporten.
+
+## Eldre versjoner
+
+Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate README-filer. V13.0.0 erstatter disse med én kontrollert baseline. Git-historikken skal brukes ved behov for detaljert historikk.
