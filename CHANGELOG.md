@@ -1,12 +1,11 @@
-## 14.1.0 – Utskriftsrapport med regionsrangering
-
-- Endret Topp 10 til Topp 5 produkter i utskriftsrapporten.
-- Lagt til regionsrangering med fem varehus, sortert på fortjenesteprosent.
-- Tabellen viser omsetning, bruttofortjeneste og fortjenesteprosent.
-- Valgt varehus markeres tydelig.
-- Nederste rapportdel er delt mellom produkter og regionsrangering uten å endre resten av A4-oppsettet.
-
 # Changelog
+
+## 14.2.0
+- Felles kategori-/vareområdefiltrering i Produktsalg.
+- KPI-er og topplister følger aktive filtre.
+- Malerverktøy og Vareområde Maling sammenlignes etter underkategori/vareområde i stedet for leverandør.
+- Utskriftsrapport: Topp 5 produkter, regionsrangering, korte varehusnavn og kollisjonssikker bunnlayout.
+
 
 ## 14.0.0 – Enterprise baseline
 

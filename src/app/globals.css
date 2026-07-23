@@ -1251,35 +1251,28 @@
 /* V13.1 Product Master */
 .productMasterV2{display:grid;gap:22px}.pmStats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.pmStats button{background:#f7f9fc;border:1px solid #dce4ed;border-radius:16px;padding:18px;text-align:left;display:grid;gap:4px;cursor:pointer}.pmStats button b{font-size:28px;color:#0b2d4f}.pmStats button span{font-weight:700}.pmStats button em{font-style:normal;color:#16835d}.pmStats button.warning{background:#fff8eb;border-color:#f2cf91}.pmStart{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:22px;border-radius:18px;background:#eef5fb;border:1px solid #d2e1ee}.pmStart>svg{width:34px;height:34px;color:#0d4d7d}.pmStart h3{margin:0 0 4px}.pmStart p{margin:0;color:#5f6f7f}.pmBack{border:0;background:none;padding:0;display:flex;align-items:center;gap:5px;color:#3d6587;font-weight:700;cursor:pointer}.pmTabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pmTabs button{border:1px solid #d9e2eb;background:#fff;border-radius:999px;padding:9px 14px;cursor:pointer}.pmTabs button.active{background:#103b61;color:#fff;border-color:#103b61}.pmTabs input{margin-left:auto;min-width:310px}.pmCards{display:grid;gap:14px}.pmCard{display:grid;grid-template-columns:110px minmax(210px,.8fr) minmax(420px,1.5fr) auto;gap:18px;align-items:center;border:1px solid #dce4ed;border-radius:18px;padding:16px;background:#fff}.pmCard.needsReview{border-left:5px solid #e4a11b}.pmCard.approved{border-left:5px solid #1b9a6d}.pmImage{height:96px;border-radius:12px;background:#f4f7fa;display:grid;place-items:center;position:relative;overflow:hidden}.pmImage img{width:100%;height:100%;object-fit:contain}.pmImage label{position:absolute;right:6px;bottom:6px;background:#fff;border:1px solid #d5dee7;border-radius:8px;padding:6px;display:grid;cursor:pointer}.pmImage input{display:none}.pmIdentity{display:grid;gap:4px;min-width:0}.pmIdentity b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pmIdentity small{color:#738394}.pmIdentity span{color:#647484;font-size:13px}.pmIdentity a{display:flex;align-items:center;gap:4px;font-size:13px}.pmStatus{width:max-content;background:#f0f4f8;border-radius:999px;padding:4px 8px;font-weight:800;color:#37546d!important}.pmFields{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:10px}.pmFields label{display:grid;gap:5px;font-size:12px;font-weight:800;color:#53687a}.pmFields label:last-child{grid-column:1/-1}.pmFields input,.pmFields select{min-width:0}.pmActions{display:grid;gap:8px;min-width:185px}.pmActions button{justify-content:center}@media(max-width:1100px){.pmStats{grid-template-columns:repeat(3,1fr)}.pmCard{grid-template-columns:90px 1fr}.pmFields,.pmActions{grid-column:1/-1}.pmActions{grid-template-columns:1fr 1fr}}@media(max-width:700px){.pmStats{grid-template-columns:repeat(2,1fr)}.pmStart{grid-template-columns:1fr}.pmCard{grid-template-columns:1fr}.pmImage{height:160px}.pmIdentity,.pmFields,.pmActions{grid-column:auto}.pmFields{grid-template-columns:1fr}.pmFields label:last-child{grid-column:auto}.pmTabs input{margin-left:0;min-width:100%;width:100%}}
 
-/* V14.1 – print: top 5 products + regional gross-margin ranking */
+/* V14.2.0 – unified filtering, category comparison and collision-safe print layout */
+.compareSuppliers>div>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media print {
-  .a4BottomGrid{
-    display:grid!important;
-    grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;
-    gap:4mm!important;
-    height:110mm!important;
-    flex:0 0 110mm!important;
-    margin-top:4mm!important;
-    min-height:0!important;
-  }
-  .a4BottomGrid>.a4Panel{height:110mm!important;margin:0!important;min-width:0!important}
-  .a4BottomGrid .a4ProductsPanel{height:110mm!important;flex:none!important;overflow:hidden!important}
-  .a4BottomGrid .a4ProductColumn{display:grid!important;grid-template-rows:repeat(5,18mm)!important;min-width:0!important}
-  .a4BottomGrid .a4Product{height:18mm!important;min-height:18mm!important;grid-template-columns:7mm 14mm minmax(0,1fr) 21mm 19mm!important;gap:1.5mm!important;padding:.8mm 0!important}
-  .a4BottomGrid .a4Product img{width:13mm!important;height:13mm!important}
-  .a4BottomGrid .a4ProductText{min-width:0!important}
-  .a4BottomGrid .a4ProductText strong{font-size:7.1pt!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important}
-  .a4BottomGrid .a4ProductSales b,.a4BottomGrid .a4ProductMargin b{font-size:7.2pt!important;white-space:nowrap!important}
-  .a4RegionPanel{display:flex!important;flex-direction:column!important}
-  .a4RegionHead,.a4RegionRow{display:grid!important;grid-template-columns:7mm minmax(0,1fr) 23mm 23mm 17mm!important;gap:1.5mm!important;align-items:center!important}
-  .a4RegionHead{padding:1.5mm 1.5mm 1.2mm!important;color:#718195!important;font-size:5.8pt!important;text-transform:uppercase!important;font-weight:800!important;border-bottom:1px solid #dfe6ed!important}
-  .a4RegionHead span:nth-child(n+3){text-align:right!important}
-  .a4RegionRows{display:grid!important;gap:1.8mm!important;margin-top:2mm!important}
-  .a4RegionRow{min-height:13mm!important;padding:2mm 1.5mm!important;border-radius:2mm!important;background:#f3f6f9!important;border:1px solid transparent!important}
-  .a4RegionRow.focus{background:#fff5e7!important;border-color:#ef8f20!important}
-  .a4RegionRow>b{width:6.5mm!important;height:6.5mm!important;border-radius:50%!important;background:#102a49!important;color:#fff!important;display:grid!important;place-items:center!important;font-size:6.5pt!important}
-  .a4RegionRow>strong{font-size:7.4pt!important;color:#102a49!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-  .a4RegionRow>span{font-size:6.7pt!important;color:#334c68!important;text-align:right!important;white-space:nowrap!important}
-  .a4RegionRow>em{font-style:normal!important;font-size:8.2pt!important;font-weight:900!important;color:#16875c!important;text-align:right!important;white-space:nowrap!important}
-  .a4RegionNote{margin-top:auto!important;padding-top:2mm!important;border-top:1px solid #e1e7ed!important;color:#65778b!important;font-size:6.2pt!important}
+  .a4MainGrid,.a4ToolsMainGrid{height:78mm!important;flex-basis:78mm!important;min-height:78mm!important}
+  .a4BottomGrid{display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)!important;gap:4mm!important;height:105mm!important;flex:0 0 105mm!important;margin-top:4mm!important;min-height:0!important}
+  .a4BottomGrid>.a4Panel{height:105mm!important;min-height:0!important;margin:0!important;overflow:hidden!important;box-sizing:border-box!important}
+  .a4ProductsPanel{height:105mm!important;flex:none!important;margin:0!important}
+  .a4ProductsPanel .a4ProductColumn{display:grid!important;grid-template-rows:repeat(5,17.2mm)!important;min-height:0!important}
+  .a4ProductsPanel .a4Product{height:17.2mm!important;min-height:17.2mm!important;padding:.6mm 0!important;grid-template-columns:7mm 14mm minmax(0,1fr) 21mm 19mm!important;gap:1.4mm!important}
+  .a4ProductsPanel .a4Product img{width:13mm!important;height:13mm!important}
+  .a4ProductsPanel .a4ProductText{min-width:0!important}.a4ProductsPanel .a4ProductText strong{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+  .a4RegionPanel{display:flex!important;flex-direction:column!important;min-width:0!important}
+  .a4RegionTable{display:grid!important;gap:1.6mm!important;min-width:0!important}
+  .a4RegionHead,.a4RegionRow{display:grid!important;grid-template-columns:7mm minmax(22mm,1fr) 22mm 22mm 16mm!important;gap:1.2mm!important;align-items:center!important;min-width:0!important}
+  .a4RegionHead{padding:0 1.5mm 1.2mm!important;border-bottom:1px solid #dce4ec!important;font-size:5.7pt!important;text-transform:uppercase!important;color:#708095!important}
+  .a4RegionRow{min-height:12.5mm!important;padding:1.5mm!important;border-radius:2mm!important;background:#f3f6f9!important;font-size:6.6pt!important}
+  .a4RegionRow.focus{background:#fff6e8!important;border:1px solid #ef8b1e!important}
+  .a4RegionRow>b:first-child{display:grid!important;place-items:center!important;width:6mm!important;height:6mm!important;border-radius:50%!important;background:#112d50!important;color:#fff!important}
+  .a4RegionRow strong{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#102a49!important;font-size:6.7pt!important}
+  .a4RegionRow span,.a4RegionRow em{text-align:right!important;white-space:nowrap!important;font-style:normal!important}
+  .a4RegionRow em{font-weight:900!important;color:#16875c!important;font-size:7.3pt!important}
+  .a4RegionNote{margin-top:auto!important;padding-top:2mm!important;border-top:1px solid #dce4ec!important;font-size:6pt!important;color:#708095!important}
+  .a4GroupList{min-height:0!important;overflow:hidden!important}
+  .a4GroupDetailed{break-inside:avoid!important}
 }
