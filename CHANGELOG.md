@@ -1,3 +1,10 @@
+## 14.2.1
+
+- Dynamisk høydefordeling i A4-rapporten basert på antall solgte underkategorier.
+- Underkategorier og nøkkeltall komprimeres gradvis ved 6–7 kategorier.
+- Topp 5 og regionsrangering flyttes ned i normal dokumentflyt og får resterende tilgjengelig sidehøyde.
+- Produkter og regionrader skaleres innenfor tilgjengelig høyde slik at rapporten holder seg på én side.
+
 # Changelog
 
 ## 14.2.0

@@ -1276,3 +1276,74 @@
   .a4GroupList{min-height:0!important;overflow:hidden!important}
   .a4GroupDetailed{break-inside:avoid!important}
 }
+
+/* V14.2.1 – adaptive one-page print sizing based on actual category count */
+@media print {
+  .a4CategoryPage {
+    --a4-middle-height: 78mm;
+    --a4-bottom-height: 105mm;
+  }
+  .a4MainGrid,
+  .a4ToolsMainGrid {
+    height: var(--a4-middle-height) !important;
+    min-height: var(--a4-middle-height) !important;
+    flex: 0 0 var(--a4-middle-height) !important;
+    align-items: stretch !important;
+  }
+  .a4MainGrid > .a4Panel,
+  .a4ToolsMainGrid > .a4Panel {
+    height: var(--a4-middle-height) !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .a4BottomGrid {
+    height: var(--a4-bottom-height) !important;
+    min-height: var(--a4-bottom-height) !important;
+    flex: 0 0 var(--a4-bottom-height) !important;
+    position: static !important;
+    clear: both !important;
+  }
+  .a4BottomGrid > .a4Panel,
+  .a4ProductsPanel {
+    height: var(--a4-bottom-height) !important;
+    min-height: 0 !important;
+    max-height: var(--a4-bottom-height) !important;
+  }
+  .a4GroupList {
+    display: grid !important;
+    align-content: start !important;
+    overflow: visible !important;
+  }
+  .a4CompactGroups .a4GroupList { gap: 1.35mm !important; }
+  .a4DenseGroups .a4GroupList { gap: .8mm !important; }
+  .a4CompactGroups .a4GroupDetailed > i { height: 2.2mm !important; margin: .7mm 0 !important; }
+  .a4DenseGroups .a4GroupDetailed > i { height: 1.9mm !important; margin: .45mm 0 !important; }
+  .a4CompactGroups .a4GroupDetailed > div:first-child b { font-size: 7.2pt !important; }
+  .a4DenseGroups .a4GroupDetailed > div:first-child b { font-size: 6.8pt !important; }
+  .a4CompactGroups .a4GroupDetailed > div:first-child strong,
+  .a4CompactGroups .a4GroupNumbers b { font-size: 7.4pt !important; }
+  .a4DenseGroups .a4GroupDetailed > div:first-child strong,
+  .a4DenseGroups .a4GroupNumbers b { font-size: 7pt !important; }
+  .a4CompactGroups .a4GroupNumbers { font-size: 6.4pt !important; }
+  .a4DenseGroups .a4GroupNumbers { font-size: 6pt !important; line-height: 1 !important; }
+  .a4CompactGroups .a4Panel > header { margin-bottom: 1.5mm !important; padding-bottom: 1.5mm !important; }
+  .a4DenseGroups .a4Panel > header { margin-bottom: 1mm !important; padding-bottom: 1.2mm !important; }
+  .a4DenseGroups .a4MetricList { gap: 1.5mm !important; }
+  .a4DenseGroups .a4MetricList > div { padding: 2.2mm !important; }
+  .a4DenseGroups .a4MetricList b { font-size: 9.5pt !important; }
+  .a4ProductsPanel .a4ProductColumn {
+    height: calc(var(--a4-bottom-height) - 17mm) !important;
+    grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
+  }
+  .a4ProductsPanel .a4Product {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .a4RegionTable {
+    grid-template-rows: auto repeat(5, minmax(0, 1fr)) !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+  .a4RegionRow { min-height: 0 !important; }
+}
