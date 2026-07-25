@@ -65,6 +65,9 @@ async function runSchemaMigration() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS review_reason text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_status text NOT NULL DEFAULT 'review'`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_reasons jsonb NOT NULL DEFAULT '[]'::jsonb`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS lookup_method text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS matched_identifier text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS match_confidence integer`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_audit_status_idx ON paint_products(audit_status)`;
   await q`CREATE TABLE IF NOT EXISTS paint_tags (
     id bigserial PRIMARY KEY,

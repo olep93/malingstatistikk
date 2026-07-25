@@ -30,7 +30,7 @@ export async function GET(){
         report_count=GREATEST(paint_products.report_count,excluded.report_count),
         aliases=(SELECT COALESCE(jsonb_agg(DISTINCT v),'[]'::jsonb) FROM jsonb_array_elements(COALESCE(paint_products.aliases,'[]'::jsonb)||COALESCE(excluded.aliases,'[]'::jsonb)) v),
         updated_at=now()`;
-    const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,category,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at,aliases,first_seen_at,last_seen_at,report_count,merged_into,review_reason,audit_status,audit_reasons FROM paint_products WHERE merged_into IS NULL ORDER BY CASE WHEN lookup_status<>'found' OR subgroup IS NULL OR subgroup='' THEN 0 ELSE 1 END,updated_at DESC LIMIT 20000`;
+    const products=await q`SELECT product_key,ean,source_name,website_name,display_name,display_name_locked,supplier,size,image_url,product_url,category,area,subgroup,subgroup_locked,lookup_status,last_fetched_at,updated_at,aliases,first_seen_at,last_seen_at,report_count,merged_into,review_reason,audit_status,audit_reasons,lookup_method,matched_identifier,match_confidence FROM paint_products WHERE merged_into IS NULL ORDER BY CASE WHEN lookup_status<>'found' OR subgroup IS NULL OR subgroup='' THEN 0 ELSE 1 END,updated_at DESC LIMIT 20000`;
     return NextResponse.json({products});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke hente produktregister'},{status:500})}
 }
@@ -45,7 +45,7 @@ export async function POST(req:Request){
     if(!rows.length)return NextResponse.json({error:'Produktet finnes ikke'},{status:404});
     const p:any=rows[0];
     const result=await findObsbyggImage({productKey:p.product_key,ean:p.ean||'',productName:p.display_name||p.source_name||'Ukjent produkt',rawName:p.source_name||'',supplier:p.supplier||'Ukjent',size:p.size||'',area:p.area||'',subgroup:p.subgroup||''},{force:true});
-    const updated=await q`SELECT product_key,ean,source_name,website_name,display_name,supplier,size,image_url,product_url,area,subgroup,lookup_status,report_count FROM paint_products WHERE product_key=${productKey}`;
+    const updated=await q`SELECT product_key,ean,source_name,website_name,display_name,supplier,size,image_url,product_url,area,subgroup,lookup_status,report_count,lookup_method,matched_identifier,match_confidence,review_reason FROM paint_products WHERE product_key=${productKey}`;
     return NextResponse.json({ok:true,found:Boolean(result.found),product:updated[0]||null});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke slå opp produktet'},{status:500})}
 }

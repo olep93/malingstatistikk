@@ -1,3 +1,15 @@
+# Changelog
+
+## 15.0.0 – Exact lookup og Admin Quick Edit
+
+- Automatisk produktkobling krever nå eksakt EAN/PLU-match på Obsbygg.no.
+- Navnelikhet alene godkjennes ikke lenger automatisk.
+- Oppslagsmetode, bekreftet nummer og match confidence lagres i Produktmaster.
+- Produkter uten eksakt treff merkes for manuell kontroll uten å overskrive eksisterende data.
+- Admin kan redigere navn, leverandør, vareområde, tag, bilde og produktlenke direkte fra Produktsalg.
+- Admin kan søke eksakt på nytt eller fjerne en feil kobling fra Quick Edit-panelet.
+- Etter lagring lastes valgt rapportperiode på nytt fra Produktmaster.
+
 ## 14.2.1
 
 - Dynamisk høydefordeling i A4-rapporten basert på antall solgte underkategorier.
