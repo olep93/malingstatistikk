@@ -1,5 +1,13 @@
 # Changelog
 
+## 15.2.0
+
+- Støtte for den nye daglige BI-rapporten med egen `EAN/UPC`-kolonne før varenummer og varenavn.
+- EAN lagres separat fra varenummer gjennom parser, rapportdata, hurtigbuffer og Product Master-synkronisering.
+- Eksakt Obsbygg-oppslag prioriterer rapportens EAN/UPC når den finnes.
+- Administrator kan endre og lagre lenken til Coop BI-rapporten direkte i Kontrollpanel uten ny commit.
+- Standardlenken er oppdatert til den nye rapportmalen og bookmarken.
+
 ## 15.1.0
 
 - La til **Hent manuelt fra Obsbygg.no** i Produktmaster.
@@ -28,6 +36,14 @@
 - Produkter og regionrader skaleres innenfor tilgjengelig høyde slik at rapporten holder seg på én side.
 
 # Changelog
+
+## 15.2.0
+
+- Støtte for den nye daglige BI-rapporten med egen `EAN/UPC`-kolonne før varenummer og varenavn.
+- EAN lagres separat fra varenummer gjennom parser, rapportdata, hurtigbuffer og Product Master-synkronisering.
+- Eksakt Obsbygg-oppslag prioriterer rapportens EAN/UPC når den finnes.
+- Administrator kan endre og lagre lenken til Coop BI-rapporten direkte i Kontrollpanel uten ny commit.
+- Standardlenken er oppdatert til den nye rapportmalen og bookmarken.
 
 ## 14.2.0
 - Felles kategori-/vareområdefiltrering i Produktsalg.

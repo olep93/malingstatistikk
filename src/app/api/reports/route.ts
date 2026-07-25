@@ -12,7 +12,7 @@ const isoDate=(v:unknown)=>String(v||'').slice(0,10);
 async function loadFastReport(date:string,period:ReportPeriod){
  const q=sql();const {from,to}=rangeFor(date,period);await refreshReportCache(from,to);
  const rows=await q`SELECT c.store_id,c.store_name,
-   c.product_key,c.item_no,c.raw_name,
+   c.product_key,c.item_no,c.ean,c.raw_name,
    COALESCE(NULLIF(p.display_name,''),NULLIF(p.website_name,''),c.product_name) product_name,
    COALESCE(NULLIF(p.size,''),c.size,'') size,
    c.supplier,
@@ -24,11 +24,11 @@ async function loadFastReport(date:string,period:ReportPeriod){
    COALESCE(NULLIF(p.product_url,''),c.product_url) product_url
  FROM paint_report_rows c LEFT JOIN paint_products p ON p.product_key=c.product_key AND p.merged_into IS NULL
  WHERE c.report_date BETWEEN ${from}::date AND ${to}::date
- GROUP BY c.store_id,c.store_name,c.product_key,c.item_no,c.raw_name,p.display_name,p.website_name,c.product_name,p.size,c.size,c.supplier,p.category,c.category,p.area,c.area,p.subgroup,c.subgroup,p.image_url,c.image_url,p.product_url,c.product_url
+ GROUP BY c.store_id,c.store_name,c.product_key,c.item_no,c.ean,c.raw_name,p.display_name,p.website_name,c.product_name,p.size,c.size,c.supplier,p.category,c.category,p.area,c.area,p.subgroup,c.subgroup,p.image_url,c.image_url,p.product_url,c.product_url
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
- return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}))};
+ return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',ean:r.ean||undefined,rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}))};
 }
 
 export async function GET(req:Request){

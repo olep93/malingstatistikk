@@ -5,7 +5,7 @@ export type Supplier = "Infra"|"Butinox"|"Jotun"|"Jordan"|"Øvrig";
 export type ProductArea = "exterior"|"interior"|"terrace"|"tools";
 export type Period = "Dag"|"Uke"|"Måned"|"Hittil i år"|"År";
 export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
-export type ProductRow={storeId:string;store:string;itemNo:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;area?:ProductArea;subgroup?:string;quantity:number;revenue:number;profit:number;margin:number;image?:string};
+export type ProductRow={storeId:string;store:string;itemNo:string;ean?:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;area?:ProductArea;subgroup?:string;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
 export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[];uploadedBy?:string;uploadedAt?:string};
 
@@ -229,6 +229,7 @@ export const aggregateProducts=(rows:ProductRow[])=>{
       existing.margin=existing.revenue?existing.profit/existing.revenue*100:0;
       if(!existing.image&&r.image)existing.image=r.image;
       if(!existing.productUrl&&r.productUrl)existing.productUrl=r.productUrl;
+      if(!existing.ean&&r.ean)existing.ean=r.ean;
     }else{
       map.set(key,{...r,margin:r.revenue?r.profit/r.revenue*100:0});
     }

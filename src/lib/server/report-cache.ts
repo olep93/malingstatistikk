@@ -30,12 +30,12 @@ export async function refreshReportCache(from:string,to:string){
      )
  )
  INSERT INTO paint_report_rows(
-   report_date,store_id,store_name,product_key,item_no,raw_name,product_name,size,supplier,category,area,subgroup,quantity,revenue,profit,image_url,product_url,source_updated_at
+   report_date,store_id,store_name,product_key,item_no,ean,raw_name,product_name,size,supplier,category,area,subgroup,quantity,revenue,profit,image_url,product_url,source_updated_at
  )
  SELECT p.report_date,
    COALESCE(NULLIF(r->>'storeId',''),'unknown'),COALESCE(NULLIF(r->>'store',''),'Ukjent varehus'),
    COALESCE(NULLIF(r->>'productKey',''),concat_ws('|',COALESCE(r->>'area',''),COALESCE(r->>'subgroup',''),COALESCE(r->>'supplier',''),COALESCE(r->>'product',''),COALESCE(r->>'size',''))),
-   COALESCE(NULLIF(r->>'itemNo',''),NULLIF(r->>'ean','')),COALESCE(NULLIF(r->>'rawName',''),NULLIF(r->>'product','')),
+   COALESCE(NULLIF(r->>'itemNo',''),NULLIF(r->>'ean','')),NULLIF(r->>'ean',''),COALESCE(NULLIF(r->>'rawName',''),NULLIF(r->>'product','')),
    COALESCE(NULLIF(r->>'product',''),'Ukjent produkt'),COALESCE(r->>'size',''),COALESCE(NULLIF(r->>'supplier',''),'Øvrig'),
    NULLIF(r->>'category',''),NULLIF(r->>'area',''),NULLIF(r->>'subgroup',''),
    COALESCE(NULLIF(r->>'quantity','')::numeric,0),COALESCE(NULLIF(r->>'revenue','')::numeric,0),COALESCE(NULLIF(r->>'profit','')::numeric,0),
@@ -43,7 +43,7 @@ export async function refreshReportCache(from:string,to:string){
  FROM missing_reports p
  CROSS JOIN LATERAL jsonb_array_elements(COALESCE(p.report_data->'rows','[]'::jsonb)) r
  ON CONFLICT(report_date,store_id,product_key) DO UPDATE SET
-   store_name=excluded.store_name,item_no=excluded.item_no,raw_name=excluded.raw_name,product_name=excluded.product_name,size=excluded.size,
+   store_name=excluded.store_name,item_no=excluded.item_no,ean=excluded.ean,raw_name=excluded.raw_name,product_name=excluded.product_name,size=excluded.size,
    supplier=excluded.supplier,category=excluded.category,area=excluded.area,subgroup=excluded.subgroup,
    quantity=excluded.quantity,revenue=excluded.revenue,profit=excluded.profit,image_url=excluded.image_url,product_url=excluded.product_url,source_updated_at=excluded.source_updated_at`;
 }

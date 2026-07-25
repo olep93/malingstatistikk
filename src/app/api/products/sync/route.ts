@@ -15,7 +15,7 @@ export async function POST(req:Request){
   const unique=new Map<string,SyncItem>();
   for(const row of rows){
    const key=row.productKey||[row.area,row.subgroup,row.supplier,row.product,row.size||''].join('|');
-   if(!unique.has(key))unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo||row.ean,area:row.area,subgroup:row.subgroup});
+   if(!unique.has(key))unique.set(key,{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.ean||row.itemNo,area:row.area,subgroup:row.subgroup});
   }
   const items=[...unique.values()].slice(0,75);
   if(!items.length)return NextResponse.json({ok:true,checked:0,found:0,cached:0,notFound:0,results:[]});

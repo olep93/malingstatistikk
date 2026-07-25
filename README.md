@@ -280,3 +280,8 @@ Dette er en intern virksomhetsapplikasjon. Kildekode, innloggingsinformasjon, ra
 ## Manuelt produktoppslag med bekreftelse
 
 I Produktmaster kan en administrator velge **Hent manuelt fra Obsbygg.no**. Systemet søker kun etter en eksakt EAN-/PLU-match, viser navn, bilde, URL og treffinformasjon i en forhåndsvisning, og lagrer ingenting før administratoren velger **Bekreft og lagre**. Etter bekreftelse oppdateres Produktmaster, og produktet forsvinner automatisk fra behandlingskøen når obligatoriske data er komplette.
+
+
+## Konfigurerbar BI-rapport
+
+Den daglige Excel-parseren støtter nå en egen `EAN/UPC`-kolonne foran `Varenr/navn`. EAN lagres separat og brukes som førstevalg ved eksakte produktoppslag mot Obsbygg.no. Administrator kan endre feltet **Lenke til rapport BI portal** i Kontrollpanel. Lenken lagres i databasen og krever derfor ikke kodeendring eller ny deploy.
