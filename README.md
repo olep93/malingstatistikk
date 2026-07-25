@@ -275,3 +275,8 @@ Dette er en intern virksomhetsapplikasjon. Kildekode, innloggingsinformasjon, ra
   <strong>Malingstatistikk Enterprise V15.0.0</strong><br />
   Utviklet som operativt beslutningsstøtteverktøy for Obs BYGG.
 </div>
+
+
+## Manuelt produktoppslag med bekreftelse
+
+I Produktmaster kan en administrator velge **Hent manuelt fra Obsbygg.no**. Systemet søker kun etter en eksakt EAN-/PLU-match, viser navn, bilde, URL og treffinformasjon i en forhåndsvisning, og lagrer ingenting før administratoren velger **Bekreft og lagre**. Etter bekreftelse oppdateres Produktmaster, og produktet forsvinner automatisk fra behandlingskøen når obligatoriske data er komplette.

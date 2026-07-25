@@ -1,5 +1,13 @@
 # Changelog
 
+## 15.1.0
+
+- La til **Hent manuelt fra Obsbygg.no** i Produktmaster.
+- Oppslag søker kun etter eksakt EAN/PLU og endrer ikke data ved søk.
+- La til forhåndsvisning av produktnavn, bilde, URL, treffmetode og treffsikkerhet.
+- Produktdata lagres først etter eksplisitt bekreftelse.
+- Bekreftede produkter oppdateres i Produktmaster og fjernes fra behandlingskøen når de er komplette.
+
 ## 15.0.0 – Product Master 2.0, Exact Lookup og Admin Quick Edit
 
 - Automatisk produktkobling krever nå eksakt EAN/PLU-match på Obsbygg.no.

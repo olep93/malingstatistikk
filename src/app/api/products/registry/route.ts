@@ -39,14 +39,17 @@ export async function POST(req:Request){
   if(!(await isAdmin()))return NextResponse.json({error:'Kun Admin kan slå opp produkter.'},{status:403});
   try{
     const {action,productKey}=await req.json();
-    if(action!=='lookup'||!productKey)return NextResponse.json({error:'Ugyldig handling'},{status:400});
+    if(!['lookup','confirm_lookup'].includes(action)||!productKey)return NextResponse.json({error:'Ugyldig handling'},{status:400});
     await ensureSchema();const q=sql();
     const rows=await q`SELECT product_key,ean,source_name,display_name,supplier,size,area,subgroup FROM paint_products WHERE product_key=${productKey} AND merged_into IS NULL LIMIT 1`;
     if(!rows.length)return NextResponse.json({error:'Produktet finnes ikke'},{status:404});
     const p:any=rows[0];
-    const result=await findObsbyggImage({productKey:p.product_key,ean:p.ean||'',productName:p.display_name||p.source_name||'Ukjent produkt',rawName:p.source_name||'',supplier:p.supplier||'Ukjent',size:p.size||'',area:p.area||'',subgroup:p.subgroup||''},{force:true});
+    const shouldPersist=action==='confirm_lookup';
+    const result=await findObsbyggImage({productKey:p.product_key,ean:p.ean||'',productName:p.display_name||p.source_name||'Ukjent produkt',rawName:p.source_name||'',supplier:p.supplier||'Ukjent',size:p.size||'',area:p.area||'',subgroup:p.subgroup||''},{force:true,persist:shouldPersist});
+    if(!result.found)return NextResponse.json({ok:true,found:false,product:null});
+    if(!shouldPersist)return NextResponse.json({ok:true,found:true,product:{product_key:productKey,ean:p.ean,source_name:p.source_name,website_name:result.websiteName||result.displayName,display_name:result.displayName||p.display_name||p.source_name,image_url:result.imageUrl||null,product_url:result.url||null,area:p.area,subgroup:result.subgroup||p.subgroup,lookup_status:'preview',lookup_method:result.matchMethod,matched_identifier:result.matchedIdentifier,match_confidence:result.confidence}});
     const updated=await q`SELECT product_key,ean,source_name,website_name,display_name,supplier,size,image_url,product_url,area,subgroup,lookup_status,report_count,lookup_method,matched_identifier,match_confidence,review_reason FROM paint_products WHERE product_key=${productKey}`;
-    return NextResponse.json({ok:true,found:Boolean(result.found),product:updated[0]||null});
+    return NextResponse.json({ok:true,found:true,product:updated[0]||null});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke slå opp produktet'},{status:500})}
 }
 
