@@ -1,3 +1,11 @@
+# 15.4.1
+
+- Product Master rydder nå også produkter som bare har varenummer.
+- Godkjent produktreferanse gjenoppretter EAN, navn, størrelse og eksteriør-tag automatisk ved eksakt varenummer/EAN.
+- Eksakte EAN-treff fra Obsbygg.no oppdateres automatisk; eksakte varenummertreff uten kjent EAN sendes til kontroll.
+- Synkroniseringen viser EAN gjenopprettet, produkter til kontroll, ikke funnet og feil.
+- BI-knappen blokkeres ikke lenger mens en bakgrunnssjekk av lenken pågår.
+
 # Changelog
 
 ## 15.3.0 – 2026-07-26
