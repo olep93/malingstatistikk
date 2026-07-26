@@ -14,10 +14,11 @@ export async function GET(req:NextRequest){
   const supplier=p.get('supplier')||'';
   const size=p.get('size')||'';
   const ean=p.get('ean')||'';
+  const itemNo=p.get('itemNo')||'';
   const productKey=p.get('key')||[supplier,productName,size].join('|');
   if(!productName)return placeholder();
   try{
-    const result=await findObsbyggImage({productName,supplier,size,ean,productKey});
+    const result=await findObsbyggImage({productName,supplier,size,ean,itemNo,productKey});
     if(result.found && result.imageUrl){
       return NextResponse.redirect(result.imageUrl,302);
     }

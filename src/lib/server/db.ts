@@ -27,12 +27,14 @@ async function runSchemaMigration() {
   await q`ALTER TABLE paint_reports ADD COLUMN IF NOT EXISTS uploaded_by text`;
   await q`CREATE TABLE IF NOT EXISTS paint_report_rows (
     report_date date NOT NULL REFERENCES paint_reports(report_date) ON DELETE CASCADE,
-    store_id text NOT NULL, store_name text NOT NULL, product_key text NOT NULL, item_no text, raw_name text, product_name text NOT NULL, size text, supplier text NOT NULL, category text, area text, subgroup text,
+    store_id text NOT NULL, store_name text NOT NULL, product_key text NOT NULL, item_no text, ean text, raw_name text, product_name text NOT NULL, size text, supplier text NOT NULL, category text, area text, subgroup text,
     quantity numeric NOT NULL DEFAULT 0, revenue numeric NOT NULL DEFAULT 0, profit numeric NOT NULL DEFAULT 0, image_url text, product_url text, source_updated_at timestamptz NOT NULL,
     PRIMARY KEY(report_date,store_id,product_key)
   )`;
+  await q`ALTER TABLE paint_report_rows ADD COLUMN IF NOT EXISTS ean text`;
   await q`CREATE INDEX IF NOT EXISTS paint_report_rows_period_idx ON paint_report_rows(report_date,area,store_id)`;
   await q`CREATE INDEX IF NOT EXISTS paint_report_rows_product_idx ON paint_report_rows(product_key)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_report_rows_fast_period_idx ON paint_report_rows(report_date,store_id,area,subgroup,supplier) INCLUDE (quantity,revenue,profit)`;
   await q`CREATE TABLE IF NOT EXISTS paint_products (
     product_key text PRIMARY KEY,
     display_name text NOT NULL,
@@ -48,6 +50,7 @@ async function runSchemaMigration() {
     updated_at timestamptz NOT NULL DEFAULT now()
   )`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS product_url text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS item_no text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS category text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS source_name text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS website_name text`;
@@ -64,6 +67,9 @@ async function runSchemaMigration() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS review_reason text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_status text NOT NULL DEFAULT 'review'`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS audit_reasons jsonb NOT NULL DEFAULT '[]'::jsonb`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS lookup_method text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS matched_identifier text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS match_confidence integer`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_audit_status_idx ON paint_products(audit_status)`;
   await q`CREATE TABLE IF NOT EXISTS paint_tags (
     id bigserial PRIMARY KEY,
@@ -124,6 +130,7 @@ async function runSchemaMigration() {
       AND (subgroup IS NULL OR subgroup='')`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
+  await q`CREATE INDEX IF NOT EXISTS paint_products_item_no_idx ON paint_products(item_no)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_lookup_status_idx ON paint_products(lookup_status)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_area_subgroup_idx ON paint_products(area,subgroup)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_merged_into_idx ON paint_products(merged_into)`;
@@ -137,6 +144,16 @@ async function runSchemaMigration() {
     created_at timestamptz NOT NULL DEFAULT now()
   )`;
   await q`CREATE INDEX IF NOT EXISTS paint_product_changes_product_idx ON paint_product_changes(product_key,created_at DESC)`;
+
+  await q`CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key text PRIMARY KEY,
+    setting_value text NOT NULL,
+    updated_by text,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`;
+  await q`INSERT INTO app_settings(setting_key,setting_value) VALUES
+    ('bi_report_url','https://bi.coop.no/BOE/OpenDocument/opendoc/openDocument.jsp?sIDType=CUID&iDocID=AWy2QvRaEdFMmgGWQNqOsek&BOOKMARK=AUubX.RpQhtFiVHTx7t9xXo')
+    ON CONFLICT(setting_key) DO NOTHING`;
   await q`CREATE TABLE IF NOT EXISTS app_users (
     id bigserial PRIMARY KEY,
     username text NOT NULL UNIQUE,

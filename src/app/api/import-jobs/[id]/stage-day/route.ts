@@ -11,7 +11,7 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
   const products=new Map<string,any>();
   for(const row of report.rows){
    const key=row.productKey||[row.area,row.subgroup,row.supplier,row.product,row.size||''].join('|');
-   if(!products.has(key))products.set(key,{product_key:key,product_data:{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.itemNo,area:row.area,subgroup:row.subgroup}});
+   if(!products.has(key))products.set(key,{product_key:key,product_data:{productKey:key,productName:row.product,rawName:row.rawName,supplier:row.supplier,size:row.size,ean:row.ean,itemNo:row.itemNo,area:row.area,subgroup:row.subgroup}});
   }
   const payload=[...products.values()];
   const q=sql();

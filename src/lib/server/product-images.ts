@@ -1,13 +1,14 @@
 import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
+import { cleanProductName, decodeHtmlEntities } from '../text';
 
-const NORMALIZATION_VERSION=2;
-const decodeHtml=(s:string)=>s.replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&#x2F;/gi,'/').replace(/\\u0026/g,'&').replace(/\\\//g,'/');
+const NORMALIZATION_VERSION=3;
+const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>!href?'':href.startsWith('//')?`https:${href}`:href.startsWith('http')?href:`https://www.obsbygg.no${href.startsWith('/')?'':'/'}${href}`;
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
-type Input={ean?:string;productName:string;productKey:string;supplier:string;size?:string;rawName?:string;area?:string;subgroup?:string};
-type Result={found:boolean;imageUrl?:string;displayName?:string;websiteName?:string;url?:string;category?:string;subgroup?:string;source?:string;status?:string};
-const cleanTitle=(title:string)=>decodeHtml(title).replace(/\s*[|–-]\s*Obs BYGG.*$/i,'').replace(/\s*\|\s*Coop.*$/i,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+type Input={ean?:string;itemNo?:string;productName:string;productKey:string;supplier:string;size?:string;rawName?:string;area?:string;subgroup?:string};
+type Result={found:boolean;imageUrl?:string;displayName?:string;websiteName?:string;url?:string;category?:string;subgroup?:string;source?:string;status?:string;matchMethod?:'EXACT_EAN'|'EXACT_ITEM_NO'|'CATALOG'|'NONE';matchedIdentifier?:string;confidence?:number};
+const cleanTitle=(title:string)=>cleanProductName(title);
 
 function customerName(title:string,fallback:string,area?:string){
  const clean=cleanTitle(title||fallback)
@@ -29,38 +30,64 @@ function inferSubgroup(area:string|undefined,title:string,html:string,fallback?:
  return fallback;
 }
 
+function digits(value?:string){return String(value||'').replace(/\D/g,'')}
+function identifiersFromPage(url:string,html:string){
+ const found=new Set<string>();
+ const add=(v?:string)=>{const d=digits(v);if(d.length>=6)found.add(d)};
+ for(const m of url.matchAll(/(?:ObsBygg-|[?&](?:v|variant|ean|sku)=)(\d{6,14})/gi))add(m[1]);
+ for(const rx of [/(?:ean|gtin|sku|productNumber|itemNumber|varenummer|artikkelnummer)["'\s:=\\]+(?:ObsBygg-)?(\d{6,14})/gi,/ObsBygg-(\d{6,14})/gi])for(const m of html.matchAll(rx))add(m[1]);
+ return found;
+}
+function exactMatch(url:string,html:string,input:Input){
+ const ids=identifiersFromPage(url,html);
+ const ean=digits(input.ean),itemNo=digits(input.itemNo);
+ if(ean&&ids.has(ean))return {method:'EXACT_EAN' as const,identifier:ean};
+ if(itemNo&&ids.has(itemNo))return {method:'EXACT_ITEM_NO' as const,identifier:itemNo};
+ return null;
+}
 async function persist(input:Input,result:Result){
  const q=sql();await ensureSchema();
  const sourceName=input.rawName||input.productName;
  const websiteName=result.websiteName||result.displayName||null;
  const suggested=input.area==='exterior'?input.productName:(result.displayName||input.productName);
- await q`INSERT INTO paint_products(product_key,display_name,source_name,website_name,supplier,size,ean,image_url,image_source,product_url,category,subgroup,image_approved,aliases,lookup_status,last_fetched_at,normalization_version,area,updated_at)
- VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${input.size||null},${input.ean||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now())
+ await q`INSERT INTO paint_products(product_key,display_name,source_name,website_name,supplier,size,ean,item_no,image_url,image_source,product_url,category,subgroup,image_approved,aliases,lookup_status,last_fetched_at,normalization_version,area,updated_at,lookup_method,matched_identifier,match_confidence,review_reason,audit_status)
+ VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${input.size||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
  ON CONFLICT(product_key) DO UPDATE SET
- source_name=COALESCE(excluded.source_name,paint_products.source_name),website_name=COALESCE(excluded.website_name,paint_products.website_name),
- display_name=CASE WHEN paint_products.display_name_locked THEN paint_products.display_name ELSE excluded.display_name END,
- supplier=excluded.supplier,size=COALESCE(excluded.size,paint_products.size),image_url=COALESCE(excluded.image_url,paint_products.image_url),image_source=excluded.image_source,
- product_url=COALESCE(excluded.product_url,paint_products.product_url),category=COALESCE(excluded.category,paint_products.category),subgroup=CASE WHEN paint_products.subgroup_locked THEN paint_products.subgroup ELSE COALESCE(excluded.subgroup,paint_products.subgroup) END,image_approved=paint_products.image_approved OR excluded.image_approved,
- ean=COALESCE(excluded.ean,paint_products.ean),aliases=(SELECT jsonb_agg(DISTINCT x) FROM jsonb_array_elements(paint_products.aliases || excluded.aliases) x),lookup_status=excluded.lookup_status,last_fetched_at=now(),normalization_version=${NORMALIZATION_VERSION},area=COALESCE(excluded.area,paint_products.area),updated_at=now()`;
+ source_name=COALESCE(excluded.source_name,paint_products.source_name),
+ website_name=CASE WHEN excluded.lookup_status='found' THEN excluded.website_name ELSE paint_products.website_name END,
+ display_name=CASE WHEN paint_products.display_name_locked OR excluded.lookup_status<>'found' THEN paint_products.display_name ELSE excluded.display_name END,
+ supplier=excluded.supplier,size=COALESCE(excluded.size,paint_products.size),
+ image_url=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.image_url,paint_products.image_url) ELSE paint_products.image_url END,
+ image_source=CASE WHEN excluded.lookup_status='found' THEN excluded.image_source ELSE paint_products.image_source END,
+ product_url=CASE WHEN excluded.lookup_status='found' THEN excluded.product_url ELSE paint_products.product_url END,
+ category=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.category,paint_products.category) ELSE paint_products.category END,
+ subgroup=CASE WHEN paint_products.subgroup_locked OR excluded.lookup_status<>'found' THEN paint_products.subgroup ELSE COALESCE(excluded.subgroup,paint_products.subgroup) END,
+ image_approved=paint_products.image_approved OR (excluded.lookup_status='found' AND excluded.image_approved),
+ ean=COALESCE(excluded.ean,paint_products.ean),item_no=COALESCE(excluded.item_no,paint_products.item_no),aliases=(SELECT jsonb_agg(DISTINCT x) FROM jsonb_array_elements(paint_products.aliases || excluded.aliases) x),
+ lookup_status=excluded.lookup_status,last_fetched_at=now(),normalization_version=${NORMALIZATION_VERSION},area=COALESCE(excluded.area,paint_products.area),updated_at=now(),
+ lookup_method=excluded.lookup_method,matched_identifier=excluded.matched_identifier,match_confidence=excluded.match_confidence,
+ review_reason=excluded.review_reason,audit_status=excluded.audit_status`;
 }
-function productLinks(html:string){const links=new Set<string>();for(const rx of [/href=["']([^"']+\/\d{5,}(?:[?][^"']*)?)["']/gi,/"url"\s*:\s*"([^"]+\/\d{5,}[^"]*)"/gi,/"canonicalUrl"\s*:\s*"([^"]+)"/gi,/"productUrl"\s*:\s*"([^"]+)"/gi])for(const m of html.matchAll(rx)){const href=decodeHtml(m[1]);if(/obsbygg\.no|^\//i.test(href))links.add(absolute(href));}return [...links].filter(x=>/\/maling\//i.test(x)||/\/verktoy-og-tilbehor\//i.test(x)).slice(0,3);}
+
+function productLinks(html:string){const links=new Set<string>();for(const rx of [/href=["']([^"']+\/\d{5,}(?:[?][^"']*)?)["']/gi,/"url"\s*:\s*"([^"]+\/\d{5,}[^"]*)"/gi,/"canonicalUrl"\s*:\s*"([^"]+)"/gi,/"productUrl"\s*:\s*"([^"]+)"/gi])for(const m of html.matchAll(rx)){const href=decodeHtml(m[1]);if(/obsbygg\.no|^\//i.test(href))links.add(absolute(href));}return [...links].slice(0,12);}
 function images(html:string){const out:string[]=[];const add=(v?:string)=>{if(v){const u=absolute(decodeHtml(v.split(',')[0].trim().split(/\s+/)[0]));if(/^https?:\/\//.test(u))out.push(u)}};for(const rx of [/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)/gi,/content=["']([^"']+)["'][^>]*property=["']og:image/gi,/"image"\s*:\s*\[?\s*"([^"]+)"/gi,/"imageUrl"\s*:\s*"([^"]+)"/gi,/(?:src|data-src)=["']([^"']*globalassets\/productimages\/[^"']+)["']/gi])for(const m of html.matchAll(rx))add(m[1]);return [...new Set(out)];}
 async function fetchPage(url:string){try{const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)return null;const html=await r.text();const image=images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}catch{return null}}
 function score(title:string,input:Input){const a=title.toUpperCase(),b=`${input.productName} ${input.rawName||''}`.toUpperCase();let n=0;for(const word of b.replace(/[^A-ZÆØÅ0-9]+/g,' ').split(/\s+/).filter(x=>x.length>2))if(a.includes(word))n++;if(input.ean&&a.includes(input.ean))n+=8;if(input.size&&a.replace(/\s/g,'').includes(input.size.replace(/\s/g,'')))n+=2;return n;}
 
-export async function findObsbyggImage(input:Input,opts:{force?:boolean}={}):Promise<Result>{
+export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?:boolean;exactOnly?:boolean}={}):Promise<Result>{
  await ensureSchema();const q=sql();
  const existing=await q`SELECT display_name,website_name,image_url,product_url,category,subgroup,lookup_status,last_fetched_at,normalization_version FROM paint_products WHERE product_key=${input.productKey} LIMIT 1`;
  const row:any=existing[0];const stale=!row?.last_fetched_at||Date.now()-new Date(row.last_fetched_at).getTime()>90*86400000;
  const outdated=(row?.normalization_version||0)<NORMALIZATION_VERSION;
  if(row&&!opts.force&&!stale&&!outdated){return {found:row.lookup_status==='found',imageUrl:row.image_url,displayName:row.display_name,websiteName:row.website_name,url:row.product_url,category:row.category,subgroup:row.subgroup,source:'database',status:row.lookup_status};}
- const known=catalogEntry(input.productName,input.rawName);
- if(known?.pageUrl){const page=await fetchPage(known.pageUrl);if(page){const subgroup=inferSubgroup(input.area,page.title,page.html,input.subgroup);const r={found:true,imageUrl:page.image||known.image,displayName:customerName(page.title,known.name,input.area),websiteName:page.title,url:known.pageUrl,category:known.category,subgroup,source:'catalog-page',status:'found'};await persist(input,r);return r;}}
- if(known?.image&&input.area==='exterior'){const r={found:true,imageUrl:known.image,displayName:known.name,websiteName:known.name,url:known.pageUrl,category:known.category,subgroup:input.subgroup,source:'catalog',status:'found'};await persist(input,r);return r;}
- const terms=[input.ean,`${input.productName} ${input.size||''}`].filter(Boolean) as string[];
+ const shouldPersist=opts.persist!==false;
+ const known=opts.exactOnly?undefined:catalogEntry(input.productName,input.rawName);
+ if(known?.pageUrl){const page=await fetchPage(known.pageUrl);if(page){const subgroup=inferSubgroup(input.area,page.title,page.html,input.subgroup);const r:Result={found:true,imageUrl:page.image||known.image,displayName:customerName(page.title,known.name,input.area),websiteName:page.title,url:known.pageUrl,category:known.category,subgroup,source:'catalog-page',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}}
+ if(known?.image&&input.area==='exterior'){const r:Result={found:true,imageUrl:known.image,displayName:known.name,websiteName:known.name,url:known.pageUrl,category:known.category,subgroup:input.subgroup,source:'catalog',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}
+ const terms=[digits(input.ean),digits(input.itemNo)].filter(Boolean) as string[];
  for(const term of [...new Set(terms)].slice(0,2)){
   const searchUrl=`https://www.obsbygg.no/sok?q=${encodeURIComponent(term)}`;
-  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const urls=productLinks(html);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=pages.filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);const best=candidates[0];if(best&&best.score>0){const websiteName=best.title;const subgroup=inferSubgroup(input.area,websiteName,best.html,input.subgroup);const result={found:true,imageUrl:best.image,displayName:customerName(websiteName,input.productName,input.area),websiteName,url:best.url,category:known?.category,subgroup,source:'obsbygg-search',status:'found'};await persist(input,result);return result;}}catch{}
+  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const urls=productLinks(html);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=pages.filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const websiteName=candidate.title;const subgroup=inferSubgroup(input.area,websiteName,candidate.html,input.subgroup);const result:Result={found:true,imageUrl:candidate.image,displayName:customerName(websiteName,input.productName,input.area),websiteName,url:candidate.url,category:known?.category,subgroup,source:'obsbygg-exact-search',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:100};if(shouldPersist)await persist(input,result);return result;}}catch{}
  }
- const result={found:false,displayName:known?.name||input.productName,websiteName:undefined,category:known?.category,subgroup:input.subgroup,source:'obsbygg-search',status:'not_found'};await persist(input,result);return result;
+ const result:Result={found:false,displayName:known?.name||input.productName,websiteName:undefined,category:known?.category,subgroup:input.subgroup,source:'obsbygg-exact-search',status:'needs_review',matchMethod:'NONE',confidence:0};if(shouldPersist)await persist(input,result);return result;
 }

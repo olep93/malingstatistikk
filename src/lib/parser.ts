@@ -18,10 +18,16 @@ const isoDate=(v:unknown)=>{
 type Supplier="Infra"|"Butinox"|"Jotun"|"Jordan"|"Øvrig";
 type ProductArea="exterior"|"interior"|"terrace"|"tools";
 type LegacyParsed={kind:"legacy";grid:unknown[][];groups:{supplier:Supplier;q:number;m:number;p:number;r:number}[];dateCol:number;itemCol:number;nameCol:number};
-type FlatParsed={kind:"flat";grid:unknown[][];headerRow:number;cols:{storeId:number;store:number;date:number;item:number;name:number;vgrName:number;vendorName:number;q:number;m:number;p:number;r:number}};
+type FlatParsed={kind:"flat";grid:unknown[][];headerRow:number;cols:{storeId:number;store:number;date:number;ean:number;item:number;name:number;vgrName:number;vendorName:number;q:number;m:number;p:number;r:number}};
 type ParsedGrid=LegacyParsed|FlatParsed;
 
 const norm=(v:unknown)=>String(v??"").trim().toLowerCase();
+const identifier=(v:unknown)=>{
+  if(v===null||v===undefined)return "";
+  if(typeof v==="number"&&Number.isFinite(v))return Number.isInteger(v)?String(v):String(v).replace(/\.0+$/,"");
+  return String(v).trim().replace(/\s+/g,"").replace(/\.0+$/,"");
+};
+const column=(headers:string[],aliases:string[])=>headers.findIndex(value=>aliases.some(alias=>value===alias||value.includes(alias)));
 async function workbookGrid(file:File):Promise<ParsedGrid>{
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
@@ -32,19 +38,23 @@ async function workbookGrid(file:File):Promise<ParsedGrid>{
   // Ny BO-rapport: én rad med måltall, neste rad med dimensjonsoverskrifter.
   for(let headerRow=0;headerRow<Math.min(8,grid.length);headerRow++){
     const h=(grid[headerRow]||[]).map(norm);
-    const storeId=h.findIndex(x=>x==="butikk");
-    const date=h.findIndex(x=>x==="dato");
-    const item=h.findIndex(x=>x.includes("varenr"));
-    const vgrName=h.findIndex(x=>x.includes("vare vgr"));
-    const vendorName=h.findIndex(x=>x==="leverandør");
-    if(storeId>=0&&date>=0&&item>=0&&vgrName>=0&&vendorName>=0){
+    const storeId=column(h,["butikk"]);
+    const date=column(h,["dato"]);
+    const ean=column(h,["ean/upc","ean","upc","gtin"]);
+    const item=column(h,["varenr","varenummer","artikkelnummer"]);
+    const itemGroup=column(h,["varenr/navn"]);
+    const vgr=column(h,["vare vgr","varegruppe"]);
+    const vendor=column(h,["leverandør"]);
+    if(storeId>=0&&date>=0&&(item>=0||itemGroup>=0)&&vgr>=0&&vendor>=0){
       const metricRow=(grid[Math.max(0,headerRow-1)]||[]).map(norm);
-      const q=metricRow.findIndex(x=>x.includes("ant solgt"));
-      const m=metricRow.findIndex(x=>x.includes("bto %"));
-      const p=metricRow.findIndex(x=>x.includes("bto kr"));
-      const r=metricRow.findIndex(x=>x==="oms"||x.startsWith("oms "));
+      const q=column(metricRow,["ant solgt"]);
+      const m=column(metricRow,["bto %"]);
+      const p=column(metricRow,["bto kr"]);
+      const r=column(metricRow,["oms"]);
       if(q<0||p<0||r<0)throw new Error("Fant dimensjonene, men ikke kolonnene Ant solgt, BTO kr og Oms.");
-      return {kind:"flat",grid,headerRow,cols:{storeId,store:storeId+1,date,item,name:item+1,vgrName:vgrName+1,vendorName:vendorName+1,q,m,p,r}};
+      const actualItem=item>=0?item:itemGroup;
+      const name=actualItem+1;
+      return {kind:"flat",grid,headerRow,cols:{storeId,store:storeId+1,date,ean,item:actualItem,name,vgrName:vgr+1,vendorName:vendor+1,q,m,p,r}};
     }
   }
 
@@ -91,9 +101,9 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   return undefined;
 }
 
-function addRow(target:ProductRow[],args:{storeId:string;store:string;item:string;raw:string;supplier:Supplier;area:ProductArea;subgroup:string;q:number;revenue:number;profit:number;margin:number}){
+function addRow(target:ProductRow[],args:{storeId:string;store:string;item:string;ean?:string;raw:string;supplier:Supplier;area:ProductArea;subgroup:string;q:number;revenue:number;profit:number;margin:number}){
   const n=normalizeProduct(args.raw,args.item);
-  target.push({storeId:args.storeId,store:args.store,itemNo:args.item,rawName:args.raw,product:n.product,productKey:[args.area,args.subgroup,args.supplier,n.canonicalKey].join("|"),size:n.size,supplier:args.supplier,area:args.area,subgroup:args.subgroup,category:n.category||categoryForProduct(n.product,args.raw),quantity:args.q,revenue:args.revenue,profit:args.profit,margin:args.revenue?args.profit/args.revenue*100:args.margin});
+  target.push({storeId:args.storeId,store:args.store,itemNo:args.item,ean:args.ean||undefined,rawName:args.raw,product:n.product,productKey:[args.area,args.subgroup,args.supplier,n.canonicalKey].join("|"),size:n.size,supplier:args.supplier,area:args.area,subgroup:args.subgroup,category:n.category||categoryForProduct(n.product,args.raw),quantity:args.q,revenue:args.revenue,profit:args.profit,margin:args.revenue?args.profit/args.revenue*100:args.margin});
 }
 
 function parseRows(parsed:ParsedGrid,forcedDate?:string){
@@ -105,13 +115,14 @@ function parseRows(parsed:ParsedGrid,forcedDate?:string){
       const row=grid[i]||[];
       const reportDate=forcedDate||isoDate(row[c.date]); if(!reportDate)continue;
       const storeId=String(row[c.storeId]??"").trim(),store=shortStore(String(row[c.store]??""));
-      const item=String(row[c.item]??"").trim(),raw=String(row[c.name]??"").trim();
+      const ean=c.ean>=0?identifier(row[c.ean]):"";
+      const item=identifier(row[c.item]),raw=String(row[c.name]??"").trim();
       const vgr=String(row[c.vgrName]??"").trim();
       const supplier=supplierFromVendor(String(row[c.vendorName]??""));
       const classification=classify(vgr,raw);
       if(!storeId||!store||!item||!raw||!supplier||!classification)continue;
       const target=rowsByDate.get(reportDate)||[];
-      addRow(target,{storeId,store,item,raw,supplier,area:classification.area,subgroup:classification.subgroup,q:num(row[c.q]),margin:num(row[c.m]),profit:num(row[c.p]),revenue:num(row[c.r])});
+      addRow(target,{storeId,store,item,ean,raw,supplier,area:classification.area,subgroup:classification.subgroup,q:num(row[c.q]),margin:num(row[c.m]),profit:num(row[c.p]),revenue:num(row[c.r])});
       rowsByDate.set(reportDate,target);
     }
     return {rowsByDate,sourceTotalsByDate};
