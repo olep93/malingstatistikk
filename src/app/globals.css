@@ -1357,3 +1357,34 @@
 
 /* V15.2 – redigerbar BI-lenke */
 .biLinkEditor{margin-top:16px;padding:16px;border:1px solid #d8e1ea;border-radius:14px;background:#f8fafc;max-width:920px}.biLinkEditor label{display:grid;gap:7px;font-weight:700;color:#243447}.biLinkEditor input{width:100%;padding:11px 12px;border:1px solid #c7d2df;border-radius:9px;background:#fff;font:inherit;font-weight:500}.biLinkActions{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}.biLinkActions span{font-size:.9rem;color:#526579}
+
+/* V15.4.0 – rask BI-lenke, produktmaster-synk og adaptiv sammenligning */
+.productMedia{display:flex;flex-direction:column;align-self:stretch;min-width:0}
+.productMedia .productImage{flex:1}
+.productQuickEdit{position:static!important;margin:8px 10px 10px!important;width:calc(100% - 20px);justify-content:center;box-shadow:none!important}
+.pmHeaderActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pmSyncProgress{display:grid;gap:8px;padding:14px 16px;border:1px solid #cfe0ef;border-radius:14px;background:#f2f8fd}
+.pmSyncProgress>div{display:flex;justify-content:space-between;gap:16px;color:#173b67}
+.pmSyncProgress progress{width:100%;height:12px;accent-color:#ef7d00}
+.pmSyncProgress small{color:#607489;font-weight:700}
+
+.compareGrid.count-4,.compareGrid.count-5{grid-template-columns:repeat(var(--compare-columns,4),minmax(0,1fr));gap:12px}
+.compareGrid.count-4{--compare-columns:4}.compareGrid.count-5{--compare-columns:5}
+.compareGrid.count-4 .compareStore,.compareGrid.count-5 .compareStore{padding:14px;min-width:0}
+.compareGrid.count-4 .compareStore h2,.compareGrid.count-5 .compareStore h2{font-size:clamp(16px,1.25vw,23px);overflow-wrap:anywhere}
+.compareGrid.count-4 .compareKpis,.compareGrid.count-5 .compareKpis{gap:5px}
+.compareGrid.count-4 .compareKpis>div,.compareGrid.count-5 .compareKpis>div{padding:8px 6px}
+.compareGrid.count-4 .compareKpis strong,.compareGrid.count-5 .compareKpis strong{font-size:clamp(12px,.95vw,15px);overflow-wrap:anywhere}
+.compareGrid.count-4 .compareKpis span,.compareGrid.count-4 .compareKpis em,.compareGrid.count-5 .compareKpis span,.compareGrid.count-5 .compareKpis em{font-size:clamp(8px,.7vw,10px);overflow-wrap:anywhere}
+.compareGrid.count-4 .compareSuppliers>div,.compareGrid.count-5 .compareSuppliers>div{grid-template-columns:minmax(42px,.7fr) minmax(55px,1fr) minmax(38px,.45fr);gap:5px;font-size:clamp(9px,.67vw,11px)}
+.compareGrid.count-4 .compareSuppliers>div>strong,.compareGrid.count-4 .compareSuppliers>div>em,.compareGrid.count-5 .compareSuppliers>div>strong,.compareGrid.count-5 .compareSuppliers>div>em{grid-column:2/4;min-width:0;overflow-wrap:anywhere}
+.compareGrid.count-4 .compareShare,.compareGrid.count-5 .compareShare{min-width:0}
+.compareGrid.count-4 .compareShare span,.compareGrid.count-5 .compareShare span{white-space:nowrap}
+@media(max-width:1450px){.compareGrid.count-5{grid-template-columns:repeat(3,minmax(0,1fr))}.compareGrid.count-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.compareGrid.count-4,.compareGrid.count-5{grid-template-columns:1fr}}
+
+@media(max-width:700px){
+  .v10Topbar .topbarSecondary .viewNav button[data-view="history"]{display:none!important}
+  .v10Topbar .topbarSecondary .viewNav button[data-view="compare"]{display:flex!important}
+  .pmHeaderActions{width:100%;justify-content:stretch}.pmHeaderActions button{flex:1;justify-content:center}
+}

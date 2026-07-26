@@ -295,3 +295,9 @@ I Produktmaster kan en administrator velge **Hent manuelt fra Obsbygg.no**. Syst
 ## Konfigurerbar BI-rapport
 
 Den daglige Excel-parseren støtter nå en egen `EAN/UPC`-kolonne foran `Varenr/navn`. EAN lagres separat og brukes som førstevalg ved eksakte produktoppslag mot Obsbygg.no. Administrator kan endre feltet **Lenke til rapport BI portal** i Kontrollpanel. Lenken lagres i databasen og krever derfor ikke kodeendring eller ny deploy.
+
+## Nytt i V15.4.0
+
+V15.4.0 optimaliserer den daglige arbeidsflyten. BI-lenken er tilgjengelig umiddelbart fra en lokal cache, mens Neon kontrolleres i bakgrunnen. Administrator kan kjøre **Synkroniser Product Master** for å oppdatere alle ufullstendige produkter som har EAN. Automatisk lagring skjer bare ved et verifisert, eksakt EAN-treff; resterende produkter beholdes i kontrollkøen.
+
+Sammenligningsvisningen er gjort adaptiv for 2–5 varehus, produktkortets redigeringsknapp er flyttet under bildet, og mobilnavigasjonen prioriterer Dashboard, Produktsalg og Sammenligning.

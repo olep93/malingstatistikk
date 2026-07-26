@@ -121,3 +121,14 @@ Formatet følger prinsippene i Keep a Changelog, og prosjektet bruker semantisk 
 ## Eldre versjoner
 
 Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate README-filer. V13.0.0 erstatter disse med én kontrollert baseline. Git-historikken skal brukes ved behov for detaljert historikk.
+
+## 15.4.0 – Product Master Sync og grensesnittforbedringer
+
+- BI-rapportlenken leses umiddelbart fra lokal, validert cache og synkroniseres mot Neon i bakgrunnen.
+- Når administrator lagrer en ny BI-lenke, oppdateres både Neon og lokal cache med én gang.
+- Ny **Synkroniser Product Master**-funksjon behandler ufullstendige produkter med EAN i grupper.
+- Kun verifiserte, eksakte EAN-treff kan godkjennes automatisk. Produkter uten treff blir stående til manuell kontroll.
+- Fremdrift viser antall kontrollert, oppdatert, ikke funnet og feil.
+- Rediger-knappen på produktkort er flyttet under produktbildet.
+- Sammenligningskort skalerer og bryter responsivt ved 4–5 valgte varehus, slik at nøkkeltall ikke går utenfor kortene.
+- Mobilmenyen viser Dashboard, Produktsalg og Sammenligning.
