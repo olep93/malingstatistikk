@@ -1388,3 +1388,79 @@
   .v10Topbar .topbarSecondary .viewNav button[data-view="compare"]{display:flex!important}
   .pmHeaderActions{width:100%;justify-content:stretch}.pmHeaderActions button{flex:1;justify-content:center}
 }
+
+/* V15.4.2 – presis kolonnejustering i regionsrangering på A4-rapport */
+@media print {
+  .a4RegionPanel {
+    overflow: hidden !important;
+  }
+
+  .a4RegionTable {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .a4RegionHead,
+  .a4RegionRow {
+    /* Samme kolonnemal på overskrift og alle datarader. */
+    grid-template-columns:
+      7mm
+      minmax(0, 1fr)
+      minmax(17mm, 20mm)
+      minmax(17mm, 20mm)
+      13.5mm !important;
+    column-gap: .8mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .a4RegionHead {
+    padding: 0 1.2mm 1.2mm !important;
+    font-size: 5.15pt !important;
+    line-height: 1 !important;
+  }
+
+  .a4RegionRow {
+    padding: 1.5mm 1.2mm !important;
+  }
+
+  .a4RegionHead > *,
+  .a4RegionRow > * {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .a4RegionHead > b:first-child {
+    text-align: center !important;
+  }
+
+  .a4RegionHead > b:nth-child(2) {
+    text-align: left !important;
+  }
+
+  .a4RegionHead > b:nth-child(n+3),
+  .a4RegionRow > span,
+  .a4RegionRow > em {
+    text-align: right !important;
+    white-space: nowrap !important;
+  }
+
+  .a4RegionRow > strong {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .a4RegionRow > span {
+    font-size: 6.25pt !important;
+    letter-spacing: -.08pt !important;
+  }
+
+  .a4RegionRow > em {
+    font-size: 6.7pt !important;
+    letter-spacing: -.08pt !important;
+  }
+}

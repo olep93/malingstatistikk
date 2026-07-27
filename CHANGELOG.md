@@ -140,3 +140,9 @@ Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate READ
 - Rediger-knappen på produktkort er flyttet under produktbildet.
 - Sammenligningskort skalerer og bryter responsivt ved 4–5 valgte varehus, slik at nøkkeltall ikke går utenfor kortene.
 - Mobilmenyen viser Dashboard, Produktsalg og Sammenligning.
+
+## 15.4.2
+- Rettet kolonnejustering i regionsrangeringen på A4-rapporten.
+- Overskrift og datarader bruker nå identisk CSS-grid.
+- Omsetning, fortjeneste og fortjenesteprosent høyrejusteres mot samme kolonner.
+- Tabellen holder seg innenfor rapportkortet også ved større tall.
