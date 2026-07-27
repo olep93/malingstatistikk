@@ -2,7 +2,7 @@ import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
 
-const NORMALIZATION_VERSION=4;
+const NORMALIZATION_VERSION=5;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
@@ -73,11 +73,49 @@ function productLinks(html:string){const links=new Set<string>();for(const rx of
 function images(html:string){const out:string[]=[];const add=(v?:string)=>{if(v){const u=absolute(decodeHtml(v.split(',')[0].trim().split(/\s+/)[0]));if(/^https?:\/\//.test(u))out.push(u)}};for(const rx of [/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)/gi,/content=["']([^"']+)["'][^>]*property=["']og:image/gi,/"image"\s*:\s*\[?\s*"([^"]+)"/gi,/"imageUrl"\s*:\s*"([^"]+)"/gi,/(?:src|data-src)=["']([^"']*globalassets\/productimages\/[^"']+)["']/gi])for(const m of html.matchAll(rx))add(m[1]);return [...new Set(out)];}
 function normalizeSize(value?:string){return String(value||'').toLocaleLowerCase('nb-NO').replace(/,/g,'.').replace(/\s+/g,'').replace(/liter/g,'l')}
 function variantUrl(url:string,ean?:string){const id=digits(ean);if(!id)return url;try{const parsed=new URL(url);parsed.searchParams.set('v',`ObsBygg-${id}`);return parsed.toString()}catch{return url}}
+function balancedObjectAround(html:string,index:number){
+ // Variantdata ligger normalt i serialisert JSON. Finn det minste JSON-objektet
+ // rundt identifikatoren i stedet for å lese hele siden med standardbildet.
+ let start=-1,depth=0,inString=false,escaped=false;
+ for(let i=index;i>=0;i--){
+  const c=html[i];
+  if(inString){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')inString=false;continue;}
+  if(c==='"'){inString=true;continue;}
+  if(c==='}')depth++;
+  else if(c==='{'){if(depth===0){start=i;break;}depth--;}
+ }
+ if(start<0)return '';
+ depth=0;inString=false;escaped=false;
+ for(let i=start;i<html.length;i++){
+  const c=html[i];
+  if(inString){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')inString=false;continue;}
+  if(c==='"'){inString=true;continue;}
+  if(c==='{')depth++;
+  else if(c==='}'&&--depth===0)return html.slice(start,i+1);
+ }
+ return '';
+}
+function variantObjectForIdentifier(html:string,identifier:string){
+ if(!identifier)return '';
+ let from=0;
+ while(from<html.length){
+  const index=html.indexOf(identifier,from);if(index<0)break;
+  const object=balancedObjectAround(html,index);
+  if(object&&object.length<250000&&images(object).length)return object;
+  from=index+identifier.length;
+ }
+ return '';
+}
 function imageFromIdentifierWindow(html:string,identifier:string){
  if(!identifier)return undefined;
- const index=html.indexOf(identifier);if(index<0)return undefined;
- const window=html.slice(Math.max(0,index-5000),Math.min(html.length,index+5000));
- return images(window).find(url=>digits(url).includes(identifier))||images(window)[0];
+ const object=variantObjectForIdentifier(html,identifier);
+ if(object){
+  const candidates=images(object);
+  // Bildets filnavn trenger ikke inneholde EAN. Det avgjørende er at bildet
+  // ligger i samme variantobjekt som identifikatoren.
+  if(candidates.length)return candidates[0];
+ }
+ return undefined;
 }
 function imageNearSize(html:string,size:string){
  if(!size)return undefined;
@@ -88,10 +126,8 @@ function imageNearSize(html:string,size:string){
   let from=0;
   while(from<lower.length){
    const idx=lower.indexOf(token,from);if(idx<0)break;
-   const window=html.slice(Math.max(0,idx-4000),Math.min(html.length,idx+4000));
-   const candidates=images(window);
-   const withEan=candidates.find(url=>/\d{13}/.test(digits(url)));if(withEan)return withEan;
-   if(candidates[0])return candidates[0];
+   const object=balancedObjectAround(html,idx);
+   if(object&&object.length<250000){const candidates=images(object);if(candidates[0])return candidates[0];}
    from=idx+token.length;
   }
  }
@@ -104,14 +140,16 @@ function eanFromImageUrl(url?:string){
 function chooseVariantImage(html:string,input:Input,matchedIdentifier?:string){
  const all=images(html);if(!all.length)return undefined;
  const ean=digits(input.ean),matched=digits(matchedIdentifier),size=normalizeSize(input.size);
- const nearEan=imageFromIdentifierWindow(html,ean);if(nearEan&&digits(nearEan).includes(ean))return nearEan;
- const exactEan=ean?all.find(url=>digits(url).includes(ean)):undefined;if(exactEan)return exactEan;
- // Historiske rapporter har ofte bare varenummer. Da er riktig spannstørrelse
- // sikrere enn sidens standardvariant og må kontrolleres før varenummer-vinduet.
- const sizeImage=imageNearSize(html,size);if(!ean&&sizeImage)return sizeImage;
- const exactMatched=matched?all.find(url=>digits(url).includes(matched)):undefined;if(exactMatched)return exactMatched;
+ // EAN/variantobjekt er eneste sikre automatiske kilde. Bildenummeret i URL-en
+ // er ofte et internt assetnummer og vil derfor normalt ikke inneholde EAN.
+ const nearEan=imageFromIdentifierWindow(html,ean);if(nearEan)return nearEan;
  const nearMatched=imageFromIdentifierWindow(html,matched);if(nearMatched)return nearMatched;
- if(sizeImage)return sizeImage;
+ const exactEan=ean?all.find(url=>digits(url).includes(ean)):undefined;if(exactEan)return exactEan;
+ const exactMatched=matched?all.find(url=>digits(url).includes(matched)):undefined;if(exactMatched)return exactMatched;
+ const sizeImage=imageNearSize(html,size);if(sizeImage)return sizeImage;
+ // Ikke lagre sidens og:image som korrekt variant når siden har flere varianter.
+ // Da er manglende bilde bedre enn et dokumentert feil bilde.
+ if((ean||matched)&&identifiersFromPage('',html).size>1)return undefined;
  return all[0];
 }
 async function fetchPage(url:string,input?:Input,matchedIdentifier?:string){try{const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)return null;const html=await r.text();const image=input?chooseVariantImage(html,input,matchedIdentifier):images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}catch{return null}}
