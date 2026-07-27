@@ -1,3 +1,12 @@
+# Changelog
+
+## 15.4.3 – Variantkorrekte produktbilder
+- Produktoppslag velger nå bilde fra eksakt EAN-variant når bilde-URL-en inneholder EAN.
+- Produktlenken lagres med riktig `?v=ObsBygg-<EAN>` når varianten kan identifiseres.
+- Historiske produkter uten EAN bruker rapportert størrelse før sidens standardvariant.
+- Variant-EAN kan utledes fra valgt produktbilde og brukes til et nytt, variantspesifikt sideoppslag.
+- Normaliseringsversjonen er økt slik at gamle produktkoblinger kan oppdateres ved nytt oppslag.
+
 # 15.4.1
 
 - Product Master rydder nå også produkter som bare har varenummer.

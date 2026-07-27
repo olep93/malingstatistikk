@@ -2,9 +2,9 @@ import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
 
-const NORMALIZATION_VERSION=3;
+const NORMALIZATION_VERSION=4;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
-const absolute=(href:string)=>!href?'':href.startsWith('//')?`https:${href}`:href.startsWith('http')?href:`https://www.obsbygg.no${href.startsWith('/')?'':'/'}${href}`;
+const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
 type Input={ean?:string;itemNo?:string;productName:string;productKey:string;supplier:string;size?:string;rawName?:string;area?:string;subgroup?:string};
 type Result={found:boolean;imageUrl?:string;displayName?:string;websiteName?:string;url?:string;category?:string;subgroup?:string;source?:string;status?:string;matchMethod?:'EXACT_EAN'|'EXACT_ITEM_NO'|'CATALOG'|'NONE';matchedIdentifier?:string;confidence?:number};
@@ -71,7 +71,50 @@ async function persist(input:Input,result:Result){
 
 function productLinks(html:string){const links=new Set<string>();for(const rx of [/href=["']([^"']+\/\d{5,}(?:[?][^"']*)?)["']/gi,/"url"\s*:\s*"([^"]+\/\d{5,}[^"]*)"/gi,/"canonicalUrl"\s*:\s*"([^"]+)"/gi,/"productUrl"\s*:\s*"([^"]+)"/gi])for(const m of html.matchAll(rx)){const href=decodeHtml(m[1]);if(/obsbygg\.no|^\//i.test(href))links.add(absolute(href));}return [...links].slice(0,12);}
 function images(html:string){const out:string[]=[];const add=(v?:string)=>{if(v){const u=absolute(decodeHtml(v.split(',')[0].trim().split(/\s+/)[0]));if(/^https?:\/\//.test(u))out.push(u)}};for(const rx of [/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)/gi,/content=["']([^"']+)["'][^>]*property=["']og:image/gi,/"image"\s*:\s*\[?\s*"([^"]+)"/gi,/"imageUrl"\s*:\s*"([^"]+)"/gi,/(?:src|data-src)=["']([^"']*globalassets\/productimages\/[^"']+)["']/gi])for(const m of html.matchAll(rx))add(m[1]);return [...new Set(out)];}
-async function fetchPage(url:string){try{const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)return null;const html=await r.text();const image=images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}catch{return null}}
+function normalizeSize(value?:string){return String(value||'').toLocaleLowerCase('nb-NO').replace(/,/g,'.').replace(/\s+/g,'').replace(/liter/g,'l')}
+function variantUrl(url:string,ean?:string){const id=digits(ean);if(!id)return url;try{const parsed=new URL(url);parsed.searchParams.set('v',`ObsBygg-${id}`);return parsed.toString()}catch{return url}}
+function imageFromIdentifierWindow(html:string,identifier:string){
+ if(!identifier)return undefined;
+ const index=html.indexOf(identifier);if(index<0)return undefined;
+ const window=html.slice(Math.max(0,index-5000),Math.min(html.length,index+5000));
+ return images(window).find(url=>digits(url).includes(identifier))||images(window)[0];
+}
+function imageNearSize(html:string,size:string){
+ if(!size)return undefined;
+ const lower=html.toLocaleLowerCase('nb-NO');
+ const numeric=size.replace(/l$/,'');
+ const tokens=[size,size.replace('.',','),`${numeric} l`,`${numeric.replace('.',',')} l`,`${numeric}l`,`${numeric.replace('.',',')}l`];
+ for(const token of [...new Set(tokens)]){
+  let from=0;
+  while(from<lower.length){
+   const idx=lower.indexOf(token,from);if(idx<0)break;
+   const window=html.slice(Math.max(0,idx-4000),Math.min(html.length,idx+4000));
+   const candidates=images(window);
+   const withEan=candidates.find(url=>/\d{13}/.test(digits(url)));if(withEan)return withEan;
+   if(candidates[0])return candidates[0];
+   from=idx+token.length;
+  }
+ }
+ return undefined;
+}
+function eanFromImageUrl(url?:string){
+ const values=String(url||'').match(/\d{13}/g)||[];
+ return values.find(v=>/^(?:70|73|50|57|64|87)/.test(v))||values[0];
+}
+function chooseVariantImage(html:string,input:Input,matchedIdentifier?:string){
+ const all=images(html);if(!all.length)return undefined;
+ const ean=digits(input.ean),matched=digits(matchedIdentifier),size=normalizeSize(input.size);
+ const nearEan=imageFromIdentifierWindow(html,ean);if(nearEan&&digits(nearEan).includes(ean))return nearEan;
+ const exactEan=ean?all.find(url=>digits(url).includes(ean)):undefined;if(exactEan)return exactEan;
+ // Historiske rapporter har ofte bare varenummer. Da er riktig spannstørrelse
+ // sikrere enn sidens standardvariant og må kontrolleres før varenummer-vinduet.
+ const sizeImage=imageNearSize(html,size);if(!ean&&sizeImage)return sizeImage;
+ const exactMatched=matched?all.find(url=>digits(url).includes(matched)):undefined;if(exactMatched)return exactMatched;
+ const nearMatched=imageFromIdentifierWindow(html,matched);if(nearMatched)return nearMatched;
+ if(sizeImage)return sizeImage;
+ return all[0];
+}
+async function fetchPage(url:string,input?:Input,matchedIdentifier?:string){try{const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)return null;const html=await r.text();const image=input?chooseVariantImage(html,input,matchedIdentifier):images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}catch{return null}}
 function score(title:string,input:Input){const a=title.toUpperCase(),b=`${input.productName} ${input.rawName||''}`.toUpperCase();let n=0;for(const word of b.replace(/[^A-ZÆØÅ0-9]+/g,' ').split(/\s+/).filter(x=>x.length>2))if(a.includes(word))n++;if(input.ean&&a.includes(input.ean))n+=8;if(input.size&&a.replace(/\s/g,'').includes(input.size.replace(/\s/g,'')))n+=2;return n;}
 
 export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?:boolean;exactOnly?:boolean}={}):Promise<Result>{
@@ -87,7 +130,7 @@ export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?
  const terms=[digits(input.ean),digits(input.itemNo)].filter(Boolean) as string[];
  for(const term of [...new Set(terms)].slice(0,2)){
   const searchUrl=`https://www.obsbygg.no/sok?q=${encodeURIComponent(term)}`;
-  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const urls=productLinks(html);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=pages.filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const websiteName=candidate.title;const subgroup=inferSubgroup(input.area,websiteName,candidate.html,input.subgroup);const result:Result={found:true,imageUrl:candidate.image,displayName:customerName(websiteName,input.productName,input.area),websiteName,url:candidate.url,category:known?.category,subgroup,source:'obsbygg-exact-search',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:100};if(shouldPersist)await persist(input,result);return result;}}catch{}
+  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const urls=productLinks(html);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=pages.filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const initialImage=chooseVariantImage(candidate.html,input,match.identifier)||candidate.image;const variantEan=match.method==='EXACT_EAN'?match.identifier:eanFromImageUrl(initialImage);const exactUrl=variantEan?variantUrl(candidate.url,variantEan):candidate.url;const variantPage=exactUrl!==candidate.url?await fetchPage(exactUrl,input,variantEan||match.identifier):null;const page=variantPage||candidate;const image=chooseVariantImage(page.html,{...input,ean:input.ean||variantEan},variantEan||match.identifier)||initialImage||page.image;const websiteName=page.title;const subgroup=inferSubgroup(input.area,websiteName,page.html,input.subgroup);const result:Result={found:true,imageUrl:image,displayName:customerName(websiteName,input.productName,input.area),websiteName,url:exactUrl,category:known?.category,subgroup,source:'obsbygg-exact-variant',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:image?100:90};if(shouldPersist)await persist(input,result);return result;}}catch{}
  }
  const result:Result={found:false,displayName:known?.name||input.productName,websiteName:undefined,category:known?.category,subgroup:input.subgroup,source:'obsbygg-exact-search',status:'needs_review',matchMethod:'NONE',confidence:0};if(shouldPersist)await persist(input,result);return result;
 }
