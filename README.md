@@ -301,3 +301,18 @@ Den daglige Excel-parseren støtter nå en egen `EAN/UPC`-kolonne foran `Varenr/
 V15.4.1 optimaliserer den daglige arbeidsflyten. BI-lenken er tilgjengelig umiddelbart fra en lokal cache, mens Neon kontrolleres i bakgrunnen. Administrator kan kjøre **Synkroniser Product Master** for å oppdatere alle ufullstendige produkter som har EAN. Automatisk lagring skjer bare ved et verifisert, eksakt EAN-treff; resterende produkter beholdes i kontrollkøen.
 
 Sammenligningsvisningen er gjort adaptiv for 2–5 varehus, produktkortets redigeringsknapp er flyttet under bildet, og mobilnavigasjonen prioriterer Dashboard, Produktsalg og Sammenligning.
+
+## V16 nasjonalt testmiljø
+
+Når en innlogget admin åpner **Test kun for Ole**, kan en Excel-eksport fra den nye Power BI-rapporten analyseres lokalt i nettleseren.
+
+Første testiterasjon:
+- støtter nasjonalt uttrekk uten varenavn
+- bruker GTIN/EAN som produktidentifikator
+- filtrerer `Total`-rader
+- valg: samvirkelag → fokusvarehus → vareområde
+- sammenligner fokusvarehuset bare med butikker i samme samvirkelag
+- utskriftsrangering viser topp 4 + fokusvarehusets faktiske plass når fokus er utenfor topp 5
+- lagrer ikke testuttrekket i Neon
+
+Produktnavn og bilder vises foreløpig som EAN-plassholdere i testvisningen. Permanent Product Master-berikelse kobles på etter at parser, butikkmapping og tallgrunnlag er bekreftet.

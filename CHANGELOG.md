@@ -1,3 +1,12 @@
+# V16.0.0-test.1
+
+- Nasjonalt Power BI-testmiljø kun for admin.
+- Samvirkelag → fokusvarehus basert på 66 Obs BYGG-varehus.
+- Ny parser for Power BI-eksport med GTIN/EAN uten varenavn.
+- Nye verktøytagger: Rens & vask, Maletilbehør og Fugemasse & Kitt.
+- Utskriftsrapport viser topp 4 + fokusvarehus på faktisk plass dersom fokus er utenfor topp 5.
+- Testimporten lagres ikke i databasen i denne iterasjonen.
+
 # Changelog
 
 ## 15.4.3 – Variantkorrekte produktbilder

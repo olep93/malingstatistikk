@@ -83,7 +83,7 @@ async function runSchemaMigration() {
   await q`INSERT INTO paint_tags(area,name) VALUES
     ('interior','Tak'),('interior','Supermatt'),('interior','Matt'),('interior','Silkematt'),('interior','Tre & Panel'),('interior','Grunning'),('interior','Sparkel'),('interior','Lakk'),
     ('terrace','Vanntynnet'),('terrace','Terrassemaling'),('terrace','Oljebasert'),
-    ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Diverse'),
+    ('tools','Pensler'),('tools','Ruller'),('tools','Tape'),('tools','Tildekning'),('tools','Rensemidler'),('tools','Rens & vask'),('tools','Maletilbehør'),('tools','Fugemasse & Kitt'),('tools','Diverse'),
     ('exterior','Maling / Dekkbeis / Beis'),('exterior','Vindu / Dør'),('exterior','Murmaling')
     ON CONFLICT(area,name) DO NOTHING`;
 

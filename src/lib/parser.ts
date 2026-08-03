@@ -82,6 +82,9 @@ function classify(vgr:string,raw:string):{area:ProductArea;subgroup:string}|unde
   // SAP-varegruppe 0687 Bygningstape inneholder maskerings- og malertape
   // i den nye BI-rapporten. Hele varegruppen føres derfor som Tape.
   if(g.includes("0687")||g.includes("BYGNINGSTAPE"))return {area:"tools",subgroup:"Tape"};
+  if(g.includes("MALETILBEHØR"))return {area:"tools",subgroup:"Maletilbehør"};
+  if(g.includes("FUGEMASSE")||g.includes("KITT"))return {area:"tools",subgroup:"Fugemasse & Kitt"};
+  if(g.includes("PLEIEMIDLER")&&g.includes("INTERIØR"))return {area:"tools",subgroup:"Rens & vask"};
   if(g.includes("MALERVERKTØY")) {
     // Maskeringsblad er et skjære-/hjelpeverktøy, ikke maskeringstape.
     // Innen selve malerverktøygruppen kreves fortsatt et eksplisitt tape-navn.
@@ -144,3 +147,26 @@ function parseRows(parsed:ParsedGrid,forcedDate?:string){
 
 export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);const rows=[...rowsByDate.values()].flat();if(!rows.length)throw new Error("Fant ingen produktlinjer i de valgte varegruppene.");return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};}
 export async function parsePaintHistoryWorkbook(file:File):Promise<DailyReport[]>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed);const reports=[...rowsByDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]}));if(!reports.length)throw new Error("Fant ingen daterte produktlinjer.");return reports;}
+
+export async function parseNationalPowerBiWorkbook(file:File):Promise<DailyReport>{
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:"array",cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
+  if(grid.length<2)throw new Error("Excel-filen er tom.");
+  const headers=(grid[0]||[]).map(norm);
+  const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);
+  if([dateCol,storeCol,vendorCol,groupCol,eanCol,qCol,rCol,pCol].some(x=>x<0))throw new Error("Det nasjonale Power BI-formatet ble ikke gjenkjent.");
+  const rows:ProductRow[]=[];let reportDate="";
+  for(let i=1;i<grid.length;i++){
+    const row=grid[i]||[];const date=isoDate(row[dateCol]);if(date)reportDate=reportDate||date;
+    const storeText=String(row[storeCol]??"").trim(),vendor=String(row[vendorCol]??"").trim(),vgr=String(row[groupCol]??"").trim(),ean=identifier(row[eanCol]);
+    if(!storeText||storeText.toLowerCase()==="total"||!vendor||vendor.toLowerCase()==="total"||!vgr||vgr.toLowerCase()==="total"||!ean||ean.toLowerCase()==="total")continue;
+    const match=storeText.match(/^(\d+)\s+(.+?)(?:,\s*[^,]+)?$/);if(!match)continue;
+    const storeId=match[1],store=shortStore(match[2]);const supplier=supplierFromVendor(vendor);const classification=classify(vgr,`EAN ${ean}`);
+    if(!supplier||!classification)continue;
+    addRow(rows,{storeId,store,item:ean,ean,raw:`EAN ${ean}`,supplier,area:classification.area,subgroup:classification.subgroup,q:num(row[qCol]),revenue:num(row[rCol]),profit:num(row[pCol]),margin:mCol>=0?num(row[mCol])*100:0});
+  }
+  if(!rows.length)throw new Error("Fant ingen gyldige salgslinjer i Power BI-filen.");
+  return {date:reportDate||new Date().toISOString().slice(0,10),createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows)};
+}
