@@ -169,3 +169,9 @@ Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate READ
 - Overskrift og datarader bruker nå identisk CSS-grid.
 - Omsetning, fortjeneste og fortjenesteprosent høyrejusteres mot samme kolonner.
 - Tabellen holder seg innenfor rapportkortet også ved større tall.
+
+## V16.0.0-test.4
+- Admin-testfanen har nå klientstyrt Product Master-synk i puljer, både for manglende produkter og full kontroll av alle produkter med EAN/varenummer.
+- Nasjonal Power BI-fil kan analyseres, berikes og publiseres som ordinær rapportdag.
+- Publisering bruker eksisterende rapport-API og erstatter dermed eventuell tidligere rapport for samme dato, i stedet for å doble salgstall.
+- Etter publisering oppdateres rapportlisten, og historiske visninger henter løpende navn/bilder fra Product Master.
