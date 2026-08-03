@@ -17,10 +17,9 @@ async function fetchHtml(url){const r=await fetch(url,{headers,redirect:'follow'
 async function enrich(p){
  const ean=digits(p.ean);if(!ean)return null;
  try{
-  const search=await fetchHtml(`https://www.obsbygg.no/sok?q=${ean}`);let pages=[search];
-  if(!search.html.includes(ean))pages=[];
-  if(!pages.length||!canonical(search.html))for(const url of links(search.html)){try{pages.push(await fetchHtml(url))}catch{}}
-  for(const page of pages){if(!page.html.includes(ean))continue;const websiteName=title(page.html),productUrl=canonical(page.html)||page.url;if(!websiteName||!productUrl.includes('obsbygg.no/'))continue;
+  const search=await fetchHtml(`https://www.obsbygg.no/sok?q=${ean}`);const directUrl=canonical(search.html)||search.url;let pages=/^https:\/\/www\.obsbygg\.no\/.*\/\d{5,}(?:[?].*)?$/.test(directUrl)?[search]:[];
+  if(!pages.length)for(const url of links(search.html)){try{pages.push(await fetchHtml(url))}catch{}}
+  for(const page of pages){if(!page.html.includes(ean))continue;const websiteName=title(page.html),productUrl=canonical(page.html)||page.url;if(!websiteName||/^\d{6,14}$/.test(websiteName)||!/^https:\/\/www\.obsbygg\.no\/.*\/\d{5,}(?:[?].*)?$/.test(productUrl))continue;
    const placeholder=/^(?:ean|vare|varenr|produkt|ukjent)(?:[\s:#-]|$)|^\d{6,14}$/i.test(String(p.display_name||'').trim());
    return {productKey:p.product_key,ean,matchedIdentifier:ean,websiteName,displayName:placeholder?websiteName:p.display_name,imageUrl:image(page.html,ean),productUrl,size:size(page.html)};
   }

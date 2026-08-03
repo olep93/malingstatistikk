@@ -26,10 +26,21 @@ export async function GET(req:Request){
 export async function POST(req:Request){
  if(!authorized(req))return NextResponse.json({error:'Ikke autorisert'},{status:401});
  const body=await req.json();const results=Array.isArray(body.results)?body.results.slice(0,50):[];
- await ensureSchema();const q=sql();let updated=0,rejected=0;
+ await ensureSchema();const q=sql();
+ if(body.cleanupSearchPages===true){
+  const cleaned=await q`UPDATE paint_products p SET
+    website_name=null,
+    display_name=CASE WHEN display_name_locked THEN display_name WHEN source_name ~* '^(ean|vare|varenr|produkt|ukjent)([[:space:]:#-]|$)' OR source_name ~ '^[0-9]{6,14}$' THEN 'EAN '||COALESCE(ean,'') ELSE COALESCE(NULLIF(source_name,''),display_name) END,
+    size=COALESCE((SELECT max(NULLIF(r.size,'')) FROM paint_report_rows r WHERE r.product_key=p.product_key),size),
+    product_url=null,lookup_status='not_found',lookup_method='NONE',matched_identifier=null,match_confidence=0,
+    review_reason='Ingen eksakt produktside funnet på Obsbygg.no',audit_status='review',updated_at=now()
+   WHERE image_source='one-time-local-backfill' AND (product_url='https://www.obsbygg.no/sok' OR website_name ~ '^[0-9]{6,14}$') RETURNING product_key`;
+  return NextResponse.json({ok:true,cleaned:cleaned.length});
+ }
+ let updated=0,rejected=0;
  for(const r of results){
   const ean=digits(r.ean),matched=digits(r.matchedIdentifier);
-  if(!r.productKey||!ean||ean!==matched||!String(r.websiteName||'').trim()||!String(r.productUrl||'').startsWith('https://www.obsbygg.no/')){rejected++;continue}
+  if(!r.productKey||!ean||ean!==matched||!String(r.websiteName||'').trim()||/^\d{6,14}$/.test(String(r.websiteName).trim())||!/^https:\/\/www\.obsbygg\.no\/.*\/\d{5,}(?:[?].*)?$/.test(String(r.productUrl||''))){rejected++;continue}
   const rows=await q`UPDATE paint_products SET
     website_name=${String(r.websiteName).trim()},
     display_name=CASE WHEN display_name_locked THEN display_name ELSE ${String(r.displayName||r.websiteName).trim()} END,
