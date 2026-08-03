@@ -18,7 +18,7 @@ export async function GET(req:Request){
  const rows=await q`SELECT product_key,ean,item_no,source_name,display_name,supplier,size,area,subgroup
   FROM paint_products
   WHERE merged_into IS NULL AND product_key>${after}
-    AND NULLIF(ean,'') IS NOT NULL
+    AND regexp_replace(COALESCE(ean,''),'[^0-9]','','g') ~ '^[0-9]{13}$'
   ORDER BY product_key LIMIT 200`;
  return NextResponse.json({rows,next:rows.length?rows.at(-1)?.product_key:null},{headers:{'Cache-Control':'no-store'}});
 }
