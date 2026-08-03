@@ -1,6 +1,6 @@
 {
   "name": "malingstatistikk",
-  "version": "16.0.0-import-center.2",
+  "version": "16.1.0-import-flow.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

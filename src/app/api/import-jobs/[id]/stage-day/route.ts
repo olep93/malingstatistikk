@@ -51,10 +51,19 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
     report_data=jsonb_set(report_data,'{rows}',COALESCE(report_data->'rows','[]'::jsonb) || ${JSON.stringify(rows)}::jsonb,true),
     staged_rows=staged_rows+${rows.length},status='staging',error=null,updated_at=now()
     WHERE job_id=${id}::bigint AND report_date=${date}::date`;
-   if(payload.length)await q`INSERT INTO paint_import_job_products(job_id,product_key,product_data,status)
-    SELECT ${id}::bigint,x.product_key,x.product_data,'pending'
-    FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb) AS x(product_key text,product_data jsonb)
-    ON CONFLICT(job_id,product_key) DO NOTHING`;
+   if(payload.length){
+    await q`INSERT INTO paint_import_job_products(job_id,product_key,product_data,status)
+     SELECT ${id}::bigint,x.product_key,x.product_data,'pending'
+     FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb) AS x(product_key text,product_data jsonb)
+     ON CONFLICT(job_id,product_key) DO NOTHING`;
+    // Komplett Product Master-data brukes direkte. Bare nye eller mangelfulle varer
+    // blir stående i berikelseskøen.
+    await q`UPDATE paint_import_job_products jp SET status='done',error=null,updated_at=now()
+     FROM paint_products p
+     WHERE jp.job_id=${id}::bigint AND jp.status='pending'
+       AND (p.product_key=jp.product_key OR (NULLIF(p.ean,'') IS NOT NULL AND p.ean=jp.product_data->>'ean'))
+       AND p.lookup_status='found' AND NULLIF(p.display_name,'') IS NOT NULL AND NULLIF(p.image_url,'') IS NOT NULL`;
+   }
    return NextResponse.json({ok:true,stagedRows:stagedRows+rows.length,totalRows:Number(current[0].total_rows||0)});
   }
 
@@ -69,7 +78,10 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
     (SELECT count(*)::int FROM paint_import_job_products WHERE job_id=${id}::bigint) products,
     (SELECT total_days::int FROM paint_import_jobs WHERE id=${id}::bigint) total`;
    const c=counts[0];
-   await q`UPDATE paint_import_jobs SET staged_days=${c.staged},total_products=${c.products},status=CASE WHEN ${c.staged}>=${c.total} THEN 'ready' ELSE 'analyzing' END,analyzed_at=CASE WHEN ${c.staged}>=${c.total} THEN now() ELSE analyzed_at END,updated_at=now() WHERE id=${id}::bigint`;
+   await q`UPDATE paint_import_jobs SET staged_days=${c.staged},total_products=${c.products},
+    synced_products=(SELECT count(*) FROM paint_import_job_products WHERE job_id=${id}::bigint AND status='done'),
+    failed_products=(SELECT count(*) FROM paint_import_job_products WHERE job_id=${id}::bigint AND status='error'),
+    status=CASE WHEN ${c.staged}>=${c.total} THEN 'ready' ELSE 'analyzing' END,analyzed_at=CASE WHEN ${c.staged}>=${c.total} THEN now() ELSE analyzed_at END,updated_at=now() WHERE id=${id}::bigint`;
    return NextResponse.json({ok:true,stagedDays:c.staged,totalDays:c.total,totalProducts:c.products});
   }
 

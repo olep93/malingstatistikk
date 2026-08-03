@@ -1,3 +1,11 @@
+# V16.1.0 – Importflyt 1
+
+- Rapportdager importeres før produktberikelse.
+- Produktberikelse er valgfri og blokkerer ikke historikkimport.
+- Komplette varer i Product Master hoppes over automatisk.
+- Berikelse kjører fem oppslag parallelt per serverkall.
+- Fremdrift viser produkter behandlet og gjenstående.
+
 ## V16.0.0 Import Center Test 2
 
 - Historisk analyse lagres nå i batcher på 200 varelinjer for å unngå Vercel `FUNCTION_PAYLOAD_TOO_LARGE`.
