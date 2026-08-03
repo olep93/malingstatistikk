@@ -30,7 +30,11 @@ function customerName(title:string,fallback:string,area?:string){
   .replace(/\s+\d+(?:[.,]\d+)?\s*(?:l|liter|ml)\b/ig,'')
   .replace(/\s+(?:a|b|c|hvit|gul)\s*-?base\b/ig,'')
   .replace(/\s+/g,' ').trim();
- if(area==='exterior') return fallback;
+ // Eksteriør beholdt historisk navnet fra Excel. Det er riktig når Excel har
+ // et faktisk produktnavn, men nye BI-eksporter kan bare inneholde "EAN 123…".
+ // Da må det validerte navnet fra Obsbygg brukes.
+ const placeholder=/^(?:ean|vare|varenr|produkt|ukjent)(?:[\s:#-]|$)|^\d{6,14}$/i.test(String(fallback||'').trim());
+ if(area==='exterior'&&!placeholder) return fallback;
  // For alle nye hovedområder brukes det kundevennlige navnet fra produktsiden.
  // Behold produktbetegnelser som "terrassebeis" og "gulvmaling" fordi de er
  // en viktig del av det faktiske produktnavnet.
