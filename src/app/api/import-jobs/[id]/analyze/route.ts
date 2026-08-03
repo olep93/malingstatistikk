@@ -19,12 +19,12 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
     await q`UPDATE paint_import_jobs SET
       status='staging',
       total_days=${totalDays},
-      staged_days=(SELECT count(*)::int FROM paint_import_job_days WHERE job_id=${id}::bigint),
+      staged_days=(SELECT count(*)::int FROM paint_import_job_days WHERE job_id=${id}::bigint AND status IN ('staged','imported')),
       total_products=(SELECT count(*)::int FROM paint_import_job_products WHERE job_id=${id}::bigint),
       updated_at=now()
       WHERE id=${id}::bigint`;
 
-    const staged=await q`SELECT report_date::text date FROM paint_import_job_days WHERE job_id=${id}::bigint ORDER BY report_date`;
+    const staged=await q`SELECT report_date::text date FROM paint_import_job_days WHERE job_id=${id}::bigint AND status IN ('staged','imported') ORDER BY report_date`;
     return NextResponse.json({ok:true,totalDays,stagedDates:staged.map((r:any)=>String(r.date)),stagedDays:staged.length});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke klargjøre analysen'},{status:500})}
 }

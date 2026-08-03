@@ -1,3 +1,11 @@
+## V16.0.0 Import Center Test 2
+
+- Historisk analyse lagres nå i batcher på 200 varelinjer for å unngå Vercel `FUNCTION_PAYLOAD_TOO_LARGE`.
+- Delvis analyserte rapportdager lagrer checkpoint (`staged_rows`) og fortsetter fra siste lagrede batch.
+- Ferdige rapportdager hoppes over ved ny kjøring.
+- Analyseknappen kan brukes igjen mens en jobb står i `analyzing` eller `staging`.
+- Product Master-køen bygges fortløpende fra hver lagrede batch.
+
 # V16 live pilot
 
 - Adminfanen er endret fra testmiljø til **Power BI-import (pilot)**.

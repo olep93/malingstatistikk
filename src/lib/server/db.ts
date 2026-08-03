@@ -198,10 +198,14 @@ async function runSchemaMigration() {
     report_date date NOT NULL,
     report_data jsonb NOT NULL,
     status text NOT NULL DEFAULT 'staged',
+    staged_rows integer NOT NULL DEFAULT 0,
+    total_rows integer NOT NULL DEFAULT 0,
     error text,
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY(job_id,report_date)
   )`;
+  await q`ALTER TABLE paint_import_job_days ADD COLUMN IF NOT EXISTS staged_rows integer NOT NULL DEFAULT 0`;
+  await q`ALTER TABLE paint_import_job_days ADD COLUMN IF NOT EXISTS total_rows integer NOT NULL DEFAULT 0`;
   await q`CREATE TABLE IF NOT EXISTS paint_import_job_products (
     job_id bigint NOT NULL REFERENCES paint_import_jobs(id) ON DELETE CASCADE,
     product_key text NOT NULL,
