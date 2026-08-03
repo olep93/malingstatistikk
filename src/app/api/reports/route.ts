@@ -10,8 +10,21 @@ export const maxDuration=60;
 const isoDate=(v:unknown)=>String(v||'').slice(0,10);
 
 async function loadFastReport(date:string,period:ReportPeriod){
- const q=sql();const {from,to}=rangeFor(date,period);await refreshReportCache(from,to);
- const rows=await q`SELECT c.store_id,c.store_name,
+ const q=sql();const {from,to}=rangeFor(date,period);
+ const coverage=await q`SELECT
+   (SELECT count(*)::int FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date) report_days,
+   (SELECT count(DISTINCT report_date)::int FROM paint_report_rows WHERE report_date BETWEEN ${from}::date AND ${to}::date) cached_days`;
+ if(Number(coverage[0]?.cached_days||0)<Number(coverage[0]?.report_days||0))await refreshReportCache(from,to);
+ const rows=await q`WITH c AS MATERIALIZED (
+   SELECT store_id,max(store_name) store_name,product_key,max(item_no) item_no,max(ean) ean,
+     max(raw_name) raw_name,max(product_name) product_name,max(size) size,max(supplier) supplier,
+     max(category) category,max(area) area,max(subgroup) subgroup,
+     sum(quantity)::float8 quantity,sum(revenue)::float8 revenue,sum(profit)::float8 profit,
+     max(image_url) image_url,max(product_url) product_url
+   FROM paint_report_rows
+   WHERE report_date BETWEEN ${from}::date AND ${to}::date
+   GROUP BY store_id,product_key
+ ) SELECT c.store_id,c.store_name,
    c.product_key,c.item_no,c.ean,c.raw_name,
    COALESCE(
      CASE WHEN NULLIF(p.display_name,'') IS NOT NULL
@@ -19,15 +32,15 @@ async function loadFastReport(date:string,period:ReportPeriod){
        AND p.display_name !~ '^[0-9]{6,14}$' THEN p.display_name END,
      NULLIF(p.website_name,''),c.product_name
    ) product_name,
-   COALESCE(NULLIF(p.normalized_size,''),NULLIF(p.size,''),c.size,'') size,
+   COALESCE(NULLIF(p.size,''),c.size,'') size,
    c.supplier,
    COALESCE(NULLIF(p.category,''),c.category) category,
    COALESCE(NULLIF(p.area,''),c.area) area,
    COALESCE(NULLIF(p.subgroup,''),c.subgroup) subgroup,
-   sum(c.quantity)::float8 quantity,sum(c.revenue)::float8 revenue,sum(c.profit)::float8 profit,
+   c.quantity,c.revenue,c.profit,
    COALESCE(NULLIF(p.image_url,''),c.image_url) image_url,
    COALESCE(NULLIF(p.product_url,''),c.product_url) product_url
- FROM paint_report_rows c LEFT JOIN LATERAL (
+ FROM c LEFT JOIN LATERAL (
    SELECT candidate.* FROM paint_products candidate
    WHERE candidate.merged_into IS NULL
      AND (candidate.product_key=c.product_key OR (NULLIF(c.ean,'') IS NOT NULL AND candidate.ean=c.ean))
@@ -35,8 +48,6 @@ async function loadFastReport(date:string,period:ReportPeriod){
      CASE WHEN candidate.product_key=c.product_key THEN 0 ELSE 1 END, candidate.updated_at DESC
    LIMIT 1
  ) p ON true
- WHERE c.report_date BETWEEN ${from}::date AND ${to}::date
- GROUP BY c.store_id,c.store_name,c.product_key,c.item_no,c.ean,c.raw_name,p.display_name,p.website_name,c.product_name,p.normalized_size,p.size,c.size,c.supplier,p.category,c.category,p.area,c.area,p.subgroup,c.subgroup,p.image_url,c.image_url,p.product_url,c.product_url
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
@@ -45,7 +56,7 @@ async function loadFastReport(date:string,period:ReportPeriod){
 }
 
 export async function GET(req:Request){
- try{await ensureSchema();const q=sql();const url=new URL(req.url);const date=url.searchParams.get('date');const period=(url.searchParams.get('period')||'Dag') as ReportPeriod;
+ try{const q=sql();const url=new URL(req.url);const date=url.searchParams.get('date');const period=(url.searchParams.get('period')||'Dag') as ReportPeriod;
   if(date){const report=await loadFastReport(date,period);let previousReport=null;if(period==='Dag'){const prev=await q`SELECT report_date::text report_date FROM paint_reports WHERE report_date<${date}::date ORDER BY report_date DESC LIMIT 1`;if(prev[0]?.report_date)previousReport=await loadFastReport(isoDate(prev[0].report_date),'Dag')}return NextResponse.json({report,previousReport},{headers:{'Cache-Control':'private, max-age=30, stale-while-revalidate=120'}})}
   const rows=await q`SELECT p.report_date::text report_date,p.source_name,p.uploaded_by,p.created_at,p.updated_at,
     COALESCE(NULLIF(p.report_data->>'rowCount','')::int,jsonb_array_length(COALESCE(p.report_data->'rows','[]'::jsonb)),r.row_count,0)::int row_count
