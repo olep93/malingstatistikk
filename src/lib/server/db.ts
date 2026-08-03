@@ -215,6 +215,7 @@ async function runSchemaMigration() {
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY(job_id,product_key)
   )`;
+  await q`ALTER TABLE paint_import_job_products ADD COLUMN IF NOT EXISTS retry_count integer NOT NULL DEFAULT 0`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_products_status_idx ON paint_import_job_products(job_id,status)`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_days_status_idx ON paint_import_job_days(job_id,status)`;
 

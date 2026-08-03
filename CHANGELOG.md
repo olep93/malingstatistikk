@@ -1,3 +1,12 @@
+## V16.1.1 – Produktberikelse og størrelsestekst
+
+- Produktberikelsen fortsetter automatisk gjennom alle batcher.
+- Feilede nettsideoppslag prøves kontrollert på nytt, maksimalt to ganger.
+- Ferdigstatus vises først når alle produkter enten er beriket eller sendt til kontroll.
+- Produkter uten sikkert treff telles separat og låser ikke importjobben.
+- Liter-/pakningsstørrelse hentes fra produktsiden eller råvarenavnet og lagres i Product Master.
+- Produktkort og utskriftsrapport viser ikke lenger standardteksten «Produkt»; størrelse utledes som fallback fra råvarenavnet.
+
 # V16.1.0 – Importflyt 1
 
 - Rapportdager importeres før produktberikelse.
