@@ -175,3 +175,10 @@ Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate READ
 - Nasjonal Power BI-fil kan analyseres, berikes og publiseres som ordinær rapportdag.
 - Publisering bruker eksisterende rapport-API og erstatter dermed eventuell tidligere rapport for samme dato, i stedet for å doble salgstall.
 - Etter publisering oppdateres rapportlisten, og historiske visninger henter løpende navn/bilder fra Product Master.
+
+## 16.0.0-test.5
+- Nasjonal Power BI-publisering sendes i batcher på 250 aggregerte produktlinjer for å unngå Vercel 413-grensen.
+- Rapportdagen opprettes, eksisterende cached-rader erstattes og batchene skrives direkte til `paint_report_rows`.
+- Hovedsiden lastes på nytt til den publiserte datoen når importen er ferdig.
+- Hovedsiden har nå filterrekkefølgen Samvirkelag → Fokusvarehus, og regional rangering avgrenses til valgt samvirkelag.
+- Rapporter lagret direkte som rader blir ikke overskrevet av den gamle JSON-cachebyggeren.

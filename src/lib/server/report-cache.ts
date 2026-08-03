@@ -17,6 +17,7 @@ export async function refreshReportCache(from:string,to:string){
    FROM paint_report_rows c
    JOIN paint_reports p ON p.report_date=c.report_date
    WHERE p.report_date BETWEEN ${from}::date AND ${to}::date
+     AND COALESCE(p.report_data->>'storageMode','json')<>'rows'
      AND c.source_updated_at<p.updated_at
  )
  DELETE FROM paint_report_rows c USING stale_days s WHERE c.report_date=s.report_date`;
@@ -25,6 +26,7 @@ export async function refreshReportCache(from:string,to:string){
    SELECT p.report_date,p.report_data,p.updated_at
    FROM paint_reports p
    WHERE p.report_date BETWEEN ${from}::date AND ${to}::date
+     AND COALESCE(p.report_data->>'storageMode','json')<>'rows'
      AND NOT EXISTS (
        SELECT 1 FROM paint_report_rows c WHERE c.report_date=p.report_date
      )

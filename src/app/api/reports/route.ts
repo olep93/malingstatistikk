@@ -34,7 +34,11 @@ async function loadFastReport(date:string,period:ReportPeriod){
 export async function GET(req:Request){
  try{await ensureSchema();const q=sql();const url=new URL(req.url);const date=url.searchParams.get('date');const period=(url.searchParams.get('period')||'Dag') as ReportPeriod;
   if(date){const report=await loadFastReport(date,period);let previousReport=null;if(period==='Dag'){const prev=await q`SELECT report_date::text report_date FROM paint_reports WHERE report_date<${date}::date ORDER BY report_date DESC LIMIT 1`;if(prev[0]?.report_date)previousReport=await loadFastReport(isoDate(prev[0].report_date),'Dag')}return NextResponse.json({report,previousReport},{headers:{'Cache-Control':'private, max-age=30, stale-while-revalidate=120'}})}
-  const rows=await q`SELECT report_date::text report_date,source_name,uploaded_by,created_at,updated_at,jsonb_array_length(COALESCE(report_data->'rows','[]'::jsonb))::int row_count FROM paint_reports ORDER BY report_date`;
+  const rows=await q`SELECT p.report_date::text report_date,p.source_name,p.uploaded_by,p.created_at,p.updated_at,
+    COALESCE(NULLIF(p.report_data->>'rowCount','')::int,jsonb_array_length(COALESCE(p.report_data->'rows','[]'::jsonb)),r.row_count,0)::int row_count
+    FROM paint_reports p
+    LEFT JOIN LATERAL (SELECT count(*)::int row_count FROM paint_report_rows rr WHERE rr.report_date=p.report_date) r ON true
+    ORDER BY p.report_date`;
   return NextResponse.json({reports:rows.map((r:any)=>({date:isoDate(r.report_date),createdAt:String(r.created_at||''),sourceName:r.source_name||'Rapport',rows:[],uploadedBy:r.uploaded_by||'Ukjent bruker',uploadedAt:String(r.updated_at||r.created_at||''),rowCount:Number(r.row_count||0)}))});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke hente rapporter'},{status:500})}
 }
