@@ -1,6 +1,6 @@
 {
   "name": "malingstatistikk",
-  "version": "16.0.0-test.1",
+  "version": "16.0.0-test.2",
   "private": true,
   "scripts": {
     "dev": "next dev",

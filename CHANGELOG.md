@@ -1,3 +1,8 @@
+## V16.0.0-test.2
+- Flyttet «Test kun for Ole» til første fane før Eksteriørmaling.
+- Testfanen vises kun for innlogget admin, også i mobilvelgeren.
+- Klikk på et ordinært vareområde forlater testmiljøet og går tilbake til ordinært dashboard.
+
 # V16.0.0-test.1
 
 - Nasjonalt Power BI-testmiljø kun for admin.
