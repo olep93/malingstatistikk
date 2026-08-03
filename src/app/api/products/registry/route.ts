@@ -8,23 +8,12 @@ export async function GET(){
   try{await ensureSchema();const q=sql();
     await q`INSERT INTO paint_products(product_key,display_name,supplier,size,ean,item_no,source_name,area,subgroup,lookup_status,aliases,first_seen_at,last_seen_at,report_count,updated_at)
       SELECT
-        key,
-        max(product_name),max(supplier),max(size),max(ean),max(item_no),max(raw_name),max(area),max(subgroup),'pending',
-        jsonb_agg(DISTINCT alias) FILTER (WHERE alias<>''),min(report_date),max(report_date),count(DISTINCT report_date)::int,now()
-      FROM (
-        SELECT pr.report_date,
-          COALESCE(r->>'productKey',concat_ws('|',r->>'area',r->>'subgroup',r->>'supplier',r->>'product',r->>'size')) key,
-          COALESCE(NULLIF(r->>'product',''),'Ukjent produkt') product_name,
-          COALESCE(NULLIF(r->>'supplier',''),'Ukjent') supplier,
-          NULLIF(r->>'size','') size,
-          NULLIF(r->>'ean','') ean,
-          NULLIF(r->>'itemNo','') item_no,
-          COALESCE(NULLIF(r->>'rawName',''),NULLIF(r->>'product','')) raw_name,
-          NULLIF(r->>'area','') area,NULLIF(r->>'subgroup','') subgroup,
-          unnest(ARRAY[COALESCE(NULLIF(r->>'rawName',''),''),COALESCE(NULLIF(r->>'product',''),'')]) alias
-        FROM paint_reports pr CROSS JOIN LATERAL jsonb_array_elements(COALESCE(pr.report_data->'rows','[]'::jsonb)) r
-        WHERE COALESCE(r->>'productKey',r->>'product','')<>''
-      ) x GROUP BY key
+        product_key,max(product_name),max(supplier),max(size),max(ean),max(item_no),max(raw_name),max(area),max(subgroup),'pending',
+        COALESCE(jsonb_agg(DISTINCT to_jsonb(COALESCE(NULLIF(raw_name,''),product_name))) FILTER (WHERE COALESCE(NULLIF(raw_name,''),product_name)<>''),'[]'::jsonb),
+        min(report_date),max(report_date),count(DISTINCT report_date)::int,now()
+      FROM paint_report_rows
+      WHERE product_key<>''
+      GROUP BY product_key
       ON CONFLICT(product_key) DO UPDATE SET
         first_seen_at=LEAST(paint_products.first_seen_at,excluded.first_seen_at),
         last_seen_at=GREATEST(paint_products.last_seen_at,excluded.last_seen_at),

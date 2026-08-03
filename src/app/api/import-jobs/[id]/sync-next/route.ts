@@ -21,7 +21,9 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
    FROM paint_products p
    WHERE jp.job_id=${id}::bigint AND jp.status IN ('pending','error')
     AND (p.product_key=jp.product_key OR (NULLIF(p.ean,'') IS NOT NULL AND p.ean=jp.product_data->>'ean'))
-    AND p.lookup_status='found' AND NULLIF(p.display_name,'') IS NOT NULL AND NULLIF(p.image_url,'') IS NOT NULL`;
+    AND p.lookup_status='found' AND NULLIF(p.image_url,'') IS NOT NULL
+    AND (NULLIF(p.website_name,'') IS NOT NULL OR (NULLIF(p.display_name,'') IS NOT NULL
+      AND p.display_name !~* '^(ean|vare|varenr|produkt|ukjent)([[:space:]:#-]|$)' AND p.display_name !~ '^[0-9]{6,14}$'))`;
 
   // Ta nye produkter først. Tidligere feil forsøkes på nytt maksimalt MAX_RETRIES ganger.
   const rows=await q`SELECT product_key,product_data,retry_count FROM paint_import_job_products
