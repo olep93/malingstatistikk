@@ -55,7 +55,10 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
  const mapped=rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',ean:r.ean||undefined,rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}));
- return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:aggregateProducts(mapped as any)};
+ // SQL-en har allerede aggregert per butikk og stabil product_key. En ny runde
+ // gjennom aggregateProducts/canonicalizeRow ville normalisert fra rawName igjen
+ // og dermed overskrevet Product Master-navnet med "EAN …" fra BI-importen.
+ return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:mapped};
 }
 
 async function loadComparisonReport(date:string){
