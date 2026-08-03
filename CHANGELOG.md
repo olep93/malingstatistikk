@@ -215,3 +215,9 @@ Versjonene før 13.0.0 ble utviklet iterativt og var dokumentert i separate READ
 - Hovedsiden lastes på nytt til den publiserte datoen når importen er ferdig.
 - Hovedsiden har nå filterrekkefølgen Samvirkelag → Fokusvarehus, og regional rangering avgrenses til valgt samvirkelag.
 - Rapporter lagret direkte som rader blir ikke overskrevet av den gamle JSON-cachebyggeren.
+
+## V16.1.3
+- Gjenoppretter spannstørrelse i produktkort og rapporter.
+- Normaliserer 0,68/1 L til 1 L, 2,7/3 L til 3 L, 4,5/5 L til 5 L og 9/10 L til 10 L.
+- Beholder EAN og råvarenavn for sporbarhet, og slår kun sammen samme produktserie/type innen normalisert størrelse.
+- Product Master-oppslag kan kobles via EAN dersom produktnøkkelen er endret av størrelsesnormaliseringen.

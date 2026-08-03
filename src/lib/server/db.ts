@@ -128,6 +128,22 @@ async function runSchemaMigration() {
       AND category IS NOT NULL
       AND category<>''
       AND (subgroup IS NULL OR subgroup='')`;
+  // Normaliser leverandørenes parallelle spannbetegnelser til kommersielle salgsstørrelser.
+  // Rå EAN og råvarenavn beholdes, slik at faktisk variant fortsatt er sporbar.
+  await q`UPDATE paint_products SET size=CASE
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('0,68l','0.68l','1l','1,0l','1.0l') THEN '1 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('2,7l','2.7l','3l','3,0l','3.0l') THEN '3 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('4,5l','4.5l','5l','5,0l','5.0l') THEN '5 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('9l','9,0l','9.0l','10l','10,0l','10.0l') THEN '10 L'
+      ELSE size END
+    WHERE size IS NOT NULL AND size<>''`;
+  await q`UPDATE paint_report_rows SET size=CASE
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('0,68l','0.68l','1l','1,0l','1.0l') THEN '1 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('2,7l','2.7l','3l','3,0l','3.0l') THEN '3 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('4,5l','4.5l','5l','5,0l','5.0l') THEN '5 L'
+      WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('9l','9,0l','9.0l','10l','10,0l','10.0l') THEN '10 L'
+      ELSE size END
+    WHERE size IS NOT NULL AND size<>''`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_item_no_idx ON paint_products(item_no)`;

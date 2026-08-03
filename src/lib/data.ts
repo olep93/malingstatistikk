@@ -21,15 +21,22 @@ export const supplierFromVendor=(vendor:string):Supplier|undefined=>{
 const titleCase=(value:string)=>value.toLowerCase().replace(/(^|\s|\/|-)\S/g,c=>c.toUpperCase())
   .replace(/\bBx\b/g,"Butinox").replace(/\bDryg\b/g,"Drygolin");
 
-export const normalizeSize=(name:string)=>{
-  const m=(name||"").toUpperCase().match(/(\d+(?:[,.]\d+)?)\s*(?:L|LITER)\b/);
+export const normalizeCommercialSize=(value:string)=>{
+  const m=String(value||"").toUpperCase().match(/(\d+(?:[,.]\d+)?)\s*(ML|L|LITER)\b/);
   if(!m)return "";
-  let value=Number(m[1].replace(",","."));
-  // 3 L og 2,7 L er samme kommersielle spannstørrelse i rapporteringen.
-  if(Math.abs(value-3)<0.01||Math.abs(value-2.7)<0.01)value=2.7;
-  const shown=Number.isInteger(value)?String(value):String(value).replace(".",",");
+  const unit=m[2]==="ML"?"ml":"L";
+  if(unit==="ml")return `${String(Number(m[1].replace(",","."))).replace(".",",")} ml`;
+  let liters=Number(m[1].replace(",","."));
+  // Kommersielle spannstørrelser: ulike leverandørbetegnelser samles i samme salgsgruppe.
+  if(Math.abs(liters-0.68)<0.03||Math.abs(liters-1)<0.03)liters=1;
+  else if(Math.abs(liters-2.7)<0.05||Math.abs(liters-3)<0.05)liters=3;
+  else if(Math.abs(liters-4.5)<0.05||Math.abs(liters-5)<0.05)liters=5;
+  else if(Math.abs(liters-9)<0.05||Math.abs(liters-10)<0.05)liters=10;
+  const shown=Number.isInteger(liters)?String(liters):String(liters).replace(".",",");
   return `${shown} L`;
 };
+
+export const normalizeSize=(name:string)=>normalizeCommercialSize(name);
 
 const canonicalSlug=(value:string)=>value.toLowerCase()
   .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
@@ -89,9 +96,9 @@ export const normalizeProduct=(raw:string,itemNo?:string)=>{
   if(reference){
     return {
       product:reference.name,
-      size:reference.size,
+      size:normalizeCommercialSize(reference.size),
       category:reference.category,
-      canonicalKey:reference.canonicalKey,
+      canonicalKey:`${canonicalSlug(reference.name)}|${canonicalSlug(normalizeCommercialSize(reference.size))}`,
       ean:reference.ean
     };
   }
@@ -209,7 +216,7 @@ export const canonicalizeRow=(row:ProductRow):ProductRow=>{
   return {
     ...row,
     product:normalized.product,
-    size:normalized.size||row.size,
+    size:normalized.size||normalizeCommercialSize(row.size)||row.size,
     category:normalized.category,
     productKey,
     image:row.image||imageForProduct(normalized.product,row.rawName)

@@ -1,8 +1,9 @@
 import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
+import { normalizeCommercialSize } from '../data';
 
-const NORMALIZATION_VERSION=6;
+const NORMALIZATION_VERSION=7;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
@@ -21,7 +22,7 @@ function extractSize(...values:(string|undefined)[]){
  if(!match)return undefined;
  const amount=match[1].replace('.',',');
  const unit=match[2].toLowerCase()==='ml'?'ml':'L';
- return `${amount} ${unit}`;
+ return unit==='L'?normalizeCommercialSize(`${amount} L`):`${amount} ml`;
 }
 
 function customerName(title:string,fallback:string,area?:string){
@@ -64,8 +65,9 @@ async function persist(input:Input,result:Result){
  const sourceName=input.rawName||input.productName;
  const websiteName=result.websiteName||result.displayName||null;
  const suggested=input.area==='exterior'?input.productName:(result.displayName||input.productName);
+ const normalizedSize=normalizeCommercialSize(validSize(result.size)||validSize(input.size)||'');
  await q`INSERT INTO paint_products(product_key,display_name,source_name,website_name,supplier,size,ean,item_no,image_url,image_source,product_url,category,subgroup,image_approved,aliases,lookup_status,last_fetched_at,normalization_version,area,updated_at,lookup_method,matched_identifier,match_confidence,review_reason,audit_status)
- VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${validSize(result.size)||validSize(input.size)||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
+ VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${normalizedSize||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
  ON CONFLICT(product_key) DO UPDATE SET
  source_name=COALESCE(excluded.source_name,paint_products.source_name),
  website_name=CASE WHEN excluded.lookup_status='found' THEN excluded.website_name ELSE paint_products.website_name END,

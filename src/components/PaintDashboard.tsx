@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
 import {BarChart3,CalendarDays,CheckCircle2,ChevronDown,ChevronLeft,ChevronRight,Coins,ExternalLink,FileSpreadsheet,ImageOff,LoaderCircle,LockKeyhole,LogIn,LogOut,PackageSearch,Save,AlertCircle,Percent,Printer,ImagePlus,RefreshCw,Store,Trophy,Trash2,TrendingDown,TrendingUp,UploadCloud,Users,UserPlus,Pencil,ShieldCheck,GitCompare,FlaskConical} from "lucide-react";
-import {aggregateProducts,categoryForProduct,DailyReport,Period,ProductCategory,ProductRow,Supplier} from "@/lib/data";
+import {aggregateProducts,categoryForProduct,DailyReport,normalizeCommercialSize,Period,ProductCategory,ProductRow,Supplier} from "@/lib/data";
 import {applyNationalProductEnrichment,parseNationalPowerBiWorkbook,parsePaintHistoryWorkbook,parsePaintWorkbook} from "@/lib/parser";
 import {cooperativeStores} from "@/lib/cooperatives";
 import ServerImportJobs from "@/components/ServerImportJobs";
@@ -67,11 +67,12 @@ function productSubtitle(row:ProductRow){
  const explicit=String(row.size||'').trim();
  // Eldre importer kunne lagre generiske plassholdere i størrelsesfeltet.
  // De skal aldri vises som undertittel på produktkortet.
- if(explicit&&!/^(produkt|product|vare|artikkel|ukjent|n\/?a)$/i.test(explicit))return explicit;
+ if(explicit&&!/^(produkt|product|vare|artikkel|ukjent|n\/?a)$/i.test(explicit))return normalizeCommercialSize(explicit)||explicit;
  const source=`${row.rawName||''} ${row.product||''}`;
  const match=source.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(ml|l|liter)\b/i);
  if(!match)return '';
- return `${match[1].replace('.',',')} ${match[2].toLowerCase()==='ml'?'ml':'L'}`;
+ const raw=`${match[1]} ${match[2]}`;
+ return normalizeCommercialSize(raw)||`${match[1].replace('.',',')} ${match[2].toLowerCase()==='ml'?'ml':'L'}`;
 }
 function ProductCard({row,rank,onEdit}:{row:ProductRow;rank:number;onEdit?:(row:ProductRow)=>void}){const fallback=productImageUrl(row);const category=row.subgroup||row.category||categoryForProduct(row.product,row.rawName);return <article className={`productCard margin-${marginClass(row.margin)}`}><div className="rank">#{rank}</div><div className="productMedia"><div className="productImage"><img src={fallback} data-fallback={fallback} alt={row.product} onError={(e)=>{const img=e.currentTarget;const fb=img.dataset.fallback;if(fb&&img.src!==new URL(fb,window.location.origin).href)img.src=fb}}/></div>{onEdit&&<button className="productQuickEdit" type="button" onClick={()=>onEdit(row)}><Pencil size={15}/>Rediger</button>}</div><div className="productInfo"><div className="productTags"><span className={`tag ${row.supplier.toLowerCase()}`}>{row.supplier}</span><span className="categoryTag">{category}</span></div><h3>{row.product}</h3><p>{productSubtitle(row)}</p><div className="productMetricGrid"><div><span>Solgt</span><b>{row.quantity.toLocaleString("nb-NO")}</b><small>{unitLabel(row.area,true)}</small></div><div><span>Fortj. kr</span><b>{kr(row.profit)}</b><small>{kr(row.revenue)} oms.</small></div><div className={`marginMetric ${marginClass(row.margin)}`}><span>Fortj. %</span><b>{pct(row.margin)}</b><i><em style={{width:`${Math.min(100,Math.max(0,row.margin*2))}%`}}/></i></div></div></div></article>}
 
