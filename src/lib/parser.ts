@@ -28,11 +28,16 @@ const identifier=(v:unknown)=>{
   return String(v).trim().replace(/\s+/g,"").replace(/\.0+$/,"");
 };
 const column=(headers:string[],aliases:string[])=>headers.findIndex(value=>aliases.some(alias=>value===alias||value.includes(alias)));
+const assertCompleteExport=(grid:unknown[][])=>{
+  const truncated=grid.some(row=>row.some(cell=>String(cell??'').toLowerCase().includes('exported data exceeded the allowed volume')));
+  if(truncated)throw new Error('Power BI har avkortet eksporten. Importer mindre perioder.');
+};
 async function workbookGrid(file:File):Promise<ParsedGrid>{
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
+  assertCompleteExport(grid);
   if(grid.length<3)throw new Error("Fant ikke forventet tabell i Excel-filen.");
 
   // Ny BO-rapport: én rad med måltall, neste rad med dimensjonsoverskrifter.
@@ -153,6 +158,7 @@ export async function parseNationalPowerBiWorkbook(file:File):Promise<DailyRepor
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
+  assertCompleteExport(grid);
   if(grid.length<2)throw new Error("Excel-filen er tom.");
   const headers=(grid[0]||[]).map(norm);
   const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);
@@ -176,6 +182,7 @@ export async function parseNationalPowerBiHistoryWorkbook(file:File):Promise<Dai
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
   const ws=wb.Sheets[wb.SheetNames[0]];
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
+  assertCompleteExport(grid);
   if(grid.length<2)throw new Error("Excel-filen er tom.");
   const headers=(grid[0]||[]).map(norm);
   const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);

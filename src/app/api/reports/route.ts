@@ -13,8 +13,13 @@ async function loadFastReport(date:string,period:ReportPeriod){
  const q=sql();const {from,to}=rangeFor(date,period);await refreshReportCache(from,to);
  const rows=await q`SELECT c.store_id,c.store_name,
    c.product_key,c.item_no,c.ean,c.raw_name,
-   COALESCE(NULLIF(p.display_name,''),NULLIF(p.website_name,''),c.product_name) product_name,
-   COALESCE(NULLIF(p.size,''),c.size,'') size,
+   COALESCE(
+     CASE WHEN NULLIF(p.display_name,'') IS NOT NULL
+       AND p.display_name !~* '^(ean|vare|varenr|produkt|ukjent)([[:space:]:#-]|$)'
+       AND p.display_name !~ '^[0-9]{6,14}$' THEN p.display_name END,
+     NULLIF(p.website_name,''),c.product_name
+   ) product_name,
+   COALESCE(NULLIF(p.normalized_size,''),NULLIF(p.size,''),c.size,'') size,
    c.supplier,
    COALESCE(NULLIF(p.category,''),c.category) category,
    COALESCE(NULLIF(p.area,''),c.area) area,
@@ -26,11 +31,12 @@ async function loadFastReport(date:string,period:ReportPeriod){
    SELECT candidate.* FROM paint_products candidate
    WHERE candidate.merged_into IS NULL
      AND (candidate.product_key=c.product_key OR (NULLIF(c.ean,'') IS NOT NULL AND candidate.ean=c.ean))
-   ORDER BY CASE WHEN candidate.product_key=c.product_key THEN 0 ELSE 1 END, candidate.updated_at DESC
+   ORDER BY CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,
+     CASE WHEN candidate.product_key=c.product_key THEN 0 ELSE 1 END, candidate.updated_at DESC
    LIMIT 1
  ) p ON true
  WHERE c.report_date BETWEEN ${from}::date AND ${to}::date
- GROUP BY c.store_id,c.store_name,c.product_key,c.item_no,c.ean,c.raw_name,p.display_name,p.website_name,c.product_name,p.size,c.size,c.supplier,p.category,c.category,p.area,c.area,p.subgroup,c.subgroup,p.image_url,c.image_url,p.product_url,c.product_url
+ GROUP BY c.store_id,c.store_name,c.product_key,c.item_no,c.ean,c.raw_name,p.display_name,p.website_name,c.product_name,p.normalized_size,p.size,c.size,c.supplier,p.category,c.category,p.area,c.area,p.subgroup,c.subgroup,p.image_url,c.image_url,p.product_url,c.product_url
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;

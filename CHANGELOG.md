@@ -1,3 +1,14 @@
+## V16.2.0 – Rask oppstart, trygg import og Product Master
+
+- Skjemamigreringer versjoneres og kjøres ikke lenger på hvert kaldt API-kall.
+- Samtidige migreringer håndterer deadlock og serialiseringskonflikter med retry.
+- Power BI-lenken er tilbake i både dagsimport og historisk masseimport.
+- Power BI-eksporter som er avkortet stoppes før import med en tydelig feilmelding.
+- Rapportvisningen foretrekker gyldige Product Master-navn, størrelser og produktlenker fremfor EAN-plassholdere.
+- Historisk produktberikelse fortsetter automatisk etter at rapportdagene er importert.
+- Dagsrapport kan publiseres før valgfri produktberikelse er ferdig.
+- Product Master bevarer eksisterende gode felt og lagrer rå størrelse, normalisert størrelse og variant-ID separat.
+
 ## V16.1.1 – Produktberikelse og størrelsestekst
 
 - Produktberikelsen fortsetter automatisk gjennom alle batcher.

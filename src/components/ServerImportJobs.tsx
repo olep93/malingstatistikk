@@ -2,14 +2,14 @@
 import {useEffect,useState} from 'react';
 import {parseNationalPowerBiHistoryWorkbook,parsePaintHistoryWorkbook} from '@/lib/parser';
 import {uploadPresigned} from '@vercel/blob/client';
-import {AlertCircle,CalendarDays,CheckCircle2,Database,FileSpreadsheet,LoaderCircle,Play,RefreshCw,Search,Trash2,UploadCloud} from 'lucide-react';
+import {AlertCircle,CalendarDays,CheckCircle2,Database,ExternalLink,LoaderCircle,Play,RefreshCw,Search,Trash2,UploadCloud} from 'lucide-react';
 
 type SourceType='powerbi'|'lumira';
 async function json(res:Response){const text=await res.text();try{return text?JSON.parse(text):{}}catch{return {error:text||'Ugyldig serversvar'}}}
 const statusLabel=(status:string)=>({uploaded:'Fil lagret – klar for analyse',analyzing:'Analyserer filen',analysis_error:'Analyse feilet',ready:'Analysert – klar for rapportimport',products_ready:'Produktberikelse ferdig',completed:'Import fullført'}[status]||status);
 const sourceLabel=(source:SourceType|string)=>source==='powerbi'?'Power BI':'Lumira / BI Portal';
 
-export default function ServerImportJobs({isAdmin,onImported}:{isAdmin:boolean;onImported:()=>Promise<void>}){
+export default function ServerImportJobs({isAdmin,onImported,biReportUrl}:{isAdmin:boolean;onImported:()=>Promise<void>;biReportUrl?:string}){
  const [files,setFiles]=useState<Partial<Record<SourceType,File>>>({});
  const [jobs,setJobs]=useState<any[]>([]);
  const [busy,setBusy]=useState('');
@@ -61,7 +61,7 @@ export default function ServerImportJobs({isAdmin,onImported}:{isAdmin:boolean;o
    setStatus({type:'success',text:`Analysen er ferdig: ${reports.length} rapportdager er lagret i små batcher. Rapportdagene kan nå importeres direkte. Produktberikelse er valgfritt og kan kjøres etterpå.`});await load();
   }catch(e){setStatus({type:'error',text:`${e instanceof Error?e.message:'Analysen feilet'} Fremdriften som allerede er lagret, beholdes. Trykk «Analyser / fortsett» for å fortsette fra siste lagrede batch.`})}finally{try{await wakeLock?.release?.()}catch{}setBusy('')}
  };
- const run=async(id:string,mode:'sync-next'|'import-next')=>{
+ const run=async(id:string,mode:'sync-next'|'import-next'):Promise<void>=>{
   setBusy(`${mode}-${id}`);let processed=0;let finalFailed=0;let wakeLock:any=null;
   try{
    try{wakeLock=await (navigator as any).wakeLock?.request?.('screen')}catch{}
@@ -85,12 +85,17 @@ export default function ServerImportJobs({isAdmin,onImported}:{isAdmin:boolean;o
     // Fortsett så lenge serveren fortsatt rapporterer produkter i kø.
     await new Promise(resolve=>setTimeout(resolve,150));
    }
-   await load();if(mode==='import-next')await onImported();
+   await load();
+   if(mode==='import-next'){
+    await onImported();
+    setStatus({type:'working',text:'Rapportdagene er importert. Produktberikelsen fortsetter automatisk i bakgrunnen …'});
+    await run(id,'sync-next');
+   }
   }catch(e){setStatus({type:'error',text:`${e instanceof Error?e.message:'Operasjonen stoppet.'} Fremdriften er lagret og kan fortsettes.`})}
   finally{try{await wakeLock?.release?.()}catch{}setBusy('')}
  };
  const remove=async(id:string)=>{if(!confirm('Slette denne serverlagrede importjobben?'))return;await fetch(`/api/import-jobs/${id}`,{method:'DELETE'});await load()};
- const uploadCard=(sourceType:SourceType,title:string,text:string)=><article className="importSourceCard"><div className="importSourceTitle"><Database/><div><span className="eyebrow">{sourceLabel(sourceType)}</span><h3>{title}</h3><p>{text}</p></div></div><label className="drop"><UploadCloud/><b>{files[sourceType]?.name||`Velg ${sourceLabel(sourceType)}-fil`}</b><span>.xlsx eller .xls</span><input type="file" accept=".xlsx,.xls" onChange={e=>setFiles(current=>({...current,[sourceType]:e.target.files?.[0]}))}/></label><button className="primary full" disabled={!files[sourceType]||Boolean(busy)} onClick={()=>upload(sourceType)}>{busy===`upload-${sourceType}`?<LoaderCircle className="spin"/>:<UploadCloud/>}Opprett historisk importjobb</button></article>;
+ const uploadCard=(sourceType:SourceType,title:string,text:string)=><article className="importSourceCard"><div className="importSourceTitle"><Database/><div><span className="eyebrow">{sourceLabel(sourceType)}</span><h3>{title}</h3><p>{text}</p></div></div>{sourceType==='powerbi'&&<button type="button" className="secondary full" disabled={!biReportUrl} onClick={()=>biReportUrl&&window.open(biReportUrl,'_blank','noopener,noreferrer')}><ExternalLink/>Åpne Power BI-rapport</button>}<label className="drop"><UploadCloud/><b>{files[sourceType]?.name||`Velg ${sourceLabel(sourceType)}-fil`}</b><span>.xlsx eller .xls</span><input type="file" accept=".xlsx,.xls" onChange={e=>setFiles(current=>({...current,[sourceType]:e.target.files?.[0]}))}/></label><button className="primary full" disabled={!files[sourceType]||Boolean(busy)} onClick={()=>upload(sourceType)}>{busy===`upload-${sourceType}`?<LoaderCircle className="spin"/>:<UploadCloud/>}Opprett historisk importjobb</button></article>;
 
  return <section className="panel serverImportJobs">
   <div className="panelHead"><div><span className="eyebrow">HISTORISK MASSEIMPORT</span><h2>Velg datakilde</h2><p className="panelIntro">Begge kilder bruker samme sikre jobb- og checkpointmotor. Power BI kan inneholde alle varehus; Lumira importerer de varehusene som finnes i uttrekket.</p></div><button className="secondary" onClick={load}><RefreshCw size={16}/>Oppdater</button></div>

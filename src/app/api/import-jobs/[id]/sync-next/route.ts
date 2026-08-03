@@ -67,7 +67,8 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const c=counts[0]||{done:0,failed:0,remaining:0};
   const isDone=Number(c.remaining)===0;
   await q`UPDATE paint_import_jobs SET synced_products=${c.done},failed_products=${c.failed},
-   status=${isDone?'completed':'syncing'},updated_at=now() WHERE id=${id}::bigint`;
+   status=CASE WHEN ${isDone} THEN CASE WHEN imported_days>=total_days THEN 'completed' ELSE 'products_ready' END ELSE 'syncing' END,
+   updated_at=now() WHERE id=${id}::bigint`;
   return NextResponse.json({ok:true,done:isDone,processed:results.length,...c});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Produktberikelse feilet'},{status:500})}
 }

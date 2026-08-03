@@ -12,6 +12,15 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
+const SCHEMA_VERSION = 162;
+
+async function currentSchemaVersion() {
+  const q = sql();
+  const relation = await q`SELECT to_regclass('public.paint_schema_version')::text AS name`;
+  if (!relation[0]?.name) return 0;
+  const rows = await q`SELECT version::int FROM paint_schema_version WHERE id=1`;
+  return Number(rows[0]?.version || 0);
+}
 
 async function runSchemaMigration() {
   const q = sql();
@@ -70,6 +79,10 @@ async function runSchemaMigration() {
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS lookup_method text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS matched_identifier text`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS match_confidence integer`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS raw_size text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalized_size text`;
+  await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS variant_id text`;
+  await q`UPDATE paint_products SET normalized_size=COALESCE(normalized_size,size),raw_size=COALESCE(raw_size,size) WHERE normalized_size IS NULL OR raw_size IS NULL`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_audit_status_idx ON paint_products(audit_status)`;
   await q`CREATE TABLE IF NOT EXISTS paint_tags (
     id bigserial PRIMARY KEY,
@@ -235,26 +248,35 @@ async function runSchemaMigration() {
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_products_status_idx ON paint_import_job_products(job_id,status)`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_days_status_idx ON paint_import_job_days(job_id,status)`;
 
+  await q`CREATE TABLE IF NOT EXISTS paint_schema_version (
+    id integer PRIMARY KEY CHECK (id=1),
+    version integer NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`;
+  await q`INSERT INTO paint_schema_version(id,version,updated_at) VALUES(1,${SCHEMA_VERSION},now())
+    ON CONFLICT(id) DO UPDATE SET version=excluded.version,updated_at=now()`;
+
 }
 
 function isConcurrentSchemaRace(error: unknown) {
   const value = error as { code?: string; constraint?: string; message?: string };
-  return value?.code === '23505' && (
+  return value?.code === '40P01' || value?.code === '40001' || (value?.code === '23505' && (
     value?.constraint === 'pg_class_relname_nsp_index' ||
     String(value?.message || '').includes('pg_class_relname_nsp_index')
-  );
+  ));
 }
 
 async function migrateWithRetry() {
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     try {
+      if (await currentSchemaVersion() >= SCHEMA_VERSION) return;
       await runSchemaMigration();
       return;
     } catch (error) {
-      if (!isConcurrentSchemaRace(error) || attempt === 3) throw error;
+      if (!isConcurrentSchemaRace(error) || attempt === 5) throw error;
       // En annen serverless-instans oppretter samme tabell eller indeks akkurat nå.
       // Alle migrasjonene er idempotente, så vent kort og kjør dem på nytt.
-      await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+      await new Promise((resolve) => setTimeout(resolve, attempt * 500));
     }
   }
 }
