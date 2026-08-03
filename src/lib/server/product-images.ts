@@ -2,13 +2,18 @@ import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
 
-const NORMALIZATION_VERSION=5;
+const NORMALIZATION_VERSION=6;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
 type Input={ean?:string;itemNo?:string;productName:string;productKey:string;supplier:string;size?:string;rawName?:string;area?:string;subgroup?:string};
 type Result={found:boolean;imageUrl?:string;displayName?:string;websiteName?:string;size?:string;url?:string;category?:string;subgroup?:string;source?:string;status?:string;matchMethod?:'EXACT_EAN'|'EXACT_ITEM_NO'|'CATALOG'|'NONE';matchedIdentifier?:string;confidence?:number};
 const cleanTitle=(title:string)=>cleanProductName(title);
+
+function validSize(value?:string){
+ const clean=String(value||'').trim();
+ return clean&&!/^(produkt|product|vare|artikkel|ukjent|n\/?a)$/i.test(clean)?clean:undefined;
+}
 
 function extractSize(...values:(string|undefined)[]){
  const text=values.filter(Boolean).join(' ');
@@ -60,12 +65,12 @@ async function persist(input:Input,result:Result){
  const websiteName=result.websiteName||result.displayName||null;
  const suggested=input.area==='exterior'?input.productName:(result.displayName||input.productName);
  await q`INSERT INTO paint_products(product_key,display_name,source_name,website_name,supplier,size,ean,item_no,image_url,image_source,product_url,category,subgroup,image_approved,aliases,lookup_status,last_fetched_at,normalization_version,area,updated_at,lookup_method,matched_identifier,match_confidence,review_reason,audit_status)
- VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${result.size||input.size||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
+ VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${validSize(result.size)||validSize(input.size)||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
  ON CONFLICT(product_key) DO UPDATE SET
  source_name=COALESCE(excluded.source_name,paint_products.source_name),
  website_name=CASE WHEN excluded.lookup_status='found' THEN excluded.website_name ELSE paint_products.website_name END,
  display_name=CASE WHEN paint_products.display_name_locked OR excluded.lookup_status<>'found' THEN paint_products.display_name ELSE excluded.display_name END,
- supplier=excluded.supplier,size=COALESCE(NULLIF(excluded.size,''),NULLIF(paint_products.size,'')),
+ supplier=excluded.supplier,size=COALESCE(NULLIF(excluded.size,''),NULLIF(CASE WHEN lower(trim(paint_products.size)) IN ('produkt','product','vare','artikkel','ukjent','n/a') THEN NULL ELSE paint_products.size END,'')),
  image_url=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.image_url,paint_products.image_url) ELSE paint_products.image_url END,
  image_source=CASE WHEN excluded.lookup_status='found' THEN excluded.image_source ELSE paint_products.image_source END,
  product_url=CASE WHEN excluded.lookup_status='found' THEN excluded.product_url ELSE paint_products.product_url END,

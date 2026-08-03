@@ -65,7 +65,9 @@ function productImageUrl(row:ProductRow){return row.image||`/api/product-image?$
 const unitLabel=(area?:string,short=false)=>area==="tools"?(short?"stk.":"artikler"):(short?"spann":"spann");
 function productSubtitle(row:ProductRow){
  const explicit=String(row.size||'').trim();
- if(explicit)return explicit;
+ // Eldre importer kunne lagre generiske plassholdere i størrelsesfeltet.
+ // De skal aldri vises som undertittel på produktkortet.
+ if(explicit&&!/^(produkt|product|vare|artikkel|ukjent|n\/?a)$/i.test(explicit))return explicit;
  const source=`${row.rawName||''} ${row.product||''}`;
  const match=source.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(ml|l|liter)\b/i);
  if(!match)return '';

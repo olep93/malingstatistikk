@@ -11,6 +11,11 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  try{
   await ensureSchema();const q=sql();
+  // Gjenopprett produkter som ble stående i 'processing' etter avbrudd eller en eldre deploy.
+  // Klienten tillater bare én berikelsesløype per jobb, så disse kan trygt settes tilbake i kø.
+  await q`UPDATE paint_import_job_products SET status='pending',updated_at=now()
+   WHERE job_id=${id}::bigint AND status='processing'`;
+
   // Produkter som allerede er komplette i Product Master skal ikke slås opp på nytt.
   await q`UPDATE paint_import_job_products jp SET status='done',error=null,updated_at=now()
    FROM paint_products p
@@ -32,9 +37,10 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
     count(*) FILTER (WHERE status='pending' OR (status='error' AND retry_count<${MAX_RETRIES}))::int AS remaining
     FROM paint_import_job_products WHERE job_id=${id}::bigint`;
    const c=counts[0]||{done:0,failed:0,remaining:0};
-   await q`UPDATE paint_import_jobs SET status=CASE WHEN imported_days>=total_days THEN 'completed' ELSE 'products_ready' END,
+   const isDone=Number(c.remaining)===0;
+   await q`UPDATE paint_import_jobs SET status=CASE WHEN ${isDone} THEN CASE WHEN imported_days>=total_days THEN 'completed' ELSE 'products_ready' END ELSE 'syncing' END,
     synced_products=${c.done},failed_products=${c.failed},updated_at=now() WHERE id=${id}::bigint`;
-   return NextResponse.json({ok:true,done:true,processed:0,...c});
+   return NextResponse.json({ok:true,done:isDone,processed:0,...c});
   }
 
   // Marker forsøk før eksterne oppslag. Checkpointet beholdes også ved timeout/avbrudd.

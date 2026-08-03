@@ -74,12 +74,15 @@ export default function ServerImportJobs({isAdmin,onImported}:{isAdmin:boolean;o
       ?`Beriker nye og mangelfulle produkter · ${processed} behandlet · ${Number(j.remaining||0)} gjenstår${finalFailed?` · ${finalFailed} uten sikkert treff`:''}.`
       :`Importerer ${j.date||'rapportdag'} · ${j.rowCount||0} varelinjer kontrollert.`});
     if(i%3===0)await load();
-    if(j.done){
+    const serverRemaining=Number(j.remaining||0);
+    if(j.done&&serverRemaining===0){
      setStatus({type:'success',text:mode==='sync-next'
       ?`Produktberikelsen er ferdig. ${finalFailed?`${finalFailed} produkter fikk ikke sikkert treff og ligger til kontroll.`:'Navn, størrelse og bilder er oppdatert også i historikken.'}`
       :`Import fullført: ${processed} rapportdager ble skrevet til hoveddatabasen.`});
      break;
     }
+    // Et eldre eller avbrutt servercheckpoint kan svare uten å behandle en rad.
+    // Fortsett så lenge serveren fortsatt rapporterer produkter i kø.
     await new Promise(resolve=>setTimeout(resolve,150));
    }
    await load();if(mode==='import-next')await onImported();
