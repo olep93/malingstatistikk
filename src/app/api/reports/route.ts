@@ -26,6 +26,13 @@ async function loadFastReport(date:string,period:ReportPeriod){
    FROM paint_report_rows
    WHERE report_date BETWEEN ${from}::date AND ${to}::date
    GROUP BY store_id,product_key
+ ), p AS MATERIALIZED (
+   SELECT DISTINCT ON (keys.product_key) keys.product_key report_product_key,candidate.*
+   FROM (SELECT DISTINCT product_key,ean FROM c) keys
+   JOIN paint_products candidate ON candidate.merged_into IS NULL
+     AND (candidate.product_key=keys.product_key OR (NULLIF(keys.ean,'') IS NOT NULL AND candidate.ean=keys.ean))
+   ORDER BY keys.product_key,CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,
+     CASE WHEN candidate.product_key=keys.product_key THEN 0 ELSE 1 END,candidate.updated_at DESC
  ) SELECT c.store_id,c.store_name,
    c.product_key,c.item_no,c.ean,c.raw_name,
    COALESCE(
@@ -42,14 +49,7 @@ async function loadFastReport(date:string,period:ReportPeriod){
    c.quantity,c.revenue,c.profit,
    COALESCE(NULLIF(p.image_url,''),c.image_url) image_url,
    COALESCE(NULLIF(p.product_url,''),c.product_url) product_url
- FROM c LEFT JOIN LATERAL (
-   SELECT candidate.* FROM paint_products candidate
-   WHERE candidate.merged_into IS NULL
-     AND (candidate.product_key=c.product_key OR (NULLIF(c.ean,'') IS NOT NULL AND candidate.ean=c.ean))
-   ORDER BY CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,
-     CASE WHEN candidate.product_key=c.product_key THEN 0 ELSE 1 END, candidate.updated_at DESC
-   LIMIT 1
- ) p ON true
+ FROM c LEFT JOIN p ON p.report_product_key=c.product_key
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
@@ -57,9 +57,24 @@ async function loadFastReport(date:string,period:ReportPeriod){
  return {date,createdAt:String(meta[0]?.created_at||new Date().toISOString()),sourceName:period==='Dag'?'Dagsrapport':`${meta[0]?.day_count||0} rapportdager`,uploadedBy:String(meta[0]?.uploaded_by||''),uploadedAt:String(meta[0]?.updated_at||''),rows:aggregateProducts(mapped as any)};
 }
 
+async function loadComparisonReport(date:string){
+ const q=sql();
+ const rows=await q`SELECT store_id,max(store_name) store_name,max(supplier) supplier,
+   COALESCE(area,'exterior') area,COALESCE(subgroup,'') subgroup,
+   sum(quantity)::float8 quantity,sum(revenue)::float8 revenue,sum(profit)::float8 profit
+   FROM paint_report_rows WHERE report_date=${date}::date
+   GROUP BY store_id,area,subgroup,supplier`;
+ return {date,createdAt:'',sourceName:'Sammenligningsgrunnlag',rows:rows.map((r:any)=>({
+   storeId:r.store_id,store:r.store_name,productKey:`summary|${r.store_id}|${r.area}|${r.subgroup}|${r.supplier}`,
+   itemNo:'',rawName:'',product:'Sammenligning',size:'',supplier:r.supplier,area:r.area,subgroup:r.subgroup,
+   quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),
+   margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0
+ }))};
+}
+
 export async function GET(req:Request){
  try{const q=sql();const url=new URL(req.url);const date=url.searchParams.get('date');const period=(url.searchParams.get('period')||'Dag') as ReportPeriod;
-  if(date){const started=Date.now();const report=await loadFastReport(date,period);let previousReport=null;if(period==='Dag'){const prev=await q`SELECT report_date::text report_date FROM paint_reports WHERE report_date<${date}::date ORDER BY report_date DESC LIMIT 1`;if(prev[0]?.report_date)previousReport=await loadFastReport(isoDate(prev[0].report_date),'Dag')}return NextResponse.json({report,previousReport},{headers:{'Cache-Control':'private, max-age=60, stale-while-revalidate=300','Server-Timing':`report;dur=${Date.now()-started}`}})}
+  if(date){const started=Date.now();const report=await loadFastReport(date,period);let previousReport=null;if(period==='Dag'){const prev=await q`SELECT report_date::text report_date FROM paint_reports WHERE report_date<${date}::date ORDER BY report_date DESC LIMIT 1`;if(prev[0]?.report_date)previousReport=await loadComparisonReport(isoDate(prev[0].report_date))}return NextResponse.json({report,previousReport},{headers:{'Cache-Control':'private, max-age=60, stale-while-revalidate=300','Server-Timing':`report;dur=${Date.now()-started}`}})}
   const rows=await q`SELECT p.report_date::text report_date,p.source_name,p.uploaded_by,p.created_at,p.updated_at
     FROM paint_reports p ORDER BY p.report_date`;
   return NextResponse.json({reports:rows.map((r:any)=>({date:isoDate(r.report_date),createdAt:String(r.created_at||''),sourceName:r.source_name||'Rapport',rows:[],uploadedBy:r.uploaded_by||'Ukjent bruker',uploadedAt:String(r.updated_at||r.created_at||''),rowCount:Number(r.row_count||0)}))},{headers:{'Cache-Control':'private, max-age=60, stale-while-revalidate=300'}});
