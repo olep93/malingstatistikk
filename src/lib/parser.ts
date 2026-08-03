@@ -171,6 +171,36 @@ export async function parseNationalPowerBiWorkbook(file:File):Promise<DailyRepor
   return {date:reportDate||new Date().toISOString().slice(0,10),createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows)};
 }
 
+export async function parseNationalPowerBiHistoryWorkbook(file:File):Promise<DailyReport[]>{
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:"array",cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
+  if(grid.length<2)throw new Error("Excel-filen er tom.");
+  const headers=(grid[0]||[]).map(norm);
+  const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);
+  if([dateCol,storeCol,vendorCol,groupCol,eanCol,qCol,rCol,pCol].some(x=>x<0))throw new Error("Det nasjonale Power BI-formatet ble ikke gjenkjent.");
+  const byDate=new Map<string,ProductRow[]>();
+  let currentDate="";
+  for(let i=1;i<grid.length;i++){
+    const row=grid[i]||[];
+    const parsedDate=isoDate(row[dateCol]);
+    if(parsedDate)currentDate=parsedDate;
+    if(!currentDate)continue;
+    const storeText=String(row[storeCol]??"").trim(),vendor=String(row[vendorCol]??"").trim(),vgr=String(row[groupCol]??"").trim(),ean=identifier(row[eanCol]);
+    if(!storeText||storeText.toLowerCase()==="total"||!vendor||vendor.toLowerCase()==="total"||!vgr||vgr.toLowerCase()==="total"||!ean||ean.toLowerCase()==="total")continue;
+    const match=storeText.match(/^(\d+)\s+(.+?)(?:,\s*[^,]+)?$/);if(!match)continue;
+    const storeId=match[1],store=shortStore(match[2]);const supplier=supplierFromVendor(vendor);const classification=classify(vgr,`EAN ${ean}`);
+    if(!supplier||!classification)continue;
+    const target=byDate.get(currentDate)||[];
+    addRow(target,{storeId,store,item:ean,ean,raw:`EAN ${ean}`,supplier,area:classification.area,subgroup:classification.subgroup,q:num(row[qCol]),revenue:num(row[rCol]),profit:num(row[pCol]),margin:mCol>=0?num(row[mCol])*100:0});
+    byDate.set(currentDate,target);
+  }
+  const reports=[...byDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows)}));
+  if(!reports.length)throw new Error("Fant ingen daterte salgslinjer i Power BI-filen.");
+  return reports;
+}
+
 export type NationalProductEnrichment={ean:string;name:string;displayName?:string;imageUrl?:string|null;productUrl?:string|null};
 export function applyNationalProductEnrichment(report:DailyReport,enrichments:Record<string,NationalProductEnrichment>):DailyReport{
   const rows=report.rows.map(row=>{

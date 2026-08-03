@@ -171,6 +171,8 @@ async function runSchemaMigration() {
   await q`CREATE TABLE IF NOT EXISTS paint_import_jobs (
     id bigserial PRIMARY KEY,
     source_name text NOT NULL,
+    source_type text NOT NULL DEFAULT 'lumira',
+    import_mode text NOT NULL DEFAULT 'historical',
     status text NOT NULL DEFAULT 'staging',
     total_days integer NOT NULL DEFAULT 0,
     staged_days integer NOT NULL DEFAULT 0,
@@ -186,6 +188,8 @@ async function runSchemaMigration() {
     blob_size bigint,
     analyzed_at timestamptz
   )`;
+  await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT 'lumira'`;
+  await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS import_mode text NOT NULL DEFAULT 'historical'`;
   await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS blob_url text`;
   await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS blob_size bigint`;
   await q`ALTER TABLE paint_import_jobs ADD COLUMN IF NOT EXISTS analyzed_at timestamptz`;
