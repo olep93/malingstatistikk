@@ -5,11 +5,10 @@ import {ensureSchema,sql} from '@/lib/server/db';
 export async function GET(){
   if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
   try{
-    await ensureSchema();
     const q=sql();
     const jobs=await q`SELECT j.id::text,j.source_name,j.source_type,j.import_mode,j.status,j.total_days,j.staged_days,j.total_products,j.synced_products,j.imported_days,j.failed_products,j.failed_days,j.created_by,j.created_at,j.updated_at,j.blob_size,j.analyzed_at,
-      (SELECT count(*)::int FROM paint_import_job_days d JOIN paint_reports r ON r.report_date=d.report_date
-        WHERE d.job_id=j.id AND jsonb_array_length(COALESCE(r.report_data->'rows','[]'::jsonb))>0) verified_days
+      (SELECT count(*)::int FROM paint_import_job_days d
+        WHERE d.job_id=j.id AND EXISTS (SELECT 1 FROM paint_report_rows r WHERE r.report_date=d.report_date)) verified_days
       FROM paint_import_jobs j ORDER BY j.created_at DESC LIMIT 25`;
     return NextResponse.json({jobs});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke hente importjobber'},{status:500})}

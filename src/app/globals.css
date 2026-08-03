@@ -1477,3 +1477,4 @@
 
 /* V16 import center */
 .importSourceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0 22px}.importSourceCard{border:1px solid #dce3ea;border-radius:18px;padding:18px;background:#f8fafc;display:grid;gap:14px}.importSourceTitle{display:flex;gap:12px;align-items:flex-start}.importSourceTitle>svg{width:25px;height:25px;margin-top:2px}.importSourceTitle h3{margin:2px 0 5px}.importSourceTitle p{margin:0;color:#5f6b76;line-height:1.45}.importSourceCard .drop{min-height:130px}.serverJobCard header span strong{color:#17212b}@media(max-width:800px){.importSourceGrid{grid-template-columns:1fr}}
+.jobDownload{min-height:36px;padding:7px 10px;text-decoration:none;white-space:nowrap}.serverJobCard header>.jobDownload{align-self:center}@media(max-width:760px){.serverJobCard header>.jobDownload{align-self:stretch;justify-content:center}}
