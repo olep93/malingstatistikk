@@ -15,7 +15,7 @@ const authorized=(req:Request)=>{
 export async function GET(req:Request){
  if(!authorized(req))return NextResponse.json({error:'Ikke autorisert'},{status:401});
  await ensureSchema();const q=sql();const url=new URL(req.url);const after=url.searchParams.get('after')||'';
- const rows=await q`SELECT product_key,ean,item_no,source_name,display_name,supplier,size,area,subgroup
+ const rows=await q`SELECT product_key,ean,item_no,source_name,website_name,display_name,supplier,size,area,subgroup,image_url,product_url,lookup_status,matched_identifier
   FROM paint_products
   WHERE merged_into IS NULL AND product_key>${after}
     AND regexp_replace(COALESCE(ean,''),'[^0-9]','','g') ~ '^[0-9]{13}$'
