@@ -1,3 +1,11 @@
+# V16 live pilot
+
+- Adminfanen er endret fra testmiljø til **Power BI-import (pilot)**.
+- Nasjonal Power BI-import publiserer fortsatt batchvis til hoveddatabasen.
+- Etter vellykket publisering åpnes hoveddashboardet automatisk på den publiserte datoen.
+- Samvirkelag- og varehusfiltrering brukes på hovedsiden for nasjonale rapportdager.
+- Gammel import beholdes som fallback i pilotperioden.
+
 ## V16.0.0-test.2
 - Flyttet «Test kun for Ole» til første fane før Eksteriørmaling.
 - Testfanen vises kun for innlogget admin, også i mobilvelgeren.
