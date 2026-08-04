@@ -112,8 +112,8 @@ export function PaintDashboard(){const {reports,save,remove,loading,serverError,
  const cooperativeNames=useMemo(()=>[...new Set(cooperativeStores.filter(item=>item.active).map(item=>item.cooperative))].sort((a,b)=>a.localeCompare(b,"nb")),[]);
  useEffect(()=>{if(cooperativeNames.length&&!cooperativeNames.includes(cooperative))setCooperative(cooperativeNames[0])},[cooperativeNames,cooperative]);
  const cooperativeStoreIds=useMemo(()=>new Set(cooperativeStores.filter(item=>item.active&&item.cooperative===cooperative).map(item=>item.storeId)),[cooperative]);
- useEffect(()=>{if(date&&cooperative){localStorage.setItem("paint-last-report-date",date);localStorage.setItem("paint-last-cooperative",cooperative);loadPeriod(date,period,[...cooperativeStoreIds])}},[date,period,cooperative,cooperativeStoreIds]);
- const filteredPeriodReport=useMemo(()=>periodReport?{...periodReport,rows:cooperative?periodReport.rows.filter(row=>cooperativeStoreIds.has(row.storeId)):periodReport.rows}:undefined,[periodReport,cooperative,cooperativeStoreIds]);
+ useEffect(()=>{if(date&&cooperative){localStorage.setItem("paint-last-report-date",date);localStorage.setItem("paint-last-cooperative",cooperative);loadPeriod(date,period,view==="compare"?[]:[...cooperativeStoreIds])}},[date,period,cooperative,cooperativeStoreIds,view]);
+ const filteredPeriodReport=useMemo(()=>periodReport?{...periodReport,rows:view==="compare"?periodReport.rows:cooperative?periodReport.rows.filter(row=>cooperativeStoreIds.has(row.storeId)):periodReport.rows}:undefined,[periodReport,cooperative,cooperativeStoreIds,view]);
  const fullReport=filteredPeriodReport;
  const report=useMemo(()=>filteredPeriodReport?{...filteredPeriodReport,rows:rowsForArea(filteredPeriodReport.rows,area)}:undefined,[filteredPeriodReport,area]);
  const stores=useMemo(()=>report?summarize(report.rows):[],[report]);
@@ -253,7 +253,24 @@ function AdminReportArchive({reports,canDelete,remove,setDate,open,onError}:{rep
 }
 
 
-function Comparison({area,report,stores,period,date}:{area:Area;report:DailyReport;stores:StoreSummary[];period:Period;date:string}){
+function Comparison(props:{area:Area;report:DailyReport;stores:StoreSummary[];period:Period;date:string}){
+ const {stores}=props;
+ const availableIds=stores.map(store=>store.storeId);
+ const cooperativeNames=[...new Set(cooperativeStores.filter(item=>item.active&&availableIds.includes(item.storeId)).map(item=>item.cooperative))].sort((a,b)=>a.localeCompare(b,"nb"));
+ const [selectedIds,setSelectedIds]=useState<string[]>(()=>availableIds.slice(0,2));
+ const [draftCooperative,setDraftCooperative]=useState(()=>cooperativeNames[0]||"");
+ const draftOptions=cooperativeStores.filter(item=>item.active&&item.cooperative===draftCooperative&&availableIds.includes(item.storeId));
+ const [draftStore,setDraftStore]=useState(()=>draftOptions[0]?.storeId||"");
+ useEffect(()=>{setSelectedIds(current=>{const valid=current.filter(id=>availableIds.includes(id));return valid.length>=2?valid:availableIds.slice(0,Math.min(2,availableIds.length))})},[availableIds.join("|")]);
+ useEffect(()=>{if(!cooperativeNames.includes(draftCooperative))setDraftCooperative(cooperativeNames[0]||"")},[cooperativeNames.join("|"),draftCooperative]);
+ useEffect(()=>{if(!draftOptions.some(item=>item.storeId===draftStore))setDraftStore(draftOptions[0]?.storeId||"")},[draftCooperative,draftOptions.map(item=>item.storeId).join("|"),draftStore]);
+ const addStore=()=>{if(draftStore&&!selectedIds.includes(draftStore)&&selectedIds.length<5)setSelectedIds(current=>[...current,draftStore])};
+ const removeStore=(id:string)=>{if(selectedIds.length>2)setSelectedIds(current=>current.filter(value=>value!==id))};
+ const chosenStores=selectedIds.map(id=>stores.find(store=>store.storeId===id)).filter(Boolean) as StoreSummary[];
+ return <div className="crossComparison"><section className="panel crossComparePicker"><div className="panelHead"><div><span className="eyebrow">SAMMENLIGN PÅ TVERS</span><h2>Legg til varehus</h2><p>Velg samvirkelag og butikk, og trykk +. Du kan sammenligne mellom to og fem varehus.</p></div></div><div className="crossCompareAdd"><label>Samvirkelag<select value={draftCooperative} onChange={event=>setDraftCooperative(event.target.value)}>{cooperativeNames.map(name=><option value={name} key={name}>{name}</option>)}</select></label><label>Varehus<select value={draftStore} onChange={event=>setDraftStore(event.target.value)}>{draftOptions.map(item=><option value={item.storeId} key={item.storeId}>{item.store}</option>)}</select></label><button className="primary crossComparePlus" disabled={!draftStore||selectedIds.includes(draftStore)||selectedIds.length>=5} onClick={addStore} aria-label="Legg til varehus">+</button></div><div className="crossCompareSelected">{chosenStores.map(store=><div key={store.storeId}><span><small>{cooperativeStores.find(item=>item.storeId===store.storeId)?.cooperative}</small><b>{displayStoreName(store.store)}</b></span><button disabled={selectedIds.length<=2} onClick={()=>removeStore(store.storeId)} aria-label={`Fjern ${store.store}`}>−</button></div>)}</div></section><LegacyComparison {...props} stores={chosenStores}/></div>
+}
+
+function LegacyComparison({area,report,stores,period,date}:{area:Area;report:DailyReport;stores:StoreSummary[];period:Period;date:string}){
  const [selectedIds,setSelectedIds]=useState<string[]>(()=>stores.slice(0,2).map(s=>s.storeId));
  useEffect(()=>{setSelectedIds(current=>{const valid=current.filter(id=>stores.some(s=>s.storeId===id));return valid.length>=2?valid:stores.slice(0,Math.min(2,stores.length)).map(s=>s.storeId)})},[stores.map(s=>s.storeId).join("|")]);
  const selectedStores=selectedIds.map(id=>stores.find(s=>s.storeId===id)).filter(Boolean) as StoreSummary[];
