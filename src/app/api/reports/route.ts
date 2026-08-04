@@ -14,7 +14,14 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
  const coverage=await q`SELECT EXISTS(
    SELECT 1 FROM paint_reports p
    WHERE p.report_date BETWEEN ${from}::date AND ${to}::date
-     AND NOT EXISTS (SELECT 1 FROM paint_report_rows r WHERE r.report_date=p.report_date)
+     AND COALESCE(p.report_data->>'storageMode','json')<>'rows'
+     AND (
+       NOT EXISTS (SELECT 1 FROM paint_report_rows r WHERE r.report_date=p.report_date)
+       OR EXISTS (
+         SELECT 1 FROM paint_report_rows r
+         WHERE r.report_date=p.report_date AND r.source_updated_at<p.updated_at
+       )
+     )
  ) AS cache_missing`;
  if(Boolean(coverage[0]?.cache_missing))await refreshReportCache(from,to);
  const rows=await q`WITH c AS MATERIALIZED (

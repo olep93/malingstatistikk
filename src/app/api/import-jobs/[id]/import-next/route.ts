@@ -2,6 +2,7 @@ import {NextResponse} from "next/server";
 import {getSession} from "@/lib/server/auth";
 import {aggregateProducts,canonicalizeRow} from "@/lib/data";
 import {ensureSchema,sql} from "@/lib/server/db";
+import {invalidateReportCache} from "@/lib/server/report-cache";
 
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await getSession();
@@ -45,6 +46,10 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
           report_data=excluded.report_data,
           uploaded_by=excluded.uploaded_by,
           updated_at=now()`;
+      // En eldre dagsrapport kan allerede ha materialiserte rader for bare ett
+      // samvirkelag. Fjern dem når den nasjonale rapporten erstatter dagen, slik
+      // at alle varehus bygges opp igjen fra den nye rapporten ved første lesing.
+      await invalidateReportCache(reportDate);
       const verify=await q`SELECT report_date::text AS report_date,
         jsonb_array_length(COALESCE(report_data->'rows','[]'::jsonb))::int AS row_count
         FROM paint_reports WHERE report_date=${reportDate}::date`;
