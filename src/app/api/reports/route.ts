@@ -36,9 +36,11 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
    GROUP BY store_id,product_key
  ), p AS MATERIALIZED (
    SELECT DISTINCT ON (keys.product_key) keys.product_key report_product_key,candidate.*
-   FROM (SELECT DISTINCT product_key,ean FROM c) keys
+   FROM (SELECT DISTINCT product_key,ean,item_no FROM c) keys
    JOIN paint_products candidate ON candidate.merged_into IS NULL
-     AND (candidate.product_key=keys.product_key OR (NULLIF(keys.ean,'') IS NOT NULL AND candidate.ean=keys.ean))
+     AND (candidate.product_key=keys.product_key
+       OR (NULLIF(keys.ean,'') IS NOT NULL AND (candidate.ean=keys.ean OR candidate.item_no=keys.ean))
+       OR (NULLIF(keys.item_no,'') IS NOT NULL AND (candidate.ean=keys.item_no OR candidate.item_no=keys.item_no)))
    ORDER BY keys.product_key,CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,
      CASE WHEN candidate.product_key=keys.product_key THEN 0 ELSE 1 END,candidate.updated_at DESC
  ) SELECT c.store_id,c.store_name,
