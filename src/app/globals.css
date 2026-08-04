@@ -1360,6 +1360,7 @@
 
 /* V15.4.0 – rask BI-lenke, produktmaster-synk og adaptiv sammenligning */
 .productMedia{display:flex;flex-direction:column;align-self:stretch;min-width:0}
+.testAreaTab,.mobileAreaPicker option[value="nationalTest"]{display:none!important}
 .productMedia .productImage{flex:1}
 .productQuickEdit{position:static!important;margin:8px 10px 10px!important;width:calc(100% - 20px);justify-content:center;box-shadow:none!important}
 .pmHeaderActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}

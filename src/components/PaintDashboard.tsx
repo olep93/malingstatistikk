@@ -127,6 +127,13 @@ export function PaintDashboard(){const {reports,save,remove,loading,serverError,
  const productRows=useMemo(()=>selected?[...(productsByStore.get(selected.storeId)||[])]:[],[productsByStore,selected?.storeId]);
  const ranking=useMemo(()=>[...stores].sort((a,b)=>b[metric]-a[metric]),[stores,metric]);
  const print=async()=>{
+  // Utskriftsrapporten rendres inne i Dashboard-komponenten. Når brukeren
+  // skriver ut fra Produktsalg, Historikk eller Sammenligning må dashboardet
+  // derfor monteres først, ellers finnes det ikke noe utskriftsinnhold i DOM-en.
+  if(view!=="dashboard"){
+   setView("dashboard");
+   await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+  }
   document.documentElement.classList.add("printPreparing");
   const images=[...document.querySelectorAll<HTMLImageElement>(".printPages img, .printReportPack img")];
   await Promise.all(images.map(img=>new Promise<void>(resolve=>{
