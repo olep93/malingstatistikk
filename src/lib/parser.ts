@@ -153,15 +153,6 @@ function parseRows(parsed:ParsedGrid,forcedDate?:string){
 export async function parsePaintWorkbook(file:File,date:string):Promise<DailyReport>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed,date);const rows=[...rowsByDate.values()].flat();if(!rows.length)throw new Error("Fant ingen produktlinjer i de valgte varegruppene.");return {date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]};}
 export async function parsePaintHistoryWorkbook(file:File):Promise<DailyReport[]>{const parsed=await workbookGrid(file);const {rowsByDate,sourceTotalsByDate}=parseRows(parsed);const reports=[...rowsByDate.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>({date,createdAt:new Date().toISOString(),sourceName:file.name,rows:aggregateProducts(rows),sourceTotals:sourceTotalsByDate.get(date)||[]}));if(!reports.length)throw new Error("Fant ingen daterte produktlinjer.");return reports;}
 
-function nationalColumns(grid:unknown[][]){
- for(let headerRow=0;headerRow<Math.min(15,grid.length);headerRow++){
-  const headers=(grid[headerRow]||[]).map(norm);
-  const date=column(headers,["dato","date"]),store=column(headers,["butikknr/navn","butikk nr/navn","butikknr","butikk"]),vendor=column(headers,["leverandørnavn","leverandør navn","leverandør"]),group=column(headers,["vare vgr navn","vare vgr","varegruppenavn","varegruppe"]),ean=column(headers,["gtin (ean/upc)","gtin(ean/upc)","gtin","ean/upc","ean","upc"]),q=column(headers,["antall solgt","ant solgt","solgt antall"]),revenue=column(headers,["omsetning","oms"]),margin=column(headers,["brutto %","bto %","brutto%","bto%"]),profit=column(headers,["brutto kr","bto kr","brutto fortjeneste","bruttofortjeneste"]);
-  if([date,store,vendor,group,ean,q,revenue,profit].every(x=>x>=0))return {headerRow,date,store,vendor,group,ean,q,revenue,margin,profit};
- }
- throw new Error("Det nasjonale Power BI-formatet ble ikke gjenkjent. Kontroller at eksporten inneholder Dato, Butikk, Leverandør, Varegruppe, EAN, Antall solgt, Omsetning og Brutto kr.");
-}
-
 export async function parseNationalPowerBiWorkbook(file:File):Promise<DailyReport>{
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:"array",cellDates:true});
@@ -169,9 +160,11 @@ export async function parseNationalPowerBiWorkbook(file:File):Promise<DailyRepor
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
   assertCompleteExport(grid);
   if(grid.length<2)throw new Error("Excel-filen er tom.");
-  const columns=nationalColumns(grid);const {headerRow,date:dateCol,store:storeCol,vendor:vendorCol,group:groupCol,ean:eanCol,q:qCol,revenue:rCol,margin:mCol,profit:pCol}=columns;
+  const headers=(grid[0]||[]).map(norm);
+  const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);
+  if([dateCol,storeCol,vendorCol,groupCol,eanCol,qCol,rCol,pCol].some(x=>x<0))throw new Error("Det nasjonale Power BI-formatet ble ikke gjenkjent.");
   const rows:ProductRow[]=[];let reportDate="";
-  for(let i=headerRow+1;i<grid.length;i++){
+  for(let i=1;i<grid.length;i++){
     const row=grid[i]||[];const date=isoDate(row[dateCol]);if(date)reportDate=reportDate||date;
     const storeText=String(row[storeCol]??"").trim(),vendor=String(row[vendorCol]??"").trim(),vgr=String(row[groupCol]??"").trim(),ean=identifier(row[eanCol]);
     if(!storeText||storeText.toLowerCase()==="total"||!vendor||vendor.toLowerCase()==="total"||!vgr||vgr.toLowerCase()==="total"||!ean||ean.toLowerCase()==="total")continue;
@@ -191,10 +184,12 @@ export async function parseNationalPowerBiHistoryWorkbook(file:File):Promise<Dai
   const grid=XLSX.utils.sheet_to_json<unknown[]>(ws,{header:1,raw:true,defval:null});
   assertCompleteExport(grid);
   if(grid.length<2)throw new Error("Excel-filen er tom.");
-  const columns=nationalColumns(grid);const {headerRow,date:dateCol,store:storeCol,vendor:vendorCol,group:groupCol,ean:eanCol,q:qCol,revenue:rCol,margin:mCol,profit:pCol}=columns;
+  const headers=(grid[0]||[]).map(norm);
+  const dateCol=column(headers,["dato"]),storeCol=column(headers,["butikknr/navn","butikk"]),vendorCol=column(headers,["leverandørnavn","leverandør"]),groupCol=column(headers,["vare vgr navn","varegruppe"]),eanCol=column(headers,["gtin (ean/upc)","gtin","ean/upc","ean"]),qCol=column(headers,["antall solgt","ant solgt"]),rCol=column(headers,["omsetning","oms"]),mCol=column(headers,["brutto %","bto %"]),pCol=column(headers,["brutto kr","bto kr"]);
+  if([dateCol,storeCol,vendorCol,groupCol,eanCol,qCol,rCol,pCol].some(x=>x<0))throw new Error("Det nasjonale Power BI-formatet ble ikke gjenkjent.");
   const byDate=new Map<string,ProductRow[]>();
   let currentDate="";
-  for(let i=headerRow+1;i<grid.length;i++){
+  for(let i=1;i<grid.length;i++){
     const row=grid[i]||[];
     const parsedDate=isoDate(row[dateCol]);
     if(parsedDate)currentDate=parsedDate;

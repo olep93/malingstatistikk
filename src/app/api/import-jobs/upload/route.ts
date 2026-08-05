@@ -6,8 +6,6 @@ import {getSession} from '@/lib/server/auth';
 const EXCEL_TYPES=[
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-excel',
-  'application/zip',
-  'application/x-zip-compressed',
   'application/octet-stream'
 ];
 
