@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 162;
+const SCHEMA_VERSION = 163;
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -104,9 +104,18 @@ async function runSchemaMigration() {
   // reference was built from the approved Excel list and remains the source of
   // truth for exterior tags. This migration is idempotent and never overwrites
   // an Admin-locked tag.
+  const commercialSize=(value:string)=>{
+    const size=String(value||'').replace(/\s/g,'').replace(',','.').toLowerCase();
+    if(['0.68l','1l','1.0l'].includes(size))return '1 L';
+    if(['2.7l','3l','3.0l'].includes(size))return '3 L';
+    if(['4.5l','5l','5.0l'].includes(size))return '5 L';
+    if(['9l','9.0l','10l','10.0l'].includes(size))return '10 L';
+    return value;
+  };
   const exteriorMappings = Object.entries(PRODUCT_REFERENCE).map(([itemNo, product]) => ({
     item_no: itemNo,
     ean: product.ean || '',
+    size: commercialSize(product.size),
     subgroup: product.category === 'Vindu / Dør'
       ? 'Vindu / Dør'
       : product.category === 'Murmaling'
@@ -115,7 +124,7 @@ async function runSchemaMigration() {
   }));
   await q`WITH mappings AS (
     SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
-      AS x(item_no text, ean text, subgroup text)
+      AS x(item_no text, ean text, size text, subgroup text)
   )
   UPDATE paint_products p
   SET area='exterior',
@@ -125,6 +134,29 @@ async function runSchemaMigration() {
   FROM mappings m
   WHERE COALESCE(p.subgroup_locked,false)=false
     AND (p.ean=m.ean OR p.ean=m.item_no)`;
+
+  // Reparasjon av eldre nasjonale importer: produktnavnet fra produktsiden kan
+  // vise standardvarianten (ofte 2,7 L), mens EAN identifiserer riktig spann.
+  // Oppdater både Product Master og allerede importerte rapportlinjer fra EAN.
+  await q`WITH mappings AS (
+    SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
+      AS x(item_no text, ean text, size text, subgroup text)
+  )
+  UPDATE paint_products p SET
+    size=m.size,raw_size=m.size,normalized_size=m.size,variant_id=COALESCE(NULLIF(p.ean,''),NULLIF(p.item_no,''),m.ean),updated_at=now()
+  FROM mappings m
+  WHERE m.size<>'' AND (
+    p.ean=m.ean OR p.item_no=m.ean OR p.ean=m.item_no OR p.item_no=m.item_no
+  )`;
+  await q`WITH mappings AS (
+    SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
+      AS x(item_no text, ean text, size text, subgroup text)
+  )
+  UPDATE paint_report_rows r SET size=m.size,source_updated_at=now()
+  FROM mappings m
+  WHERE m.size<>'' AND (
+    r.ean=m.ean OR r.item_no=m.ean OR r.ean=m.item_no OR r.item_no=m.item_no
+  )`;
 
   // Older database rows already contain the approved category in `category`, but
   // predate the new area/subgroup columns. Promote those values as well.
