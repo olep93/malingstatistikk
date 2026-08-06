@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 163;
+const SCHEMA_VERSION = 164;
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -115,6 +115,7 @@ async function runSchemaMigration() {
   const exteriorMappings = Object.entries(PRODUCT_REFERENCE).map(([itemNo, product]) => ({
     item_no: itemNo,
     ean: product.ean || '',
+    name: product.name,
     size: commercialSize(product.size),
     subgroup: product.category === 'Vindu / Dør'
       ? 'Vindu / Dør'
@@ -124,7 +125,7 @@ async function runSchemaMigration() {
   }));
   await q`WITH mappings AS (
     SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
-      AS x(item_no text, ean text, size text, subgroup text)
+      AS x(item_no text, ean text, name text, size text, subgroup text)
   )
   UPDATE paint_products p
   SET area='exterior',
@@ -140,9 +141,10 @@ async function runSchemaMigration() {
   // Oppdater både Product Master og allerede importerte rapportlinjer fra EAN.
   await q`WITH mappings AS (
     SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
-      AS x(item_no text, ean text, size text, subgroup text)
+      AS x(item_no text, ean text, name text, size text, subgroup text)
   )
   UPDATE paint_products p SET
+    display_name=CASE WHEN COALESCE(p.display_name_locked,false) THEN p.display_name ELSE m.name END,
     size=m.size,raw_size=m.size,normalized_size=m.size,variant_id=COALESCE(NULLIF(p.ean,''),NULLIF(p.item_no,''),m.ean),updated_at=now()
   FROM mappings m
   WHERE m.size<>'' AND (
@@ -150,9 +152,9 @@ async function runSchemaMigration() {
   )`;
   await q`WITH mappings AS (
     SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
-      AS x(item_no text, ean text, size text, subgroup text)
+      AS x(item_no text, ean text, name text, size text, subgroup text)
   )
-  UPDATE paint_report_rows r SET size=m.size,source_updated_at=now()
+  UPDATE paint_report_rows r SET product_name=m.name,size=m.size,source_updated_at=now()
   FROM mappings m
   WHERE m.size<>'' AND (
     r.ean=m.ean OR r.item_no=m.ean OR r.ean=m.item_no OR r.item_no=m.item_no
