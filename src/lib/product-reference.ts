@@ -305,4 +305,10 @@ export const PRODUCT_REFERENCE:Record<string,ProductReferenceEntry>={
   "7279631":{name:"Drygolin Vindu / Dør",size:"0,9 L",category:"Vindu / Dør",canonicalKey:"drygolin-vindu---dør|0.9-l",ean:"7029350272038",rawName:"DRYG VINDU/DØR KL.HV-BASE 0,9L" },
   "7279632":{name:"Drygolin Power Clean",size:"9 L",category:"Maling / Dekkbeis / Beis",canonicalKey:"drygolin-power-clean|9-l",ean:"7029350271864",rawName:"DRYG POWER CLEAN KL.HV.-B 9L" },
 };
-export const productReference=(itemNo:string|number|undefined)=>PRODUCT_REFERENCE[String(itemNo??"").trim()];
+const PRODUCT_REFERENCE_BY_EAN:Record<string,ProductReferenceEntry>=Object.fromEntries(
+  Object.values(PRODUCT_REFERENCE).filter(entry=>entry.ean).map(entry=>[String(entry.ean),entry])
+);
+export const productReference=(itemNo:string|number|undefined)=>{
+  const identifier=String(itemNo??"").trim();
+  return PRODUCT_REFERENCE[identifier]||PRODUCT_REFERENCE_BY_EAN[identifier];
+};

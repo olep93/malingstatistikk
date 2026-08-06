@@ -212,7 +212,10 @@ export const imageForProduct=(p:string,rawName="")=>catalogEntry(p,rawName)?.ima
 
 export const canonicalizeRow=(row:ProductRow):ProductRow=>{
   const normalized=normalizeProduct(row.rawName||row.product,row.itemNo);
-  const productKey=[row.area||"exterior",row.subgroup||"",row.supplier,normalized.canonicalKey].join("|");
+  const ean=String(row.ean||"").replace(/\D/g,"");
+  // Volum/basevarianter kan ha samme navn på produktsiden. EAN må derfor
+  // være den stabile identiteten, ellers kan eksempelvis 3 L og 10 L slås sammen.
+  const productKey=[row.area||"exterior",row.subgroup||"",row.supplier,ean?`ean-${ean}`:normalized.canonicalKey].join("|");
   return {
     ...row,
     product:normalized.product,

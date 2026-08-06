@@ -209,7 +209,7 @@ export async function parseNationalPowerBiHistoryWorkbook(file:File):Promise<Dai
   return reports;
 }
 
-export type NationalProductEnrichment={ean:string;name:string;displayName?:string;imageUrl?:string|null;productUrl?:string|null};
+export type NationalProductEnrichment={ean:string;name:string;displayName?:string;size?:string|null;imageUrl?:string|null;productUrl?:string|null};
 export function applyNationalProductEnrichment(report:DailyReport,enrichments:Record<string,NationalProductEnrichment>):DailyReport{
   const rows=report.rows.map(row=>{
     const ean=identifier(row.ean||row.itemNo);
@@ -217,7 +217,7 @@ export function applyNationalProductEnrichment(report:DailyReport,enrichments:Re
     if(!hit)return row;
     const raw=String(hit.name||hit.displayName||row.rawName||row.product).trim();
     const normalized=normalizeProduct(raw,row.itemNo);
-    return {...row,rawName:raw,product:normalized.product,size:normalized.size||row.size,category:normalized.category||row.category,productKey:[row.area||'',row.subgroup||'',row.supplier,normalized.canonicalKey].join('|'),image:hit.imageUrl||row.image,productUrl:hit.productUrl||row.productUrl};
+    return {...row,rawName:raw,product:normalized.product,size:normalized.size||hit.size||row.size,category:normalized.category||row.category,productKey:[row.area||'',row.subgroup||'',row.supplier,`ean-${ean}`].join('|'),image:hit.imageUrl||row.image,productUrl:hit.productUrl||row.productUrl};
   });
   return {...report,rows:aggregateProducts(rows)};
 }

@@ -17,7 +17,7 @@ export async function POST(req:Request){
 
     await ensureSchema();
     const q=sql();
-    const cached=await q`SELECT ean,item_no,website_name,display_name,image_url,product_url,area,subgroup,lookup_method,matched_identifier,match_confidence
+    const cached=await q`SELECT ean,item_no,website_name,display_name,size,image_url,product_url,area,subgroup,lookup_method,matched_identifier,match_confidence
       FROM paint_products
       WHERE regexp_replace(COALESCE(ean,''),'[^0-9]','','g')=${ean}
         AND lookup_status='found'
@@ -25,7 +25,7 @@ export async function POST(req:Request){
       LIMIT 1`;
     if(cached.length){
       const p:any=cached[0];
-      return NextResponse.json({ok:true,found:true,cached:true,ean,name:p.website_name||p.display_name||`EAN ${ean}`,displayName:p.display_name||p.website_name||`EAN ${ean}`,imageUrl:p.image_url||null,productUrl:p.product_url||null,area:p.area||area,subgroup:p.subgroup||subgroup,matchMethod:p.lookup_method||'EXACT_EAN',matchedIdentifier:p.matched_identifier||ean,confidence:Number(p.match_confidence||100)});
+      return NextResponse.json({ok:true,found:true,cached:true,ean,name:p.website_name||p.display_name||`EAN ${ean}`,displayName:p.display_name||p.website_name||`EAN ${ean}`,size:p.size||null,imageUrl:p.image_url||null,productUrl:p.product_url||null,area:p.area||area,subgroup:p.subgroup||subgroup,matchMethod:p.lookup_method||'EXACT_EAN',matchedIdentifier:p.matched_identifier||ean,confidence:Number(p.match_confidence||100)});
     }
 
     const result=await findObsbyggImage({
@@ -44,6 +44,7 @@ export async function POST(req:Request){
       ok:true,found:true,cached:false,ean,
       name:result.websiteName||result.displayName||`EAN ${ean}`,
       displayName:result.displayName||result.websiteName||`EAN ${ean}`,
+      size:result.size||null,
       imageUrl:result.imageUrl||null,
       productUrl:result.url||null,
       area,
