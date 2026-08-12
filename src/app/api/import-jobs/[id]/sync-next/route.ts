@@ -42,6 +42,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
    const isDone=Number(c.remaining)===0;
    await q`UPDATE paint_import_jobs SET status=CASE WHEN ${isDone} THEN CASE WHEN imported_days>=total_days THEN 'completed' ELSE 'products_ready' END ELSE 'syncing' END,
     synced_products=${c.done},failed_products=${c.failed},updated_at=now() WHERE id=${id}::bigint`;
+   if(isDone)await q`DELETE FROM paint_import_job_products p USING paint_import_jobs j WHERE p.job_id=j.id AND j.id=${id}::bigint AND j.status='completed'`;
    return NextResponse.json({ok:true,done:isDone,processed:0,...c});
   }
 
@@ -71,6 +72,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   await q`UPDATE paint_import_jobs SET synced_products=${c.done},failed_products=${c.failed},
    status=CASE WHEN ${isDone} THEN CASE WHEN imported_days>=total_days THEN 'completed' ELSE 'products_ready' END ELSE 'syncing' END,
    updated_at=now() WHERE id=${id}::bigint`;
+  if(isDone)await q`DELETE FROM paint_import_job_products p USING paint_import_jobs j WHERE p.job_id=j.id AND j.id=${id}::bigint AND j.status='completed'`;
   return NextResponse.json({ok:true,done:isDone,processed:results.length,...c});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Produktberikelse feilet'},{status:500})}
 }

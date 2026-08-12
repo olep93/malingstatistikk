@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {put} from "@vercel/blob";
+import {del,put} from "@vercel/blob";
 import {getSession} from "@/lib/server/auth";
 import {ensureSchema,sql} from "@/lib/server/db";
 
@@ -23,11 +23,19 @@ export async function POST(req:Request){
    blobUrl=blob.url;
   }
   const q=sql();
+  const previous=await q`SELECT blob_url FROM paint_reports WHERE report_date=${date}::date`;
   const now=new Date().toISOString();
   const metadata={date,createdAt:now,sourceName,uploadedBy:session.username,uploadedAt:now,storageMode:"rows",rowCount,storeCount,rows:[]};
   await q`INSERT INTO paint_reports(report_date,source_name,blob_url,report_data,updated_at,uploaded_by)
     VALUES(${date}::date,${sourceName},${blobUrl},${JSON.stringify(metadata)}::jsonb,now(),${session.username})
     ON CONFLICT(report_date) DO UPDATE SET source_name=excluded.source_name,blob_url=COALESCE(excluded.blob_url,paint_reports.blob_url),report_data=excluded.report_data,updated_at=now(),uploaded_by=excluded.uploaded_by`;
+  const previousUrl=String(previous[0]?.blob_url||'');
+  if(blobUrl&&previousUrl&&previousUrl!==blobUrl){
+   const references=await q`SELECT
+     (SELECT count(*)::int FROM paint_reports WHERE blob_url=${previousUrl})+
+     (SELECT count(*)::int FROM paint_import_jobs WHERE blob_url=${previousUrl}) AS count`;
+   if(Number(references[0]?.count||0)===0)try{await del(previousUrl)}catch{}
+  }
   await q`DELETE FROM paint_report_rows WHERE report_date=${date}::date`;
   return NextResponse.json({ok:true,date,rowCount,storeCount});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Kunne ikke starte importen"},{status:500})}

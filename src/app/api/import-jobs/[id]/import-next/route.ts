@@ -2,7 +2,7 @@ import {NextResponse} from "next/server";
 import {getSession} from "@/lib/server/auth";
 import {aggregateProducts,canonicalizeRow} from "@/lib/data";
 import {ensureSchema,sql} from "@/lib/server/db";
-import {invalidateReportCache} from "@/lib/server/report-cache";
+import {refreshReportCache} from "@/lib/server/report-cache";
 
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await getSession();
@@ -26,6 +26,7 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
         status=CASE WHEN ${c.failed}>0 THEN 'import_error' ELSE 'completed' END,
         imported_days=${c.imported},failed_days=${c.failed},updated_at=now()
         WHERE id=${id}::bigint`;
+      if(Number(c.failed||0)===0)await q`DELETE FROM paint_import_job_days WHERE job_id=${id}::bigint`;
       return NextResponse.json({ok:true,done:true,...c});
     }
 
@@ -46,15 +47,15 @@ export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
           report_data=excluded.report_data,
           uploaded_by=excluded.uploaded_by,
           updated_at=now()`;
-      // En eldre dagsrapport kan allerede ha materialiserte rader for bare ett
-      // samvirkelag. Fjern dem når den nasjonale rapporten erstatter dagen, slik
-      // at alle varehus bygges opp igjen fra den nye rapporten ved første lesing.
-      await invalidateReportCache(reportDate);
+      // Materialiser én gang og fjern deretter den store JSON-kopien. Tidligere
+      // ble samme rapport liggende både i JSON og i paint_report_rows.
+      await refreshReportCache(reportDate,reportDate);
       const verify=await q`SELECT report_date::text AS report_date,
-        jsonb_array_length(COALESCE(report_data->'rows','[]'::jsonb))::int AS row_count
+        (SELECT count(*)::int FROM paint_report_rows WHERE report_date=${reportDate}::date) AS row_count
         FROM paint_reports WHERE report_date=${reportDate}::date`;
       const rowCount=Number(verify[0]?.row_count||0);
       if(!verify.length||rowCount===0)throw new Error(`Kontroll av ${reportDate} feilet: rapporten ble lagret uten varelinjer.`);
+      await q`UPDATE paint_reports SET report_data=(report_data-'rows')||jsonb_build_object('storageMode','rows','rowCount',${rowCount}) WHERE report_date=${reportDate}::date`;
       await q`UPDATE paint_import_job_days SET status='imported',error=null,updated_at=now()
         WHERE job_id=${id}::bigint AND report_date=${reportDate}::date`;
       await q`UPDATE paint_import_jobs SET

@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 164;
+const SCHEMA_VERSION = 165;
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -281,6 +281,18 @@ async function runSchemaMigration() {
   await q`ALTER TABLE paint_import_job_products ADD COLUMN IF NOT EXISTS retry_count integer NOT NULL DEFAULT 0`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_products_status_idx ON paint_import_job_products(job_id,status)`;
   await q`CREATE INDEX IF NOT EXISTS paint_import_job_days_status_idx ON paint_import_job_days(job_id,status)`;
+  // Ferdige rapporter hadde tidligere hele varelinjearrayet både i JSON og i
+  // den normaliserte tabellen. Behold metadata, men fjern den doble kopien.
+  await q`UPDATE paint_reports p SET report_data=(p.report_data-'rows')||jsonb_build_object(
+      'storageMode','rows','rowCount',(SELECT count(*)::int FROM paint_report_rows r WHERE r.report_date=p.report_date)
+    )
+    WHERE jsonb_typeof(p.report_data->'rows')='array'
+      AND jsonb_array_length(p.report_data->'rows')>0
+      AND EXISTS (SELECT 1 FROM paint_report_rows r WHERE r.report_date=p.report_date)`;
+  // Fullførte serverjobber er kun historikk/status. Stagingdataene er allerede
+  // verifisert i hovedtabellene og kan trygt frigjøres.
+  await q`DELETE FROM paint_import_job_days d USING paint_import_jobs j WHERE d.job_id=j.id AND j.status='completed'`;
+  await q`DELETE FROM paint_import_job_products p USING paint_import_jobs j WHERE p.job_id=j.id AND j.status='completed'`;
 
   await q`CREATE TABLE IF NOT EXISTS paint_schema_version (
     id integer PRIMARY KEY CHECK (id=1),
