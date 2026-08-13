@@ -2,8 +2,9 @@ import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
 import { normalizeCommercialSize } from '../data';
+import { productReference } from '../product-reference';
 
-const NORMALIZATION_VERSION=8;
+const NORMALIZATION_VERSION=9;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
@@ -78,12 +79,16 @@ async function persist(input:Input,result:Result){
  display_name=CASE WHEN paint_products.display_name_locked OR excluded.lookup_status<>'found' THEN paint_products.display_name ELSE COALESCE(NULLIF(excluded.display_name,''),paint_products.display_name) END,
  supplier=COALESCE(NULLIF(excluded.supplier,''),paint_products.supplier),size=COALESCE(NULLIF(excluded.size,''),NULLIF(CASE WHEN lower(trim(paint_products.size)) IN ('produkt','product','vare','artikkel','ukjent','n/a') THEN NULL ELSE paint_products.size END,'')),
  raw_size=COALESCE(NULLIF(excluded.raw_size,''),paint_products.raw_size),normalized_size=COALESCE(NULLIF(excluded.normalized_size,''),paint_products.normalized_size),variant_id=COALESCE(NULLIF(excluded.variant_id,''),paint_products.variant_id),
- image_url=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.image_url,paint_products.image_url) ELSE paint_products.image_url END,
- image_source=CASE WHEN excluded.lookup_status='found' THEN COALESCE(NULLIF(excluded.image_source,''),paint_products.image_source) ELSE paint_products.image_source END,
+ image_url=CASE WHEN excluded.lookup_status='found' THEN CASE
+   WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_url
+   ELSE excluded.image_url END ELSE paint_products.image_url END,
+ image_source=CASE WHEN excluded.lookup_status='found' THEN CASE
+   WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_source
+   ELSE NULLIF(excluded.image_source,'') END ELSE paint_products.image_source END,
  product_url=CASE WHEN excluded.lookup_status='found' THEN COALESCE(NULLIF(excluded.product_url,''),paint_products.product_url) ELSE paint_products.product_url END,
  category=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.category,paint_products.category) ELSE paint_products.category END,
  subgroup=CASE WHEN paint_products.subgroup_locked OR excluded.lookup_status<>'found' THEN paint_products.subgroup ELSE COALESCE(excluded.subgroup,paint_products.subgroup) END,
- image_approved=paint_products.image_approved OR (excluded.lookup_status='found' AND excluded.image_approved),
+ image_approved=CASE WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_approved ELSE (excluded.lookup_status='found' AND excluded.image_approved) END,
  ean=COALESCE(excluded.ean,paint_products.ean),item_no=COALESCE(excluded.item_no,paint_products.item_no),aliases=(SELECT jsonb_agg(DISTINCT x) FROM jsonb_array_elements(paint_products.aliases || excluded.aliases) x),
  lookup_status=excluded.lookup_status,last_fetched_at=now(),normalization_version=${NORMALIZATION_VERSION},area=COALESCE(excluded.area,paint_products.area),updated_at=now(),
  lookup_method=excluded.lookup_method,matched_identifier=excluded.matched_identifier,match_confidence=excluded.match_confidence,
@@ -128,6 +133,12 @@ function variantObjectForIdentifier(html:string,identifier:string){
  return '';
 }
 function sizeFromVariantObject(html:string,identifier:string){
+ // Obsbygg serialiserer hver variant med eksakt EAN og størrelse. Les feltet
+ // rett etter identifikatoren før vi forsøker den mer tolerante objektleseren.
+ // Produktsidens tittel beskriver ofte standardvarianten og er ikke en sikker kilde.
+ const escaped=identifier.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const exact=html.match(new RegExp(`(?:sku|code|ean|gtin)["'\\s:=\\-]+(?:ObsBygg-)?${escaped}[\\s\\S]{0,1800}?(?:size|størrelse|volume|volum)["'\\s:=]+(\\d+(?:[.,]\\d+)?)\\s*(ml|l|liter)\\b`,'i'));
+ if(exact)return extractSize(`${exact[1]} ${exact[2]}`);
  const object=variantObjectForIdentifier(html,identifier);
  if(!object)return undefined;
  const labelled=object.match(/(?:size|størrelse|volume|volum|label|value)["'\\\s:=]+(\d+(?:[.,]\d+)?)\s*(ml|l|liter)\b/i);
@@ -170,10 +181,10 @@ function chooseVariantImage(html:string,input:Input,matchedIdentifier?:string){
  const ean=digits(input.ean),matched=digits(matchedIdentifier),size=normalizeSize(input.size);
  // EAN/variantobjekt er eneste sikre automatiske kilde. Bildenummeret i URL-en
  // er ofte et internt assetnummer og vil derfor normalt ikke inneholde EAN.
- const nearEan=imageFromIdentifierWindow(html,ean);if(nearEan)return nearEan;
- const nearMatched=imageFromIdentifierWindow(html,matched);if(nearMatched)return nearMatched;
  const exactEan=ean?all.find(url=>digits(url).includes(ean)):undefined;if(exactEan)return exactEan;
  const exactMatched=matched?all.find(url=>digits(url).includes(matched)):undefined;if(exactMatched)return exactMatched;
+ const nearEan=imageFromIdentifierWindow(html,ean);if(nearEan)return nearEan;
+ const nearMatched=imageFromIdentifierWindow(html,matched);if(nearMatched)return nearMatched;
  const sizeImage=imageNearSize(html,size);if(sizeImage)return sizeImage;
  // Ikke lagre sidens og:image som korrekt variant når siden har flere varianter.
  // Da er manglende bilde bedre enn et dokumentert feil bilde.
@@ -190,13 +201,15 @@ export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?
  const outdated=(row?.normalization_version||0)<NORMALIZATION_VERSION;
  if(row&&!opts.force&&!stale&&!outdated){return {found:row.lookup_status==='found',imageUrl:row.image_url,displayName:row.display_name,websiteName:row.website_name,size:row.size,url:row.product_url,category:row.category,subgroup:row.subgroup,source:'database',status:row.lookup_status};}
  const shouldPersist=opts.persist!==false;
+ const reference=productReference(digits(input.ean))||productReference(digits(input.itemNo));
+ const authoritativeSize=normalizeCommercialSize(reference?.size||extractSize(input.rawName||'')||input.size||'');
  const known=opts.exactOnly?undefined:catalogEntry(input.productName,input.rawName);
  if(known?.pageUrl){const page=await fetchPage(known.pageUrl);if(page){const subgroup=inferSubgroup(input.area,page.title,page.html,input.subgroup);const r:Result={found:true,imageUrl:page.image||known.image,displayName:customerName(page.title,known.name,input.area),websiteName:page.title,size:extractSize(page.title,input.rawName,input.size),url:known.pageUrl,category:known.category,subgroup,source:'catalog-page',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}}
  if(known?.image&&input.area==='exterior'){const r:Result={found:true,imageUrl:known.image,displayName:known.name,websiteName:known.name,size:extractSize(input.rawName,input.size),url:known.pageUrl,category:known.category,subgroup:input.subgroup,source:'catalog',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}
  const terms=[digits(input.ean),digits(input.itemNo)].filter(Boolean) as string[];
  for(const term of [...new Set(terms)].slice(0,2)){
   const searchUrl=`https://www.obsbygg.no/sok?q=${encodeURIComponent(term)}`;
-  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const directTitle=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||'');const directMatch=exactMatch(r.url,html,input);const direct=directTitle&&directMatch?{url:r.url,image:images(html)[0],title:directTitle,html,score:score(directTitle,input)}:null;const urls=productLinks(html).filter(url=>url!==r.url);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=[direct,...pages].filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const initialImage=chooseVariantImage(candidate.html,input,match.identifier)||candidate.image;const variantEan=match.method==='EXACT_EAN'?match.identifier:eanFromImageUrl(initialImage);const exactUrl=variantEan?variantUrl(candidate.url,variantEan):candidate.url;const variantPage=exactUrl!==candidate.url?await fetchPage(exactUrl,input,variantEan||match.identifier):null;const page=variantPage||candidate;const image=chooseVariantImage(page.html,{...input,ean:input.ean||variantEan},variantEan||match.identifier)||initialImage||page.image;const websiteName=page.title;const subgroup=inferSubgroup(input.area,websiteName,page.html,input.subgroup);const result:Result={found:true,imageUrl:image,displayName:customerName(websiteName,input.productName,input.area),websiteName,size:sizeFromVariantObject(page.html,match.identifier)||extractSize(websiteName,input.rawName,input.size),url:exactUrl,category:known?.category,subgroup,source:'obsbygg-exact-variant',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:image?100:90};if(shouldPersist)await persist(input,result);return result;}}catch{}
+  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const directTitle=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||'');const directMatch=exactMatch(r.url,html,input);const direct=directTitle&&directMatch?{url:r.url,image:chooseVariantImage(html,input,directMatch.identifier),title:directTitle,html,score:score(directTitle,input)}:null;const urls=productLinks(html).filter(url=>url!==r.url);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=[direct,...pages].filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const initialImage=chooseVariantImage(candidate.html,input,match.identifier);const variantEan=match.method==='EXACT_EAN'?match.identifier:eanFromImageUrl(initialImage);const exactUrl=variantEan?variantUrl(candidate.url,variantEan):candidate.url;const variantPage=exactUrl!==candidate.url?await fetchPage(exactUrl,input,variantEan||match.identifier):null;const page=variantPage||candidate;const image=chooseVariantImage(page.html,{...input,ean:input.ean||variantEan},variantEan||match.identifier)||initialImage;const websiteName=page.title;const subgroup=inferSubgroup(input.area,websiteName,page.html,input.subgroup);const result:Result={found:true,imageUrl:image,displayName:customerName(websiteName,input.productName,input.area),websiteName,size:authoritativeSize||sizeFromVariantObject(page.html,match.identifier)||extractSize(websiteName),url:exactUrl,category:known?.category,subgroup,source:'obsbygg-exact-variant',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:image?100:90};if(shouldPersist)await persist(input,result);return result;}}catch{}
  }
  const result:Result={found:false,displayName:known?.name||input.productName,websiteName:undefined,size:extractSize(input.rawName,input.productName,input.size),category:known?.category,subgroup:input.subgroup,source:'obsbygg-exact-search',status:'needs_review',matchMethod:'NONE',confidence:0};if(shouldPersist)await persist(input,result);return result;
 }
