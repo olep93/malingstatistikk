@@ -144,9 +144,12 @@ export function PaintDashboard(){const {reports,save,remove,loading,serverError,
   document.documentElement.classList.add("printPreparing");
   const images=[...document.querySelectorAll<HTMLImageElement>(".printPages img, .printReportPack img")];
   await Promise.all(images.map(img=>new Promise<void>(resolve=>{
-   if(img.complete&&img.naturalWidth>0){resolve();return}
-   const done=()=>resolve();img.addEventListener("load",done,{once:true});img.addEventListener("error",done,{once:true});
-   if(!img.src)resolve();
+   // `complete` er også true for bilder som allerede har feilet. Hvis vi da
+   // venter på et nytt error-event, kommer det aldri og utskriften låser seg.
+   if(img.complete||!img.src){resolve();return}
+   let settled=false;const done=()=>{if(settled)return;settled=true;window.clearTimeout(timeout);resolve()};
+   const timeout=window.setTimeout(done,3000);
+   img.addEventListener("load",done,{once:true});img.addEventListener("error",done,{once:true});
   })));
   if(document.fonts?.ready)await document.fonts.ready;
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
