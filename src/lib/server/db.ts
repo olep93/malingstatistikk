@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 166;
+const SCHEMA_VERSION = 167;
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -365,7 +365,13 @@ function isConcurrentSchemaRace(error: unknown) {
 async function migrateWithRetry() {
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
-      if (await currentSchemaVersion() >= SCHEMA_VERSION) return;
+      const version=await currentSchemaVersion();
+      if (version >= SCHEMA_VERSION) return;
+      // V166-produktreparasjonen ble skrevet før den tunge historikkdelen.
+      // Historikken bruker Product Master dynamisk og trenger ikke omskrives.
+      // Marker oppgraderingen ferdig uten å kjøre hele migrasjonsrekken på hvert
+      // kaldt serverless-kall dersom databasen allerede var på moderne skjema.
+      if(version>=165){const q=sql();await q`UPDATE paint_schema_version SET version=${SCHEMA_VERSION},updated_at=now() WHERE id=1`;return;}
       await runSchemaMigration();
       return;
     } catch (error) {

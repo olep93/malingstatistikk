@@ -28,16 +28,6 @@ export async function POST(){
       normalization_version=9,updated_at=now()
     FROM resolved r WHERE p.product_key=r.product_key RETURNING p.product_key
   ) SELECT count(*)::int count FROM changed`;
-  const reports=await q`WITH mappings AS (
-    SELECT * FROM jsonb_to_recordset(${JSON.stringify(mappings)}::jsonb) AS x(item_no text,ean text,name text,size text,subgroup text)
-  ), resolved AS (
-    SELECT DISTINCT ON (r.report_date,r.store_id,r.product_key) r.report_date,r.store_id,r.product_key,m.name,m.size
-    FROM paint_report_rows r JOIN mappings m ON r.ean=m.ean OR r.item_no=m.item_no OR r.ean=m.item_no OR r.item_no=m.ean
-    WHERE m.size<>'' ORDER BY r.report_date,r.store_id,r.product_key,CASE WHEN r.ean=m.ean THEN 0 WHEN r.item_no=m.item_no THEN 1 WHEN r.ean=m.item_no THEN 2 ELSE 3 END
-  ), changed AS (
-    UPDATE paint_report_rows r SET product_name=x.name,size=x.size,source_updated_at=now()
-    FROM resolved x WHERE r.report_date=x.report_date AND r.store_id=x.store_id AND r.product_key=x.product_key RETURNING r.product_key
-  ) SELECT count(*)::int count FROM changed`;
-  return NextResponse.json({ok:true,products:Number(products[0]?.count||0),reportRows:Number(reports[0]?.count||0)});
+  return NextResponse.json({ok:true,products:Number(products[0]?.count||0)});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke reparere produktvariantene'},{status:500});}
 }
