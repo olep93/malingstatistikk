@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 165;
+const SCHEMA_VERSION = 166;
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -191,6 +191,56 @@ async function runSchemaMigration() {
       WHEN replace(lower(trim(coalesce(size,''))),' ','') IN ('9l','9,0l','9.0l','10l','10,0l','10.0l') THEN '10 L'
       ELSE size END
     WHERE size IS NOT NULL AND size<>''`;
+
+  // V166: tidligere reparasjoner brukte en bred OR-kobling mot EAN og varenummer.
+  // Dersom eldre data hadde EAN i feil kolonne kunne PostgreSQL velge en vilkårlig
+  // variant. Velg nå nøyaktig én fasit per produkt, med eksakt EAN som førstevalg.
+  await q`WITH mappings AS (
+    SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
+      AS x(item_no text, ean text, name text, size text, subgroup text)
+  ), resolved AS (
+    SELECT DISTINCT ON (p.product_key) p.product_key,m.ean,m.item_no,m.name,m.size,m.subgroup
+    FROM paint_products p
+    JOIN mappings m ON p.ean=m.ean OR p.item_no=m.item_no OR p.ean=m.item_no OR p.item_no=m.ean
+    WHERE m.size<>''
+    ORDER BY p.product_key,
+      CASE WHEN p.ean=m.ean THEN 0 WHEN p.item_no=m.item_no THEN 1 WHEN p.ean=m.item_no THEN 2 ELSE 3 END
+  )
+  UPDATE paint_products p SET
+    display_name=CASE WHEN COALESCE(p.display_name_locked,false) THEN p.display_name ELSE r.name END,
+    size=r.size,raw_size=r.size,normalized_size=r.size,variant_id=r.ean,
+    area='exterior',
+    subgroup=CASE WHEN COALESCE(p.subgroup_locked,false) THEN p.subgroup ELSE r.subgroup END,
+    category=CASE WHEN COALESCE(p.subgroup_locked,false) THEN p.category ELSE r.subgroup END,
+    image_url=CASE
+      WHEN p.image_url LIKE '%blob.vercel-storage.com/%' THEN p.image_url
+      WHEN p.image_url LIKE '/products/%' THEN NULL
+      WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL
+        AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN NULL
+      ELSE p.image_url END,
+    image_approved=CASE
+      WHEN p.image_url LIKE '%blob.vercel-storage.com/%' THEN p.image_approved
+      WHEN p.image_url LIKE '/products/%' THEN false
+      WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL
+        AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN false
+      ELSE p.image_approved END,
+    normalization_version=9,updated_at=now()
+  FROM resolved r WHERE p.product_key=r.product_key`;
+  await q`WITH mappings AS (
+    SELECT * FROM jsonb_to_recordset(${JSON.stringify(exteriorMappings)}::jsonb)
+      AS x(item_no text, ean text, name text, size text, subgroup text)
+  ), resolved AS (
+    SELECT DISTINCT ON (r.report_date,r.store_id,r.product_key)
+      r.report_date,r.store_id,r.product_key,m.name,m.size
+    FROM paint_report_rows r
+    JOIN mappings m ON r.ean=m.ean OR r.item_no=m.item_no OR r.ean=m.item_no OR r.item_no=m.ean
+    WHERE m.size<>''
+    ORDER BY r.report_date,r.store_id,r.product_key,
+      CASE WHEN r.ean=m.ean THEN 0 WHEN r.item_no=m.item_no THEN 1 WHEN r.ean=m.item_no THEN 2 ELSE 3 END
+  )
+  UPDATE paint_report_rows r SET product_name=x.name,size=x.size,source_updated_at=now()
+  FROM resolved x
+  WHERE r.report_date=x.report_date AND r.store_id=x.store_id AND r.product_key=x.product_key`;
   await q`ALTER TABLE paint_products ADD COLUMN IF NOT EXISTS normalization_version integer NOT NULL DEFAULT 1`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_ean_idx ON paint_products(ean)`;
   await q`CREATE INDEX IF NOT EXISTS paint_products_item_no_idx ON paint_products(item_no)`;

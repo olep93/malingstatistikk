@@ -41,8 +41,8 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
      AND (candidate.product_key=keys.product_key
        OR (NULLIF(keys.ean,'') IS NOT NULL AND (candidate.ean=keys.ean OR candidate.item_no=keys.ean))
        OR (NULLIF(keys.item_no,'') IS NOT NULL AND (candidate.ean=keys.item_no OR candidate.item_no=keys.item_no)))
-   ORDER BY keys.product_key,CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,
-     CASE WHEN candidate.product_key=keys.product_key THEN 0 ELSE 1 END,candidate.updated_at DESC
+   ORDER BY keys.product_key,CASE WHEN candidate.product_key=keys.product_key THEN 0 ELSE 1 END,
+     CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,candidate.updated_at DESC
  ) SELECT c.store_id,c.store_name,
    c.product_key,c.item_no,c.ean,c.raw_name,
    COALESCE(
@@ -57,7 +57,8 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
    COALESCE(NULLIF(p.area,''),c.area) area,
    COALESCE(NULLIF(p.subgroup,''),c.subgroup) subgroup,
    c.quantity,c.revenue,c.profit,
-   COALESCE(NULLIF(p.image_url,''),c.image_url) image_url,
+   CASE WHEN p.report_product_key IS NOT NULL THEN NULLIF(p.image_url,'')
+     WHEN NULLIF(c.ean,'') IS NOT NULL THEN NULL ELSE c.image_url END image_url,
    COALESCE(NULLIF(p.product_url,''),c.product_url) product_url
  FROM c LEFT JOIN p ON p.report_product_key=c.product_key
  ORDER BY c.store_name,product_name`;
