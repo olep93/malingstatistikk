@@ -199,7 +199,10 @@ export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?
  const existing=await q`SELECT display_name,website_name,size,image_url,product_url,category,subgroup,lookup_status,last_fetched_at,normalization_version FROM paint_products WHERE product_key=${input.productKey} LIMIT 1`;
  const row:any=existing[0];const stale=!row?.last_fetched_at||Date.now()-new Date(row.last_fetched_at).getTime()>90*86400000;
  const outdated=(row?.normalization_version||0)<NORMALIZATION_VERSION;
- if(row&&!opts.force&&!stale&&!outdated){return {found:row.lookup_status==='found',imageUrl:row.image_url,displayName:row.display_name,websiteName:row.website_name,size:row.size,url:row.product_url,category:row.category,subgroup:row.subgroup,source:'database',status:row.lookup_status};}
+ // En tidligere variantkontroll kan ha fjernet et feil bilde, samtidig som
+ // produktet fortsatt står som "found". Det er ikke en komplett cachepost:
+ // gjør ett nytt eksakt oppslag slik at kortet kan reparere seg selv.
+ if(row&&!opts.force&&!stale&&!outdated&&(row.lookup_status!=='found'||row.image_url)){return {found:row.lookup_status==='found',imageUrl:row.image_url,displayName:row.display_name,websiteName:row.website_name,size:row.size,url:row.product_url,category:row.category,subgroup:row.subgroup,source:'database',status:row.lookup_status};}
  const shouldPersist=opts.persist!==false;
  const reference=productReference(digits(input.ean))||productReference(digits(input.itemNo));
  const authoritativeSize=normalizeCommercialSize(reference?.size||extractSize(input.rawName||'')||input.size||'');
