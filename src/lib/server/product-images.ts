@@ -4,7 +4,7 @@ import { cleanProductName, decodeHtmlEntities } from '../text';
 import { normalizeCommercialSize } from '../data';
 import { productReference } from '../product-reference';
 
-const NORMALIZATION_VERSION=9;
+const NORMALIZATION_VERSION=10;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
