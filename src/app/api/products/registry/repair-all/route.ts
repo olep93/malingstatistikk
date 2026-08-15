@@ -23,8 +23,8 @@ export async function POST(){
       size=r.size,raw_size=r.size,normalized_size=r.size,variant_id=r.ean,area='exterior',
       subgroup=CASE WHEN COALESCE(p.subgroup_locked,false) THEN p.subgroup ELSE r.subgroup END,
       category=CASE WHEN COALESCE(p.subgroup_locked,false) THEN p.category ELSE r.subgroup END,
-      image_url=CASE WHEN p.image_url LIKE '%blob.vercel-storage.com/%' THEN p.image_url WHEN p.image_url LIKE '/products/%' THEN NULL WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN NULL ELSE p.image_url END,
-      image_approved=CASE WHEN p.image_url LIKE '%blob.vercel-storage.com/%' THEN p.image_approved WHEN p.image_url LIKE '/products/%' THEN false WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN false ELSE p.image_approved END,
+      image_url=CASE WHEN p.image_url LIKE '%blob.vercel-storage.com/%' OR p.image_source='obsbygg-validated-sibling-size' THEN p.image_url WHEN p.image_url LIKE '/products/%' THEN NULL WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN NULL ELSE p.image_url END,
+      image_approved=CASE WHEN p.image_url LIKE '%blob.vercel-storage.com/%' OR p.image_source='obsbygg-validated-sibling-size' THEN p.image_approved WHEN p.image_url LIKE '/products/%' THEN false WHEN substring(COALESCE(p.image_url,'') from '([0-9]{13})') IS NOT NULL AND substring(p.image_url from '([0-9]{13})')<>r.ean THEN false ELSE p.image_approved END,
       normalization_version=9,updated_at=now()
     FROM resolved r WHERE p.product_key=r.product_key RETURNING p.product_key
   ) SELECT count(*)::int count FROM changed`;

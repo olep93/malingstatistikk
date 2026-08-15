@@ -40,7 +40,7 @@ export async function repairProductVariantsFromSales(){
   ), targets AS MATERIALIZED (
     SELECT p.product_key,e.ean,e.item_no,e.expected_size,
       CASE
-        WHEN p.image_url IS NULL OR p.image_url LIKE '%blob.vercel-storage.com/%' THEN false
+        WHEN p.image_url IS NULL OR p.image_url LIKE '%blob.vercel-storage.com/%' OR p.image_source='obsbygg-validated-sibling-size' THEN false
         WHEN p.image_url LIKE '/products/%' THEN true
         WHEN e.ean IS NOT NULL AND substring(p.image_url from '([0-9]{13})') IS DISTINCT FROM e.ean THEN true
         ELSE false END clear_image
