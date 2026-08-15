@@ -4,7 +4,7 @@ import { cleanProductName, decodeHtmlEntities } from '../text';
 import { normalizeCommercialSize } from '../data';
 import { productReference } from '../product-reference';
 
-const NORMALIZATION_VERSION=10;
+const NORMALIZATION_VERSION=11;
 const decodeHtml=(s:string)=>decodeHtmlEntities(s);
 const absolute=(href:string)=>{const clean=String(href||'').replace(/\\u002[fF]/g,'/').replace(/\\\//g,'/');return !clean?'':clean.startsWith('//')?`https:${clean}`:clean.startsWith('http')?clean:`https://www.obsbygg.no${clean.startsWith('/')?'':'/'}${clean}`};
 const headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36','accept-language':'nb-NO,nb;q=0.9,en;q=0.7','accept':'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8','referer':'https://www.obsbygg.no/'};
@@ -147,6 +147,13 @@ function sizeFromVariantObject(html:string,identifier:string){
 }
 function imageFromIdentifierWindow(html:string,identifier:string){
  if(!identifier)return undefined;
+ const escaped=identifier.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ // JSON-LD på Obsbygg knytter variantens SKU direkte til bildet. Dette er
+ // sikrere enn å lete i hele siden, som også inneholder anbefalte produkter.
+ const before=html.match(new RegExp(`"image"\\s*:\\s*"([^"]+)"[^{}]{0,2400}"sku"\\s*:\\s*"(?:ObsBygg-)?${escaped}"`,'i'));
+ const after=html.match(new RegExp(`"sku"\\s*:\\s*"(?:ObsBygg-)?${escaped}"[^{}]{0,2400}"image"\\s*:\\s*"([^"]+)"`,'i'));
+ const structured=before?.[1]||after?.[1];
+ if(structured)return absolute(decodeHtml(structured));
  const object=variantObjectForIdentifier(html,identifier);
  if(object){
   const candidates=images(object);
