@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 import {isAdmin} from '@/lib/server/auth';
 import {normalizeCommercialSize} from '@/lib/data';
 import {PRODUCT_REFERENCE} from '@/lib/product-reference';
-import {ensureSchema,sql} from '@/lib/server/db';
+import {ensureSchema,repairProductVariantsFromSales,sql} from '@/lib/server/db';
 
 export const maxDuration=60;
 
@@ -28,6 +28,7 @@ export async function POST(){
       normalization_version=9,updated_at=now()
     FROM resolved r WHERE p.product_key=r.product_key RETURNING p.product_key
   ) SELECT count(*)::int count FROM changed`;
-  return NextResponse.json({ok:true,products:Number(products[0]?.count||0)});
+  const salesAudit=await repairProductVariantsFromSales();
+  return NextResponse.json({ok:true,referenceProducts:Number(products[0]?.count||0),...salesAudit});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke reparere produktvariantene'},{status:500});}
 }

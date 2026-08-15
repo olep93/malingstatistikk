@@ -12,7 +12,59 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 167;
+const SCHEMA_VERSION = 168;
+
+export async function repairProductVariantsFromSales(){
+  const q=sql();
+  const rows=await q`WITH latest AS (
+    SELECT DISTINCT ON (product_key) product_key,NULLIF(ean,'') ean,NULLIF(item_no,'') item_no,raw_name,size
+    FROM paint_report_rows
+    WHERE product_key<>''
+    ORDER BY product_key,report_date DESC
+  ), parsed AS (
+    SELECT product_key,ean,item_no,
+      COALESCE(
+        substring(upper(COALESCE(raw_name,'')) from '([0-9]+(?:[,.][0-9]+)?)\\s*(?:L|LITER)'),
+        substring(upper(COALESCE(size,'')) from '([0-9]+(?:[,.][0-9]+)?)\\s*(?:L|LITER)')
+      ) amount
+    FROM latest
+  ), expected AS (
+    SELECT product_key,ean,item_no,CASE
+      WHEN replace(amount,',','.')::numeric BETWEEN 0.65 AND 1.03 THEN '1 L'
+      WHEN replace(amount,',','.')::numeric BETWEEN 2.65 AND 3.05 THEN '3 L'
+      WHEN replace(amount,',','.')::numeric BETWEEN 4.45 AND 5.05 THEN '5 L'
+      WHEN replace(amount,',','.')::numeric BETWEEN 8.95 AND 10.05 THEN '10 L'
+      WHEN amount IS NOT NULL THEN replace(amount,'.',',')||' L'
+      ELSE NULL END expected_size
+    FROM parsed
+  ), targets AS MATERIALIZED (
+    SELECT p.product_key,e.ean,e.item_no,e.expected_size,
+      CASE
+        WHEN p.image_url IS NULL OR p.image_url LIKE '%blob.vercel-storage.com/%' THEN false
+        WHEN p.image_url LIKE '/products/%' THEN true
+        WHEN e.ean IS NOT NULL AND substring(p.image_url from '([0-9]{13})') IS DISTINCT FROM e.ean THEN true
+        ELSE false END clear_image
+    FROM paint_products p JOIN expected e ON e.product_key=p.product_key
+    WHERE e.expected_size IS NOT NULL OR e.ean IS NOT NULL OR e.item_no IS NOT NULL
+  ), changed AS (
+    UPDATE paint_products p SET
+      ean=COALESCE(t.ean,p.ean),item_no=COALESCE(t.item_no,p.item_no),
+      size=COALESCE(t.expected_size,p.size),
+      raw_size=COALESCE(t.expected_size,p.raw_size),
+      normalized_size=COALESCE(t.expected_size,p.normalized_size),
+      variant_id=COALESCE(t.ean,t.item_no,p.variant_id),
+      image_url=CASE WHEN t.clear_image THEN NULL ELSE p.image_url END,
+      image_approved=CASE WHEN t.clear_image THEN false ELSE p.image_approved END,
+      normalization_version=9,updated_at=now()
+    FROM targets t
+    WHERE p.product_key=t.product_key
+    RETURNING p.product_key,
+      CASE WHEN t.clear_image THEN 1 ELSE 0 END image_cleared,
+      CASE WHEN t.expected_size IS NOT NULL THEN 1 ELSE 0 END size_checked
+  ) SELECT count(*)::int products,COALESCE(sum(image_cleared),0)::int images_cleared,
+      COALESCE(sum(size_checked),0)::int sizes_checked FROM changed`;
+  return {products:Number(rows[0]?.products||0),imagesCleared:Number(rows[0]?.images_cleared||0),sizesChecked:Number(rows[0]?.sizes_checked||0)};
+}
 
 async function currentSchemaVersion() {
   const q = sql();
@@ -371,7 +423,10 @@ async function migrateWithRetry() {
       // Historikken bruker Product Master dynamisk og trenger ikke omskrives.
       // Marker oppgraderingen ferdig uten å kjøre hele migrasjonsrekken på hvert
       // kaldt serverless-kall dersom databasen allerede var på moderne skjema.
-      if(version>=165){const q=sql();await q`UPDATE paint_schema_version SET version=${SCHEMA_VERSION},updated_at=now() WHERE id=1`;return;}
+      if(version>=165){
+        await repairProductVariantsFromSales();
+        const q=sql();await q`UPDATE paint_schema_version SET version=${SCHEMA_VERSION},updated_at=now() WHERE id=1`;return;
+      }
       await runSchemaMigration();
       return;
     } catch (error) {
