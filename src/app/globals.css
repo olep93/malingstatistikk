@@ -1494,3 +1494,13 @@
 .a4SupplierNumbers b.high,.a4ProductMargin b.high,.a4GroupNumbers b.high,.a4RegionRow em.high{color:#16875c!important}
 .a4SupplierNumbers b.medium,.a4ProductMargin b.medium,.a4GroupNumbers b.medium,.a4RegionRow em.medium{color:#c87813!important}
 .a4SupplierNumbers b.low,.a4ProductMargin b.low,.a4GroupNumbers b.low,.a4RegionRow em.low{color:#c73535!important}
+
+/* Femtrinns marginskala: <10 kritisk, 10–15 svak, 15–25 middels, 25–30 god, 30+ svært god. */
+.productCard.margin-excellent,.printProduct.margin-excellent{border-left-color:#087a3f!important}.productCard.margin-critical,.printProduct.margin-critical{border-left-color:#8b0000!important}
+.marginMetric.excellent,.printMargin.excellent{background:linear-gradient(180deg,#effcf4,#d8f5e4)}.marginMetric.critical,.printMargin.critical{background:linear-gradient(180deg,#fff0f0,#ffd9d9)}
+.marginMetric.excellent b,.printMargin.excellent b{color:#087a3f!important}.marginMetric.excellent i em,.printMargin.excellent i em{background:#087a3f!important}
+.marginMetric.critical b,.printMargin.critical b{color:#8b0000!important}.marginMetric.critical i em,.printMargin.critical i em{background:#8b0000!important}
+.otherStoreRow>small.excellent,.executiveMini>header>span.excellent,.supplierMiniHead>small.excellent{background:#c9f1d8!important;color:#08713a!important}
+.otherStoreRow>small.critical,.executiveMini>header>span.critical,.supplierMiniHead>small.critical{background:#ffd6d6!important;color:#830000!important}
+.a4SupplierNumbers b.excellent,.a4ProductMargin b.excellent,.a4GroupNumbers b.excellent,.a4RegionRow em.excellent{color:#087a3f!important}
+.a4SupplierNumbers b.critical,.a4ProductMargin b.critical,.a4GroupNumbers b.critical,.a4RegionRow em.critical{color:#8b0000!important}
