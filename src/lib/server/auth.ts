@@ -8,7 +8,7 @@ export type Session = { id: string; role: UserRole; username: string; displayNam
 
 const USER_COLUMNS = 'id::text,username,display_name,role,is_active';
 
-/** E-mails that become Admin the first time they open the app (comma-separated), to bootstrap roles. */
+/** E-mails that are always Admin (comma-separated), to bootstrap roles before anyone can set them. */
 function bootstrapAdmins() {
   return (process.env.MALINGSTATISTIKK_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 }
@@ -43,6 +43,9 @@ export const getSession = cache(async (): Promise<Session | null> => {
         ON CONFLICT(supabase_sub) DO UPDATE SET last_login_at=now()
         RETURNING ${USER_COLUMNS}`, [email || sub, displayName, role, sub, email || null]);
     }
+    // Listed e-mails are always Admin, also for users who first came in with the lowest role.
+    if (rows.length && email && bootstrapAdmins().includes(email) && rows[0].role !== 'admin')
+      rows = await q.query(`UPDATE app_users SET role='admin',updated_at=now() WHERE id=$1 RETURNING ${USER_COLUMNS}`, [rows[0].id]);
     const row = rows[0] as { id: string; username: string; display_name: string; role: string; is_active: boolean } | undefined;
     if (!row || !row.is_active || (row.role !== 'admin' && row.role !== 'leader')) return null;
     return { id: row.id, role: row.role, username: row.username, displayName: row.display_name };
