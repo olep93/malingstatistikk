@@ -14,6 +14,8 @@ export function subgroupFromName(area:string,text:string):string|undefined{
   }
   if(area==="interior"){
     // Grunning før "TRE"/"TAK": "TRESTJ SPERREGRUNNING" og "JOTUN KVIST-SPER.GR" er grunning.
+    // Lakk først: "TRESTJERNER 15/SILKEMATT GULVLAKK" er lakk, ikke tre eller silkematt.
+    if(/LAKK/.test(n))return "Lakk";
     if(/GRUNN|SPER\.?\s*GR|SPERREGR|HEFTGR|PRIMER/.test(n))return "Grunning";
     if(/\bTAK\b|TAKMAL|TAK\s*(?:&|OG|\/)\s*VEGG/.test(n))return "Tak";
     if(/SUPER\s*MATT|PURE COLOR/.test(n))return "Supermatt";
