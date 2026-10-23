@@ -1,60 +1,53 @@
-import { SignJWT, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { cache } from 'react';
+import { hasMalingstatistikkAccess } from '@/lib/app-access';
+import { createClient } from '@/lib/supabase/server';
 import { ensureSchema, sql } from './db';
 
-const COOKIE = 'maling_admin_session';
 export type UserRole = 'admin' | 'leader';
+export type Session = { id: string; role: UserRole; username: string; displayName: string };
 
-function secret() {
-  const value = process.env.SESSION_SECRET;
-  if (!value || value.length < 24) throw new Error('SESSION_SECRET mangler eller er for kort.');
-  return new TextEncoder().encode(value);
+const USER_COLUMNS = 'id::text,username,display_name,role,is_active';
+
+/** E-mails that become Admin the first time they open the app (comma-separated), to bootstrap roles. */
+function bootstrapAdmins() {
+  return (process.env.MALINGSTATISTIKK_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 }
 
-export function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
-  const hash = pbkdf2Sync(password, salt, 120000, 32, 'sha256').toString('hex');
-  return { hash, salt };
-}
-
-export function verifyPassword(password: string, storedHash: string, salt: string) {
-  const candidate = pbkdf2Sync(password, salt, 120000, 32, 'sha256');
-  const stored = Buffer.from(storedHash, 'hex');
-  return stored.length === candidate.length && timingSafeEqual(stored, candidate);
-}
-
-export async function ensureDefaultUsers() {
-  await ensureSchema();
-  const q = sql();
-  const linn = await q`SELECT id FROM app_users WHERE lower(username)=lower('Linn') LIMIT 1`;
-  if (!linn.length) {
-    const p = hashPassword(process.env.LINN_PASSWORD || '40857084');
-    await q`INSERT INTO app_users(username,display_name,role,password_hash,password_salt,is_active)
-      VALUES('Linn','Linn','leader',${p.hash},${p.salt},true)`;
-  } else {
-    await q`UPDATE app_users SET role='leader' WHERE lower(username)=lower('Linn')`;
-  }
-}
-
-export async function createSession(username: string, role: UserRole) {
-  return new SignJWT({ role, username }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('7d').sign(secret());
-}
-
-export async function getSession() {
+/**
+ * The portal user behind this request, with the local role. Sign-in, access and the redirect to the portal
+ * are handled in src/proxy.ts; this checks the fresh user again and links it to app_users:
+ * by supabase_sub, else on first visit by e-mail (the e-mail column or a username equal to it), else a new
+ * user with the lowest role.
+ */
+export const getSession = cache(async (): Promise<Session | null> => {
   try {
-    const token = (await cookies()).get(COOKIE)?.value;
-    if (!token) return null;
-    const verified = await jwtVerify(token, secret());
-    const role = String(verified.payload.role || '') as UserRole;
-    if (role !== 'admin' && role !== 'leader') return null;
-    return { role, username: String(verified.payload.username || 'Admin') };
+    const { data: { user } } = await (await createClient()).auth.getUser();
+    if (!user || !hasMalingstatistikkAccess(user)) return null;
+    await ensureSchema();
+    const q = sql();
+    const sub = user.id;
+    const email = (user.email || '').trim().toLowerCase();
+    let rows = await q.query(`UPDATE app_users SET last_login_at=now() WHERE supabase_sub=$1 RETURNING ${USER_COLUMNS}`, [sub]);
+    if (!rows.length && email) {
+      rows = await q.query(`UPDATE app_users SET supabase_sub=$1,email=$2,last_login_at=now(),updated_at=now()
+        WHERE id=(SELECT id FROM app_users WHERE supabase_sub IS NULL AND (lower(email)=$2 OR lower(username)=$2) ORDER BY id LIMIT 1)
+        RETURNING ${USER_COLUMNS}`, [sub, email]);
+    }
+    if (!rows.length) {
+      const meta = (user.user_metadata || {}) as Record<string, unknown>;
+      const displayName = String(meta.full_name || meta.name || email || 'Bruker');
+      const role: UserRole = email && bootstrapAdmins().includes(email) ? 'admin' : 'leader';
+      // A username taken by an older local user falls back to the unique account id.
+      rows = await q.query(`INSERT INTO app_users(username,display_name,role,email,supabase_sub,is_active,last_login_at)
+        VALUES(CASE WHEN EXISTS(SELECT 1 FROM app_users WHERE lower(username)=lower($1)) THEN $4 ELSE $1 END,$2,$3,$5,$4,true,now())
+        ON CONFLICT(supabase_sub) DO UPDATE SET last_login_at=now()
+        RETURNING ${USER_COLUMNS}`, [email || sub, displayName, role, sub, email || null]);
+    }
+    const row = rows[0] as { id: string; username: string; display_name: string; role: string; is_active: boolean } | undefined;
+    if (!row || !row.is_active || (row.role !== 'admin' && row.role !== 'leader')) return null;
+    return { id: row.id, role: row.role, username: row.username, displayName: row.display_name };
   } catch { return null; }
-}
+});
 
 export async function isAuthenticated() { return Boolean(await getSession()); }
 export async function isAdmin() { return (await getSession())?.role === 'admin'; }
-
-export async function setSessionCookie(token: string) {
-  (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 7 });
-}
-export async function clearSessionCookie() { (await cookies()).delete(COOKIE); }

@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 168;
+const SCHEMA_VERSION = 169;
 
 export async function repairProductVariantsFromSales(){
   const q=sql();
@@ -332,6 +332,7 @@ async function runSchemaMigration() {
     last_login_at timestamptz
   )`;
   await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_username_lower_idx ON app_users(lower(username))`;
+  await migrateUsersForPortal();
 
   await q`CREATE TABLE IF NOT EXISTS paint_import_jobs (
     id bigserial PRIMARY KEY,
@@ -414,6 +415,16 @@ function isConcurrentSchemaRace(error: unknown) {
   ));
 }
 
+// Users sign in through the portal (Supabase Auth); supabase_sub links the local role to that account.
+async function migrateUsersForPortal() {
+  const q = sql();
+  await q`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS email text`;
+  await q`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS supabase_sub text`;
+  await q`ALTER TABLE app_users ALTER COLUMN password_hash SET DEFAULT ''`;
+  await q`ALTER TABLE app_users ALTER COLUMN password_salt SET DEFAULT ''`;
+  await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_supabase_sub_idx ON app_users(supabase_sub)`;
+}
+
 async function migrateWithRetry() {
   for (let attempt = 1; attempt <= 5; attempt++) {
     try {
@@ -423,7 +434,12 @@ async function migrateWithRetry() {
       // Historikken bruker Product Master dynamisk og trenger ikke omskrives.
       // Marker oppgraderingen ferdig uten å kjøre hele migrasjonsrekken på hvert
       // kaldt serverless-kall dersom databasen allerede var på moderne skjema.
+      if(version>=168){
+        await migrateUsersForPortal();
+        const q=sql();await q`UPDATE paint_schema_version SET version=${SCHEMA_VERSION},updated_at=now() WHERE id=1`;return;
+      }
       if(version>=165){
+        await migrateUsersForPortal();
         await repairProductVariantsFromSales();
         const q=sql();await q`UPDATE paint_schema_version SET version=${SCHEMA_VERSION},updated_at=now() WHERE id=1`;return;
       }

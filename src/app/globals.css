@@ -281,7 +281,7 @@
  .supplierCard .shareCompare .shareValue{font-size:13px!important}
 }
 @media print{
- .onePageReport .printHeader img{content:url('/logos/obsbygg-print.jpg')!important;display:block!important;opacity:1!important;filter:none!important;background:#0a3f78!important;object-fit:contain!important}
+ .onePageReport .printHeader img{content:url('/malingstatistikk/logos/obsbygg-print.jpg')!important;display:block!important;opacity:1!important;filter:none!important;background:#0a3f78!important;object-fit:contain!important}
  .onePageReport .supplierCard .shareCompare .shareRow{
    grid-template-columns:31mm minmax(20mm,1fr) 14mm!important;
    column-gap:1.5mm!important;
@@ -505,7 +505,7 @@
   .otherStoreRow>span,.otherStoreRow>em,.otherStoreRow>small{font-size:5.1pt!important;text-align:right!important;white-space:nowrap!important;font-style:normal!important}
   .otherStoreRow>em{color:#2b8d55!important;font-weight:800!important}
   .otherStoreRow>small{color:#6c7b8e!important}
-  .printHeader.executivePrintHeader img{content:url('/logos/obsbygg-print.jpg')!important;background:#0d2b58!important;padding:1.4mm!important}
+  .printHeader.executivePrintHeader img{content:url('/malingstatistikk/logos/obsbygg-print.jpg')!important;background:#0d2b58!important;padding:1.4mm!important}
   .printSupplierGrid .shareRow{grid-template-columns:31mm minmax(28mm,1fr) 16mm!important}
   .printSupplierGrid .shareName{white-space:nowrap!important}
   .printSupplierGrid .shareValue{white-space:nowrap!important;text-align:right!important}
@@ -1504,3 +1504,10 @@
 .otherStoreRow>small.critical,.executiveMini>header>span.critical,.supplierMiniHead>small.critical{background:#ffd6d6!important;color:#830000!important}
 .a4SupplierNumbers b.excellent,.a4ProductMargin b.excellent,.a4GroupNumbers b.excellent,.a4RegionRow em.excellent{color:#087a3f!important}
 .a4SupplierNumbers b.critical,.a4ProductMargin b.critical,.a4GroupNumbers b.critical,.a4RegionRow em.critical{color:#8b0000!important}
+
+/* Back to the portal (jobbverktoy.no). */
+.portalHome{height:40px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1px solid rgba(255,255,255,.25);border-radius:8px;color:#dce8f5;font-weight:800;text-decoration:none;white-space:nowrap}
+.portalHome:hover,.portalHome:focus-visible{background:rgba(255,255,255,.12);color:#fff}
+@media(max-width:700px){.portalHome span{display:none}.portalHome{padding:0 10px}}
+@media print{.portalHome{display:none!important}}
+.authCard a.primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
