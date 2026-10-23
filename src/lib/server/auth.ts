@@ -9,9 +9,9 @@ import { ensureSchema, sql } from './db';
  * Portalen setter uploader/viewer via /api/portal/users og sender aldri admin.
  */
 export type UserRole = 'admin' | 'uploader' | 'viewer';
-export type Session = { id: string; role: UserRole; username: string; displayName: string };
+export type Session = { id: string; role: UserRole; username: string; displayName: string; storeSapNumbers: string[] };
 
-const USER_COLUMNS = 'id::text,username,display_name,role,is_active';
+const USER_COLUMNS = 'id::text,username,display_name,role,is_active,store_sap_numbers';
 
 /** E-mails that are always Admin (comma-separated). Nobody else can be Admin. */
 export function adminEmails() {
@@ -51,9 +51,10 @@ export const getSession = cache(async (): Promise<Session | null> => {
     const listed = Boolean(email) && adminEmails().includes(email);
     if (rows.length && listed !== (rows[0].role === 'admin'))
       rows = await q.query(`UPDATE app_users SET role=$2,updated_at=now() WHERE id=$1 RETURNING ${USER_COLUMNS}`, [rows[0].id, listed ? 'admin' : 'uploader']);
-    const row = rows[0] as { id: string; username: string; display_name: string; role: string; is_active: boolean } | undefined;
+    const row = rows[0] as { id: string; username: string; display_name: string; role: string; is_active: boolean; store_sap_numbers?: unknown } | undefined;
     if (!row || !row.is_active || !['admin', 'uploader', 'viewer'].includes(row.role)) return null;
-    return { id: row.id, role: row.role as UserRole, username: row.username, displayName: row.display_name };
+    const stores = Array.isArray(row.store_sap_numbers) ? row.store_sap_numbers.map(String) : [];
+    return { id: row.id, role: row.role as UserRole, username: row.username, displayName: row.display_name, storeSapNumbers: stores };
   } catch { return null; }
 });
 
