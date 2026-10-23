@@ -1505,9 +1505,16 @@
 .a4SupplierNumbers b.excellent,.a4ProductMargin b.excellent,.a4GroupNumbers b.excellent,.a4RegionRow em.excellent{color:#087a3f!important}
 .a4SupplierNumbers b.critical,.a4ProductMargin b.critical,.a4GroupNumbers b.critical,.a4RegionRow em.critical{color:#8b0000!important}
 
-/* Back to the portal (jobbverktoy.no). */
-.portalHome{height:40px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1px solid rgba(255,255,255,.25);border-radius:8px;color:#dce8f5;font-weight:800;text-decoration:none;white-space:nowrap}
-.portalHome:hover,.portalHome:focus-visible{background:rgba(255,255,255,.12);color:#fff}
-@media(max-width:700px){.portalHome span{display:none}.portalHome{padding:0 10px}}
-@media print{.portalHome{display:none!important}}
+/* Felles toppfelt: Jobbverktøy-logoen, en skillelinje og appens eget merke. */
+.topbarBrandGroup{display:flex;align-items:center;gap:12px;min-width:0;height:100%}
+.portalLogo{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:36px;height:36px;border-radius:8px}
+.portalLogo img{width:28px;height:28px;display:block}
+.portalLogo:hover,.portalLogo:focus-visible{background:rgba(255,255,255,.12)}
+.portalDivider{flex:0 0 1px;width:1px;height:28px;background:rgba(255,255,255,.28)}
+.appTopbar{height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--navy)}
+.appTopbar .appName{color:#fff;font-weight:800;text-decoration:none;white-space:nowrap}
+@media(max-width:760px){.topbarBrandGroup{gap:8px}.portalLogo{width:32px;height:32px}}
+@media(max-width:390px){.topbarPrimary{grid-template-columns:auto 1fr!important}.v10Topbar .brand{width:78px!important;min-width:78px!important}.v10Topbar .brand img{width:72px!important;height:40px!important}}
+@media(max-width:359px){.v10Topbar .brand{width:58px!important;min-width:58px!important}.v10Topbar .brand img{width:54px!important;height:32px!important}}
+@media print{.portalLogo,.portalDivider{display:none!important}}
 .authCard a.primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
