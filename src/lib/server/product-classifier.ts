@@ -23,6 +23,10 @@ export function classifyProduct(input:{area?:string;subgroup?:string;category?:s
   if(currentArea in DEFAULT_SUBGROUP)return{area:currentArea,subgroup:currentTag||undefined,confidence:'low',reason:'Navnet avgjør ikke underkategorien'};
   const suggestion=classifyText(text,currentArea,currentTag);
   if(currentArea&&suggestion.area&&suggestion.area!==currentArea)return{area:currentArea,subgroup:currentTag||undefined,confidence:'low',reason:'Forslaget gjaldt et annet vareområde'};
+  // Eksteriørreglene er grove ("dør" i en produkttekst gir Vindu / Dør). En konkret eksteriørtag
+  // flyttes derfor bare til Murmaling når navnet sier mur; ellers fylles bare tomme tagger og "Eksteriør".
+  if(currentArea==='exterior'&&currentTag&&currentTag!=='Eksteriør'&&!(suggestion.subgroup==='Murmaling'&&/MUR/.test(text)))
+    return{area:currentArea,subgroup:currentTag,confidence:'low',reason:'Beholder eksisterende eksteriørtag'};
   return suggestion;
 }
 
