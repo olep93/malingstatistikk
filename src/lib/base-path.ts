@@ -17,3 +17,6 @@ export function appPath(path: string) {
 export function apiFetch(input: string, init?: RequestInit) {
   return fetch(appPath(input), init);
 }
+
+/** The portal's home behind its rewrite: another app (zone) on the same origin, so a plain `<a>`. */
+export const portalHome = "/";

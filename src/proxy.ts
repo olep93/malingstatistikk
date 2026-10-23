@@ -35,12 +35,20 @@ export async function proxy(request: NextRequest) {
     response.cookies.getAll().forEach(c => r.cookies.set(c));
     return r;
   };
+  // Behind the portal's rewrite the portal is the same origin, so its pages are relative paths and the
+  // sign-in cookie lands on the right host. request.url is this app's own Vercel host there, so never
+  // build Locations from it. A request straight to this app's own host has no portal session (the cookie
+  // lives on the portal's host), so it is sent to the portal's absolute address instead. Never redirect a
+  // signed-in user to the portal's /malingstatistikk: if this check misjudged, that would loop.
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const viaPortal = Boolean(forwardedHost && forwardedHost !== request.headers.get("host"));
+  const here = basePath + (path === "/" ? "" : path) + request.nextUrl.search;
+  const portal = (page: string) => (viaPortal ? "" : portalUrl) + page;
 
-  if (!user) return isApi ? deny(401, "Ikke innlogget.") : redirect(`${portalUrl}/logg-inn`);
-  if (mustChangePassword(user)) return isApi ? deny(403, "Du må bytte passord i Jobbverktøy.") : redirect(`${portalUrl}/nytt-passord`);
+  if (!user) return isApi ? deny(401, "Ikke innlogget.") : redirect(portal(`/logg-inn?neste=${encodeURIComponent(here)}`));
+  if (mustChangePassword(user)) return isApi ? deny(403, "Du må bytte passord i Jobbverktøy.") : redirect(portal("/nytt-passord"));
   if (!hasMalingstatistikkAccess(user)) {
     if (isApi) return deny(403, NO_ACCESS);
-    // Relative, so the browser stays on the portal's address.
     if (path !== "/ingen-tilgang") return redirect(`${basePath}/ingen-tilgang`);
   }
   response.headers.set("Cache-Control", "private, no-store");
