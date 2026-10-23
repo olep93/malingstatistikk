@@ -15,8 +15,8 @@ export const dynamic='force-dynamic';
 export async function POST(request:Request):Promise<NextResponse>{
   try{
     const session=await getSession();
-    if(!session)return NextResponse.json({error:'Innloggingen er utløpt. Logg inn på nytt og prøv igjen.'},{status:401});
-    if(!['admin','leader'].includes(session.role))return NextResponse.json({error:'Du har ikke tilgang til historikkimport.'},{status:403});
+    if(!session)return NextResponse.json({error:'Innloggingen er utløpt. Logg inn på nytt og prøv igjen.'},{status:401});if(session.role!=='admin')return NextResponse.json({error:'Kun Admin kan bruke periodeimport.'},{status:403});
+    if(session.role!=='admin')return NextResponse.json({error:'Du har ikke tilgang til historikkimport.'},{status:403});
 
     const body=(await request.json()) as HandleUploadPresignedBody;
     const jsonResponse=await handleUploadPresigned({

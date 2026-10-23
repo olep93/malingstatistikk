@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { isAuthenticated } from '@/lib/server/auth';
+import {canUpload} from '@/lib/server/auth';
 import { findObsbyggImage } from '@/lib/server/product-images';
 
 export const maxDuration = 60;
 export async function POST(req:Request){
-  if(!(await isAuthenticated())) return NextResponse.json({error:'Ikke innlogget'},{status:401});
+  if(!(await canUpload())) return NextResponse.json({error:'Rollen din kan bare se rapporter.'},{status:403});
   try{
     const {rows=[]}=await req.json();
     const unique = new Map<string,any>();

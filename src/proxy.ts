@@ -12,6 +12,8 @@ export async function proxy(request: NextRequest) {
   const raw = request.nextUrl.pathname;
   const path = raw.startsWith(basePath + "/") ? raw.slice(basePath.length) : raw === basePath ? "/" : raw;
   const isApi = path.startsWith("/api/");
+  // Portalens server-til-server-kall har ingen innlogging, men er signert (se api/portal/users).
+  if (path.startsWith("/api/portal/")) return NextResponse.next();
   const deny = (status: number, error: string) => NextResponse.json({ error }, { status, headers: { "Cache-Control": "private, no-store" } });
 
   const env = supabaseEnv();

@@ -8,7 +8,7 @@ export const maxDuration=60;
 
 export async function POST(req:Request){
  const session=await getSession();
- if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});
+ if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});if(session.role==='viewer')return NextResponse.json({error:'Rollen din kan bare se rapporter.'},{status:403});
  try{
   await ensureSchema();
   const body=await req.json();

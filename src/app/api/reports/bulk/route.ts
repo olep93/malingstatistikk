@@ -35,7 +35,7 @@ async function storeReports(reports:DailyReport[],mode:string,session:{username:
 
 export async function POST(req:Request){
   const session=await getSession();
-  if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});
+  if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});if(session.role!=='admin')return NextResponse.json({error:'Kun Admin kan bruke periodeimport.'},{status:403});
   try{
     await ensureSchema();
     const type=req.headers.get("content-type")||"";

@@ -1,9 +1,9 @@
 import {NextResponse} from 'next/server';
-import {isAuthenticated} from '@/lib/server/auth';
+import {isAdmin} from '@/lib/server/auth';
 import {ensureSchema,sql} from '@/lib/server/db';
 
 export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
-  if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
+  if(!(await isAdmin()))return NextResponse.json({error:'Kun Admin kan bruke periodeimport.'},{status:403});
   const {id}=await params;
   try{
     await ensureSchema();

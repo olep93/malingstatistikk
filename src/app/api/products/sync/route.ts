@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';
-import {isAuthenticated} from '@/lib/server/auth';
+import {canUpload} from '@/lib/server/auth';
 import {findObsbyggImage} from '@/lib/server/product-images';
 import {ensureSchema,sql} from '@/lib/server/db';
 
@@ -8,7 +8,7 @@ export const maxDuration=60;
 type SyncItem={productKey:string;productName:string;rawName?:string;supplier:string;size?:string;ean?:string;itemNo?:string;area?:string;subgroup?:string};
 
 export async function POST(req:Request){
- if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
+ if(!(await canUpload()))return NextResponse.json({error:'Rollen din kan bare se rapporter.'},{status:403});
  try{
   await ensureSchema();
   const {rows=[],force=false}=await req.json();

@@ -12,7 +12,7 @@ export function sql() {
 }
 
 let schemaPromise: Promise<void> | null = null;
-const SCHEMA_VERSION = 169;
+const SCHEMA_VERSION = 170;
 
 export async function repairProductVariantsFromSales(){
   const q=sql();
@@ -323,7 +323,7 @@ async function runSchemaMigration() {
     id bigserial PRIMARY KEY,
     username text NOT NULL UNIQUE,
     display_name text NOT NULL,
-    role text NOT NULL CHECK (role IN ('admin','leader')),
+    role text NOT NULL,
     password_hash text NOT NULL,
     password_salt text NOT NULL,
     is_active boolean NOT NULL DEFAULT true,
@@ -423,6 +423,11 @@ async function migrateUsersForPortal() {
   await q`ALTER TABLE app_users ALTER COLUMN password_hash SET DEFAULT ''`;
   await q`ALTER TABLE app_users ALTER COLUMN password_salt SET DEFAULT ''`;
   await q`CREATE UNIQUE INDEX IF NOT EXISTS app_users_supabase_sub_idx ON app_users(supabase_sub)`;
+  // Roller fra portalen: admin (bare utvalgte e-poster), uploader (se og laste opp dagsrapport) og viewer (bare se).
+  await q`ALTER TABLE app_users DROP CONSTRAINT IF EXISTS app_users_role_check`;
+  await q`UPDATE app_users SET role='uploader' WHERE role NOT IN ('admin','uploader','viewer')`;
+  await q`ALTER TABLE app_users ADD CONSTRAINT app_users_role_check CHECK (role IN ('admin','uploader','viewer'))`;
+  await q`ALTER TABLE app_users ADD COLUMN IF NOT EXISTS store_sap_numbers jsonb NOT NULL DEFAULT '[]'::jsonb`;
 }
 
 async function migrateWithRetry() {

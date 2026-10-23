@@ -6,7 +6,7 @@ import {refreshReportCache} from "@/lib/server/report-cache";
 
 export async function POST(_:Request,{params}:{params:Promise<{id:string}>}){
   const session=await getSession();
-  if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});
+  if(!session)return NextResponse.json({error:"Ikke innlogget"},{status:401});if(session.role!=='admin')return NextResponse.json({error:'Kun Admin kan bruke periodeimport.'},{status:403});
   const {id}=await params;
   try{
     await ensureSchema();

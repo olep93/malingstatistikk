@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';
-import {isAuthenticated} from '@/lib/server/auth';
+import {isAdmin} from '@/lib/server/auth';
 import {ensureSchema,sql} from '@/lib/server/db';
 
 function productPayload(rows:any[]){
@@ -12,7 +12,7 @@ function productPayload(rows:any[]){
 }
 
 export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
- if(!(await isAuthenticated()))return NextResponse.json({error:'Ikke innlogget'},{status:401});
+ if(!(await isAdmin()))return NextResponse.json({error:'Kun Admin kan bruke periodeimport.'},{status:403});
  try{
   await ensureSchema();
   const {id}=await params;
