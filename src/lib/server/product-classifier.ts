@@ -17,7 +17,8 @@ export function classifyProduct(input:{area?:string;subgroup?:string;category?:s
   const text=norm([input.websiteName,input.displayName,input.sourceName,input.category,input.supplier].filter(Boolean).join(' '));
   if(!text)return{area:currentArea||undefined,subgroup:currentTag||undefined,confidence:'low',reason:'Ingen tekstgrunnlag'};
   // Samme navneregler som importen, så de ikke snur hverandres valg.
-  const byName=subgroupFromName(currentArea,text);
+  // Bare navnene: kategorifeltet ("Maling / Dekkbeis / Beis") ville ellers gitt treff som "DEKK".
+  const byName=subgroupFromName(currentArea,norm([input.websiteName,input.displayName,input.sourceName].filter(Boolean).join(' ')));
   if(byName)return{area:currentArea,subgroup:byName,confidence:'medium',reason:'Produktnavnet angir underkategorien'};
   if(currentArea in DEFAULT_SUBGROUP)return{area:currentArea,subgroup:currentTag||undefined,confidence:'low',reason:'Navnet avgjør ikke underkategorien'};
   const suggestion=classifyText(text,currentArea,currentTag);

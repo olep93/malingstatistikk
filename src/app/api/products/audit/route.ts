@@ -8,7 +8,7 @@ import {cleanProductName} from '@/lib/text';
 const STAGES=['lookup','names','classify','aliases','mark','clear'] as const;
 type Stage=(typeof STAGES)[number];
 
-type BatchResult={cursor:string|null;scanned:number;changed:number};
+type BatchResult={cursor:string|null;scanned:number;changed:number;proposals?:{product:string;area:string;from:string;to:string}[]};
 
 async function stats(){
   const q=sql();
@@ -84,19 +84,21 @@ export async function POST(request:Request){
       const products=await q`SELECT product_key,source_name,website_name,display_name,supplier,category,area,subgroup,subgroup_locked
         FROM paint_products WHERE merged_into IS NULL AND product_key>${cursor}
         ORDER BY product_key LIMIT ${limit}`;
-      let changed=0;
+      let changed=0;const proposals:{product:string;area:string;from:string;to:string}[]=[];
       for(const p of products as any[]){
         if(p.subgroup_locked)continue;
         const c=classifyProduct({area:p.area,subgroup:p.subgroup,category:p.category,sourceName:p.source_name,websiteName:p.website_name,displayName:p.display_name,supplier:p.supplier});
         if(c.confidence==='low'||!c.area||!c.subgroup)continue;
         const tag=await q`SELECT name FROM paint_tags WHERE is_active=true AND area=${c.area} AND lower(name)=lower(${c.subgroup}) LIMIT 1`;
         if(!tag.length)continue;
+        // Prøvekjøring: vis hva som ville blitt endret, uten å endre noe.
+        if(body.dryRun){if(c.area!==p.area||tag[0].name!==p.subgroup){changed++;proposals.push({product:p.display_name||p.website_name||p.source_name||p.product_key,area:c.area,from:p.subgroup||'',to:tag[0].name});}continue;}
         const rows=await q`UPDATE paint_products SET area=${c.area},subgroup=${tag[0].name},category=CASE WHEN ${c.area}='exterior' THEN ${tag[0].name} ELSE category END,
           audit_status='ok',audit_reasons='[]'::jsonb,review_reason=NULL,updated_at=now()
           WHERE product_key=${p.product_key} AND (area IS DISTINCT FROM ${c.area} OR subgroup IS DISTINCT FROM ${tag[0].name}) RETURNING product_key`;
         changed+=rows.length;
       }
-      result={cursor:products.at(-1)?.product_key||cursor,scanned:products.length,changed};
+      result={cursor:products.at(-1)?.product_key||cursor,scanned:products.length,changed,...(body.dryRun?{proposals}:{})};
     }else if(stage==='aliases'){
       const rows=await q`WITH target AS MATERIALIZED (
         SELECT product_key FROM paint_products
@@ -174,6 +176,6 @@ export async function POST(request:Request){
     if(done&&stage==='clear')await q`INSERT INTO paint_product_changes(product_key,changed_by,field_name,old_value,new_value)
       SELECT product_key,${session?.username||'admin'},'audit',null,'Produktmaster audit fullført'
       FROM paint_products WHERE merged_into IS NULL LIMIT 1`;
-    return NextResponse.json({ok:true,stage,cursor:lastCursor,scanned,changed,done,audit:done&&stage==='clear'?await stats():undefined});
+    return NextResponse.json({ok:true,stage,cursor:lastCursor,scanned,changed,done,proposals:result?.proposals,audit:done&&stage==='clear'?await stats():undefined});
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Kunne ikke rydde produktmasteren'},{status:500})}
 }
