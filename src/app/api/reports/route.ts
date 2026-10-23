@@ -25,7 +25,7 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
  ) AS cache_missing`;
  if(Boolean(coverage[0]?.cache_missing))await refreshReportCache(from,to);
  const rows=await q`WITH c AS MATERIALIZED (
-   SELECT store_id,max(store_name) store_name,product_key,max(item_no) item_no,max(ean) ean,
+   SELECT store_id,max(store_name) store_name,max(product_key) product_key,max(item_no) item_no,max(ean) ean,
      max(raw_name) raw_name,max(product_name) product_name,max(size) size,max(supplier) supplier,
      max(category) category,max(area) area,max(subgroup) subgroup,
      sum(quantity)::float8 quantity,sum(revenue)::float8 revenue,sum(profit)::float8 profit,
@@ -33,7 +33,8 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
    FROM paint_report_rows
    WHERE report_date BETWEEN ${from}::date AND ${to}::date
      AND (${storeIds.length}=0 OR store_id=ANY(${storeIds}::text[]))
-   GROUP BY store_id,product_key
+   -- Samme EAN er samme vare, også når kategorien (og dermed product_key) endret seg mellom importer.
+   GROUP BY store_id,CASE WHEN NULLIF(ean,'') IS NOT NULL THEN 'ean-'||ean ELSE product_key END
  ), p AS MATERIALIZED (
    SELECT DISTINCT ON (keys.product_key) keys.product_key report_product_key,candidate.*
    FROM (SELECT DISTINCT product_key,ean,item_no FROM c) keys
@@ -73,11 +74,18 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
 
 async function loadComparisonReport(date:string){
  const q=sql();
- const rows=await q`SELECT store_id,max(store_name) store_name,max(supplier) supplier,
-   COALESCE(area,'exterior') area,COALESCE(subgroup,'') subgroup,
-   sum(quantity)::float8 quantity,sum(revenue)::float8 revenue,sum(profit)::float8 profit
-   FROM paint_report_rows WHERE report_date=${date}::date
-   GROUP BY store_id,area,subgroup,supplier`;
+ // Samme kategorier som dashbordet: Product Master først, rapportens egen klassifisering som reserve.
+ const rows=await q`SELECT r.store_id,max(r.store_name) store_name,r.supplier,
+   COALESCE(NULLIF(p.area,''),r.area,'exterior') area,COALESCE(NULLIF(p.subgroup,''),r.subgroup,'') subgroup,
+   sum(r.quantity)::float8 quantity,sum(r.revenue)::float8 revenue,sum(r.profit)::float8 profit
+   FROM paint_report_rows r
+   LEFT JOIN LATERAL (
+     SELECT c.area,c.subgroup FROM paint_products c
+     WHERE c.merged_into IS NULL AND (c.product_key=r.product_key OR (NULLIF(r.ean,'') IS NOT NULL AND (c.ean=r.ean OR c.item_no=r.ean)))
+     ORDER BY CASE WHEN c.product_key=r.product_key THEN 0 ELSE 1 END,c.updated_at DESC LIMIT 1
+   ) p ON true
+   WHERE r.report_date=${date}::date
+   GROUP BY 1,3,4,5`;
  return {date,createdAt:'',sourceName:'Sammenligningsgrunnlag',rows:rows.map((r:any)=>({
    storeId:r.store_id,store:r.store_name,productKey:`summary|${r.store_id}|${r.area}|${r.subgroup}|${r.supplier}`,
    itemNo:'',rawName:'',product:'Sammenligning',size:'',supplier:r.supplier,area:r.area,subgroup:r.subgroup,

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { put } from '@vercel/blob';
 import { ensureSchema, sql } from './db';
 import { catalogEntry } from '../product-catalog';
 import { cleanProductName, decodeHtmlEntities } from '../text';
@@ -43,7 +45,10 @@ function customerName(title:string,fallback:string,area?:string){
 }
 function inferSubgroup(area:string|undefined,title:string,html:string,fallback?:string){
  if(area!=='terrace') return fallback;
- const text=`${title} ${html}`.toUpperCase();
+ // Bare produktets egen tittel og beskrivelse. Hele siden har menyer og tips-artikler med
+ // "terrassemaling" og "oljebasert", så den ga Terrassemaling for nesten alt.
+ const description=html.match(/(?:property|name)=["'](?:og:)?description["'][^>]*content=["']([^"']+)/i)?.[1]||'';
+ const text=`${title} ${decodeHtml(description)}`.toUpperCase();
  if(/TERRASSEMALING|MALING FOR TERRASSE|DEKKENDE TERRASSE/.test(text))return 'Terrassemaling';
  if(/OLJEBASERT|OLJEBASE|ALKYD|TYRILIN TERRASSEBEIS/.test(text))return 'Oljebasert';
  if(/VANNTYNNET|VANNBASERT|AKRYL/.test(text))return 'Vanntynnet';
@@ -65,14 +70,37 @@ function exactMatch(url:string,html:string,input:Input){
  if(itemNo&&ids.has(itemNo))return {method:'EXACT_ITEM_NO' as const,identifier:itemNo};
  return null;
 }
+/**
+ * Kopierer et funnet Obsbygg-bilde til Vercel Blob. Bilde-URL-ene der har versjonsparametere og
+ * slutter å virke når de bytter bilde. Kopiene ligger under product-images/auto/, slik at de skilles
+ * fra manuelt opplastede bilder (som aldri overskrives) og ryddes av blobStorageAudit når de ikke brukes.
+ * Feiler kopien, beholdes den opprinnelige adressen.
+ */
+const AUTO_IMAGE_PREFIX='product-images/auto/';
+async function cacheImage(url:string){
+ if(!/^https?:\/\//.test(url)||url.includes('blob.vercel-storage.com/')||!process.env.BLOB_READ_WRITE_TOKEN)return url;
+ try{
+  const r=await limited(()=>fetch(url,{headers,cache:'no-store',signal:AbortSignal.timeout(8000)}));
+  const type=r.headers.get('content-type')||'';
+  if(!r.ok||!type.startsWith('image/'))return url;
+  const body=await r.arrayBuffer();
+  if(!body.byteLength||body.byteLength>5*1024*1024)return url;
+  const ext=type.includes('png')?'png':type.includes('webp')?'webp':type.includes('gif')?'gif':'jpg';
+  const name=createHash('sha1').update(url).digest('hex');
+  const blob=await put(`${AUTO_IMAGE_PREFIX}${name}.${ext}`,Buffer.from(body),{access:'public',contentType:type,addRandomSuffix:false,allowOverwrite:true});
+  return blob.url;
+ }catch{return url;}
+}
+
 async function persist(input:Input,result:Result){
  const q=sql();await ensureSchema();
+ if(result.found&&result.imageUrl)result.imageUrl=await cacheImage(result.imageUrl);
  const sourceName=input.rawName||input.productName;
  const websiteName=result.websiteName||result.displayName||null;
  const suggested=input.area==='exterior'?input.productName:(result.displayName||input.productName);
  const normalizedSize=normalizeCommercialSize(validSize(result.size)||validSize(input.size)||'');
  await q`INSERT INTO paint_products(product_key,display_name,source_name,website_name,supplier,size,raw_size,normalized_size,variant_id,ean,item_no,image_url,image_source,product_url,category,subgroup,image_approved,aliases,lookup_status,last_fetched_at,normalization_version,area,updated_at,lookup_method,matched_identifier,match_confidence,review_reason,audit_status)
- VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${normalizedSize||null},${validSize(result.size)||validSize(input.size)||null},${normalizedSize||null},${result.matchedIdentifier||input.ean||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
+ VALUES(${input.productKey},${suggested},${sourceName},${websiteName},${input.supplier},${normalizedSize||null},${validSize(result.size)||validSize(input.size)||null},${normalizedSize||null},${result.matchedIdentifier||input.ean||null},${input.ean||null},${input.itemNo||null},${result.imageUrl||null},${result.source||result.url||'automatic'},${result.url||null},${result.category||null},${result.subgroup||input.subgroup||null},${Boolean(result.imageUrl)},${JSON.stringify([input.productName,input.rawName].filter(Boolean))}::jsonb,${result.found?'found':result.status||'not_found'},now(),${NORMALIZATION_VERSION},${input.area||null},now(),${result.matchMethod||'NONE'},${result.matchedIdentifier||null},${result.confidence||0},${result.found?null:result.status==='fetch_error'?'Obsbygg.no svarte ikke. Prøves igjen automatisk.':'Ingen eksakt nummermatch på Obsbygg.no'},${result.found?'ok':'review'})
  ON CONFLICT(product_key) DO UPDATE SET
  source_name=COALESCE(excluded.source_name,paint_products.source_name),
  website_name=CASE WHEN excluded.lookup_status='found' THEN COALESCE(NULLIF(excluded.website_name,''),paint_products.website_name) ELSE paint_products.website_name END,
@@ -80,19 +108,24 @@ async function persist(input:Input,result:Result){
  supplier=COALESCE(NULLIF(excluded.supplier,''),paint_products.supplier),size=COALESCE(NULLIF(excluded.size,''),NULLIF(CASE WHEN lower(trim(paint_products.size)) IN ('produkt','product','vare','artikkel','ukjent','n/a') THEN NULL ELSE paint_products.size END,'')),
  raw_size=COALESCE(NULLIF(excluded.raw_size,''),paint_products.raw_size),normalized_size=COALESCE(NULLIF(excluded.normalized_size,''),paint_products.normalized_size),variant_id=COALESCE(NULLIF(excluded.variant_id,''),paint_products.variant_id),
  image_url=CASE WHEN excluded.lookup_status='found' THEN CASE
-   WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_url
+   WHEN (paint_products.image_url LIKE '%blob.vercel-storage.com/%' AND paint_products.image_url NOT LIKE '%/product-images/auto/%') THEN paint_products.image_url
    ELSE excluded.image_url END ELSE paint_products.image_url END,
  image_source=CASE WHEN excluded.lookup_status='found' THEN CASE
-   WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_source
+   WHEN (paint_products.image_url LIKE '%blob.vercel-storage.com/%' AND paint_products.image_url NOT LIKE '%/product-images/auto/%') THEN paint_products.image_source
    ELSE NULLIF(excluded.image_source,'') END ELSE paint_products.image_source END,
  product_url=CASE WHEN excluded.lookup_status='found' THEN COALESCE(NULLIF(excluded.product_url,''),paint_products.product_url) ELSE paint_products.product_url END,
  category=CASE WHEN excluded.lookup_status='found' THEN COALESCE(excluded.category,paint_products.category) ELSE paint_products.category END,
  subgroup=CASE WHEN paint_products.subgroup_locked OR excluded.lookup_status<>'found' THEN paint_products.subgroup ELSE COALESCE(excluded.subgroup,paint_products.subgroup) END,
- image_approved=CASE WHEN paint_products.image_url LIKE '%blob.vercel-storage.com/%' THEN paint_products.image_approved ELSE (excluded.lookup_status='found' AND excluded.image_approved) END,
+ image_approved=CASE WHEN (paint_products.image_url LIKE '%blob.vercel-storage.com/%' AND paint_products.image_url NOT LIKE '%/product-images/auto/%') THEN paint_products.image_approved ELSE (excluded.lookup_status='found' AND excluded.image_approved) END,
  ean=COALESCE(excluded.ean,paint_products.ean),item_no=COALESCE(excluded.item_no,paint_products.item_no),aliases=(SELECT jsonb_agg(DISTINCT x) FROM jsonb_array_elements(paint_products.aliases || excluded.aliases) x),
- lookup_status=excluded.lookup_status,last_fetched_at=now(),normalization_version=${NORMALIZATION_VERSION},area=COALESCE(excluded.area,paint_products.area),updated_at=now(),
- lookup_method=excluded.lookup_method,matched_identifier=excluded.matched_identifier,match_confidence=excluded.match_confidence,
- review_reason=excluded.review_reason,audit_status=excluded.audit_status`;
+ -- En nettverksfeil skal ikke nedgradere et produkt som allerede er funnet.
+ lookup_status=CASE WHEN excluded.lookup_status='fetch_error' AND paint_products.lookup_status='found' THEN paint_products.lookup_status ELSE excluded.lookup_status END,
+ last_fetched_at=now(),normalization_version=${NORMALIZATION_VERSION},area=COALESCE(excluded.area,paint_products.area),updated_at=now(),
+ lookup_method=CASE WHEN excluded.lookup_status='fetch_error' THEN paint_products.lookup_method ELSE excluded.lookup_method END,
+ matched_identifier=CASE WHEN excluded.lookup_status='fetch_error' THEN paint_products.matched_identifier ELSE excluded.matched_identifier END,
+ match_confidence=CASE WHEN excluded.lookup_status='fetch_error' THEN paint_products.match_confidence ELSE excluded.match_confidence END,
+ review_reason=CASE WHEN excluded.lookup_status='fetch_error' AND paint_products.lookup_status='found' THEN paint_products.review_reason ELSE excluded.review_reason END,
+ audit_status=CASE WHEN excluded.lookup_status='fetch_error' AND paint_products.lookup_status='found' THEN paint_products.audit_status ELSE excluded.audit_status END`;
 }
 
 function productLinks(html:string){const links=new Set<string>();for(const rx of [/href=["']([^"']+\/\d{5,}(?:[?][^"']*)?)["']/gi,/(?:property=["']og:url["'][^>]*content|rel=["']canonical["'][^>]*href)=["']([^"']+)/gi,/"url"\s*:\s*"([^"]+\/\d{5,}[^"]*)"/gi,/"canonicalUrl"\s*:\s*"([^"]+)"/gi,/"productUrl"\s*:\s*"([^"]+)"/gi])for(const m of html.matchAll(rx)){const href=decodeHtml(m[1]);if(/obsbygg\.no|^\//i.test(href))links.add(absolute(href));}return [...links].slice(0,12);}
@@ -210,28 +243,65 @@ function chooseVariantImage(html:string,input:Input,matchedIdentifier?:string){
  if((ean||matched)&&identifiersFromPage('',html).size>1)return undefined;
  return all[0];
 }
-async function fetchPage(url:string,input?:Input,matchedIdentifier?:string){try{const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)return null;const html=await r.text();const image=input?chooseVariantImage(html,input,matchedIdentifier):images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}catch{return null}}
+/** Om et oppslag feilet på nettverk/serversiden, slik at det ikke lagres som «ikke funnet». */
+type Lookup={failed:boolean};
+// Obsbygg-sidene er ~0,7 MB. Begrens samtidige henting per serverinstans, ellers struper de oss.
+const MAX_PARALLEL_FETCHES=4;
+let activeFetches=0;const waiting:(()=>void)[]=[];
+async function limited<T>(run:()=>Promise<T>):Promise<T>{
+ if(activeFetches>=MAX_PARALLEL_FETCHES)await new Promise<void>(resolve=>waiting.push(resolve));
+ activeFetches++;
+ try{return await run();}finally{activeFetches--;waiting.shift()?.();}
+}
+/** HTML for en side, eller null når den ikke finnes. Tidsavbrudd, 403/429 og 5xx markeres som feil. */
+async function fetchHtml(url:string,lookup?:Lookup){
+ return limited(async()=>{
+  try{
+   const r=await fetch(url,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(8000)});
+   if(r.status===403||r.status===429||r.status>=500){if(lookup)lookup.failed=true;return null;}
+   if(!r.ok)return null;
+   return {url:r.url,html:await r.text()};
+  }catch{if(lookup)lookup.failed=true;return null;}
+ });
+}
+async function fetchPage(url:string,input?:Input,matchedIdentifier?:string,lookup?:Lookup){const r=await fetchHtml(url,lookup);if(!r)return null;const html=r.html;const image=input?chooseVariantImage(html,input,matchedIdentifier):images(html)[0];const title=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||html.match(/<title>([^<]+)/i)?.[1]||'');return title?{image,title,html}:null}
 function score(title:string,input:Input){const a=title.toUpperCase(),b=`${input.productName} ${input.rawName||''}`.toUpperCase();let n=0;for(const word of b.replace(/[^A-ZÆØÅ0-9]+/g,' ').split(/\s+/).filter(x=>x.length>2))if(a.includes(word))n++;if(input.ean&&a.includes(input.ean))n+=8;if(input.size&&a.replace(/\s/g,'').includes(input.size.replace(/\s/g,'')))n+=2;return n;}
 
-export async function findObsbyggImage(input:Input,opts:{force?:boolean;persist?:boolean;exactOnly?:boolean}={}):Promise<Result>{
+type LookupOptions={force?:boolean;persist?:boolean;exactOnly?:boolean};
+// Mange produktkort ber om samme bilde samtidig. Del ett oppslag per produkt i stedet for å hente det flere ganger.
+const inflight=new Map<string,Promise<Result>>();
+export function findObsbyggImage(input:Input,opts:LookupOptions={}):Promise<Result>{
+ const key=`${input.productKey}|${opts.force?1:0}|${opts.persist===false?0:1}|${opts.exactOnly?1:0}`;
+ const running=inflight.get(key);if(running)return running;
+ const lookup=lookupObsbyggImage(input,opts).finally(()=>inflight.delete(key));
+ inflight.set(key,lookup);
+ return lookup;
+}
+
+async function lookupObsbyggImage(input:Input,opts:LookupOptions):Promise<Result>{
  await ensureSchema();const q=sql();
  const existing=await q`SELECT display_name,website_name,size,image_url,product_url,category,subgroup,lookup_status,last_fetched_at,normalization_version FROM paint_products WHERE product_key=${input.productKey} LIMIT 1`;
- const row:any=existing[0];const stale=!row?.last_fetched_at||Date.now()-new Date(row.last_fetched_at).getTime()>90*86400000;
+ const row:any=existing[0];
+ // Funnet holder i 90 dager. "Ikke funnet" prøves igjen etter 14 dager, og en nettverksfeil etter en time,
+ // så en midlertidig feil hos Obsbygg ikke gir standardbilde i flere måneder.
+ const maxAge=row?.lookup_status==='found'?90*86400000:row?.lookup_status==='fetch_error'?3600000:14*86400000;
+ const stale=!row?.last_fetched_at||Date.now()-new Date(row.last_fetched_at).getTime()>maxAge;
  const outdated=(row?.normalization_version||0)<NORMALIZATION_VERSION;
  // En tidligere variantkontroll kan ha fjernet et feil bilde, samtidig som
  // produktet fortsatt står som "found". Det er ikke en komplett cachepost:
  // gjør ett nytt eksakt oppslag slik at kortet kan reparere seg selv.
  if(row&&!opts.force&&!stale&&!outdated&&(row.lookup_status!=='found'||row.image_url)){return {found:row.lookup_status==='found',imageUrl:row.image_url,displayName:row.display_name,websiteName:row.website_name,size:row.size,url:row.product_url,category:row.category,subgroup:row.subgroup,source:'database',status:row.lookup_status};}
  const shouldPersist=opts.persist!==false;
+ const lookup:Lookup={failed:false};
  const reference=productReference(digits(input.ean))||productReference(digits(input.itemNo));
  const authoritativeSize=normalizeCommercialSize(reference?.size||extractSize(input.rawName||'')||input.size||'');
  const known=opts.exactOnly?undefined:catalogEntry(input.productName,input.rawName);
- if(known?.pageUrl){const page=await fetchPage(known.pageUrl);if(page){const subgroup=inferSubgroup(input.area,page.title,page.html,input.subgroup);const r:Result={found:true,imageUrl:page.image||known.image,displayName:customerName(page.title,known.name,input.area),websiteName:page.title,size:extractSize(page.title,input.rawName,input.size),url:known.pageUrl,category:known.category,subgroup,source:'catalog-page',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}}
+ if(known?.pageUrl){const page=await fetchPage(known.pageUrl,undefined,undefined,lookup);if(page){const subgroup=inferSubgroup(input.area,page.title,page.html,input.subgroup);const r:Result={found:true,imageUrl:page.image||known.image,displayName:customerName(page.title,known.name,input.area),websiteName:page.title,size:extractSize(page.title,input.rawName,input.size),url:known.pageUrl,category:known.category,subgroup,source:'catalog-page',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}}
  if(known?.image&&input.area==='exterior'){const r:Result={found:true,imageUrl:known.image,displayName:known.name,websiteName:known.name,size:extractSize(input.rawName,input.size),url:known.pageUrl,category:known.category,subgroup:input.subgroup,source:'catalog',status:'found',matchMethod:'CATALOG',matchedIdentifier:digits(input.ean)||undefined,confidence:100};if(shouldPersist)await persist(input,r);return r;}
  const terms=[digits(input.ean),digits(input.itemNo)].filter(Boolean) as string[];
  for(const term of [...new Set(terms)].slice(0,2)){
   const searchUrl=`https://www.obsbygg.no/sok?q=${encodeURIComponent(term)}`;
-  try{const r=await fetch(searchUrl,{headers,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(7000)});if(!r.ok)continue;const html=await r.text();const directTitle=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||'');const directMatch=exactMatch(r.url,html,input);const directImage=directMatch?chooseVariantImage(html,input,directMatch.identifier):undefined;if(directMatch?.method==='EXACT_EAN'&&directImage){const exactLink=productLinks(html).find(url=>url.includes(directMatch.identifier));const exactUrl=variantUrl(exactLink||r.url,directMatch.identifier);const websiteName=reference?.name||input.productName||directTitle;const subgroup=inferSubgroup(input.area,websiteName,html,input.subgroup);const result:Result={found:true,imageUrl:directImage,displayName:reference?.name||input.productName,websiteName,size:authoritativeSize||sizeFromVariantObject(html,directMatch.identifier),url:exactUrl,category:reference?.category||known?.category,subgroup,source:eanFromImageUrl(directImage)&&eanFromImageUrl(directImage)!==digits(input.ean)?'obsbygg-validated-sibling-size':'obsbygg-exact-search-result',status:'found',matchMethod:'EXACT_EAN',matchedIdentifier:directMatch.identifier,confidence:100};if(shouldPersist)await persist(input,result);return result;}const direct=directTitle&&directMatch?{url:r.url,image:directImage,title:directTitle,html,score:score(directTitle,input)}:null;const urls=productLinks(html).filter(url=>url!==r.url);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=[direct,...pages].filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const initialImage=chooseVariantImage(candidate.html,input,match.identifier);const variantEan=match.method==='EXACT_EAN'?match.identifier:eanFromImageUrl(initialImage);const exactUrl=variantEan?variantUrl(candidate.url,variantEan):candidate.url;const variantPage=exactUrl!==candidate.url?await fetchPage(exactUrl,input,variantEan||match.identifier):null;const page=variantPage||candidate;const image=chooseVariantImage(page.html,{...input,ean:input.ean||variantEan},variantEan||match.identifier)||initialImage;const websiteName=page.title;const subgroup=inferSubgroup(input.area,websiteName,page.html,input.subgroup);const result:Result={found:true,imageUrl:image,displayName:customerName(websiteName,input.productName,input.area),websiteName,size:authoritativeSize||sizeFromVariantObject(page.html,match.identifier)||extractSize(websiteName),url:exactUrl,category:known?.category,subgroup,source:eanFromImageUrl(image)&&eanFromImageUrl(image)!==digits(input.ean)?'obsbygg-validated-sibling-size':'obsbygg-exact-variant',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:image?100:90};if(shouldPersist)await persist(input,result);return result;}}catch{}
+  try{const r=await fetchHtml(searchUrl,lookup);if(!r)continue;const html=r.html;const directTitle=cleanTitle(html.match(/property=["']og:title["'][^>]*content=["']([^"']+)/i)?.[1]||html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,' ')||'');const directMatch=exactMatch(r.url,html,input);const directImage=directMatch?chooseVariantImage(html,input,directMatch.identifier):undefined;if(directMatch?.method==='EXACT_EAN'&&directImage){const exactLink=productLinks(html).find(url=>url.includes(directMatch.identifier));const exactUrl=variantUrl(exactLink||r.url,directMatch.identifier);const websiteName=reference?.name||input.productName||directTitle;const subgroup=inferSubgroup(input.area,websiteName,html,input.subgroup);const result:Result={found:true,imageUrl:directImage,displayName:reference?.name||input.productName,websiteName,size:authoritativeSize||sizeFromVariantObject(html,directMatch.identifier),url:exactUrl,category:reference?.category||known?.category,subgroup,source:eanFromImageUrl(directImage)&&eanFromImageUrl(directImage)!==digits(input.ean)?'obsbygg-validated-sibling-size':'obsbygg-exact-search-result',status:'found',matchMethod:'EXACT_EAN',matchedIdentifier:directMatch.identifier,confidence:100};if(shouldPersist)await persist(input,result);return result;}const direct=directTitle&&directMatch?{url:r.url,image:directImage,title:directTitle,html,score:score(directTitle,input)}:null;const urls=productLinks(html).filter(url=>url!==r.url).sort((a,b)=>Number(b.includes(term))-Number(a.includes(term))).slice(0,6);const pages=await Promise.all(urls.map(async url=>{const page=await fetchPage(url,undefined,undefined,lookup);return page?{url,image:page.image,title:page.title,html:page.html,score:score(page.title,input)}:null}));const candidates=[direct,...pages].filter(Boolean) as {url:string;image?:string;title:string;html:string;score:number}[];candidates.sort((a,b)=>b.score-a.score);for(const candidate of candidates){const match=exactMatch(candidate.url,candidate.html,input);if(!match)continue;const initialImage=chooseVariantImage(candidate.html,input,match.identifier);const variantEan=match.method==='EXACT_EAN'?match.identifier:eanFromImageUrl(initialImage);const exactUrl=variantEan?variantUrl(candidate.url,variantEan):candidate.url;const variantPage=exactUrl!==candidate.url?await fetchPage(exactUrl,input,variantEan||match.identifier,lookup):null;const page=variantPage||candidate;const image=chooseVariantImage(page.html,{...input,ean:input.ean||variantEan},variantEan||match.identifier)||initialImage;const websiteName=page.title;const subgroup=inferSubgroup(input.area,websiteName,page.html,input.subgroup);const result:Result={found:true,imageUrl:image,displayName:customerName(websiteName,input.productName,input.area),websiteName,size:authoritativeSize||sizeFromVariantObject(page.html,match.identifier)||extractSize(websiteName),url:exactUrl,category:known?.category,subgroup,source:eanFromImageUrl(image)&&eanFromImageUrl(image)!==digits(input.ean)?'obsbygg-validated-sibling-size':'obsbygg-exact-variant',status:'found',matchMethod:match.method,matchedIdentifier:match.identifier,confidence:image?100:90};if(shouldPersist)await persist(input,result);return result;}}catch{}
  }
- const result:Result={found:false,displayName:known?.name||input.productName,websiteName:undefined,size:extractSize(input.rawName,input.productName,input.size),category:known?.category,subgroup:input.subgroup,source:'obsbygg-exact-search',status:'needs_review',matchMethod:'NONE',confidence:0};if(shouldPersist)await persist(input,result);return result;
+ const result:Result={found:false,displayName:known?.name||input.productName,websiteName:undefined,size:extractSize(input.rawName,input.productName,input.size),category:known?.category,subgroup:input.subgroup,source:'obsbygg-exact-search',status:lookup.failed?'fetch_error':'needs_review',matchMethod:'NONE',confidence:0};if(shouldPersist)await persist(input,result);return result;
 }

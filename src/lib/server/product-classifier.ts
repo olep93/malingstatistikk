@@ -1,15 +1,31 @@
+import {DEFAULT_SUBGROUP,subgroupFromName} from '@/lib/subgroups';
+
 export type Classification={area?:string;subgroup?:string;confidence:'high'|'medium'|'low';reason:string};
 
 const norm=(value:unknown)=>String(value||'').toLocaleUpperCase('nb-NO').replace(/[^A-ZÆØÅ0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const has=(text:string,rx:RegExp)=>rx.test(text);
+/** Tags importen setter fra selve varegruppen (se classify i parser.ts), ikke fra navnet. De er sikre. */
+const GROUP_TAGS=new Set(['Tape','Maletilbehør','Fugemasse & Kitt','Rens & vask','Rensemidler','Sparkel','Lakk']);
 
 export function classifyProduct(input:{area?:string;subgroup?:string;category?:string;sourceName?:string;websiteName?:string;displayName?:string;supplier?:string}):Classification{
   const currentArea=String(input.area||'').trim();
   const currentTag=String(input.subgroup||'').trim();
-  if(currentArea&&currentTag)return{area:currentArea,subgroup:currentTag,confidence:'high',reason:'Kategori fulgte rapportdata'};
+  // Rapportens kategori kan være satt fra et forkortet BI-navn eller bare "EAN …", så den
+  // vurderes på nytt fra navnet. Vareområdet kommer fra varegruppen og er sikkert: et forslag i
+  // et annet område avvises, og bare underkategorien kan endres.
+  if(currentArea&&GROUP_TAGS.has(currentTag))return{area:currentArea,subgroup:currentTag,confidence:'high',reason:'Kategorien følger varegruppen'};
   const text=norm([input.websiteName,input.displayName,input.sourceName,input.category,input.supplier].filter(Boolean).join(' '));
   if(!text)return{area:currentArea||undefined,subgroup:currentTag||undefined,confidence:'low',reason:'Ingen tekstgrunnlag'};
+  // Samme navneregler som importen, så de ikke snur hverandres valg.
+  const byName=subgroupFromName(currentArea,text);
+  if(byName)return{area:currentArea,subgroup:byName,confidence:'medium',reason:'Produktnavnet angir underkategorien'};
+  if(currentArea in DEFAULT_SUBGROUP)return{area:currentArea,subgroup:currentTag||undefined,confidence:'low',reason:'Navnet avgjør ikke underkategorien'};
+  const suggestion=classifyText(text,currentArea,currentTag);
+  if(currentArea&&suggestion.area&&suggestion.area!==currentArea)return{area:currentArea,subgroup:currentTag||undefined,confidence:'low',reason:'Forslaget gjaldt et annet vareområde'};
+  return suggestion;
+}
 
+function classifyText(text:string,currentArea:string,currentTag:string):Classification{
   if(has(text,/TERRASSEMALING|DEKKENDE TERRASSE/))return{area:'terrace',subgroup:'Terrassemaling',confidence:'high',reason:'Produktnavnet angir terrassemaling'};
   if(has(text,/TERRASSEBEIS|TREOLJE|TERRASSE OLJE|TYRILIN TERRASSE/)){
     const oil=has(text,/OLJEBASERT|ALKYD|TYRILIN|TREOLJE(?!.*VANNTYNNET)/);
