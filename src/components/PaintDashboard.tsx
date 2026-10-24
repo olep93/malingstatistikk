@@ -106,14 +106,18 @@ function aggregateDisplayProducts(rows:ProductRow[],includeStore=true){
   if(!current.productUrl&&row.productUrl)current.productUrl=row.productUrl;
  };
  for(const row of rows)add(displayProductKey(row,includeStore),row);
- // En variant uten kjent størrelse legges til søsknet når produktet bare finnes i én størrelse.
+ // En variant uten kjent størrelse legges til et søsken med størrelse (se under).
  for(const [key,row] of [...products]){
   if(displaySize(row))continue;
   const family=key.replace(/\|[^|]*$/,"|");
   const siblings=[...products.keys()].filter(other=>other!==key&&other.startsWith(family));
-  if(siblings.length!==1)continue;
-  products.delete(key);const target=products.get(siblings[0])!;const size=target.size;products.delete(siblings[0]);
-  add(siblings[0],target);add(siblings[0],{...row,size:size||row.size});
+  // Flere størrelser: velg den med nærmest lik stykkpris (innen ±25 %), ellers står varianten for seg.
+  const unit=(item:ProductRow)=>item.quantity?item.revenue/item.quantity:0;
+  const price=unit(row);
+  const match=siblings.length===1?siblings[0]:price>0?siblings.map(other=>({other,ratio:unit(products.get(other)!)/price})).filter(x=>x.ratio>0.75&&x.ratio<1.33).sort((a,b)=>Math.abs(Math.log(a.ratio))-Math.abs(Math.log(b.ratio)))[0]?.other:undefined;
+  if(!match)continue;
+  products.delete(key);const target=products.get(match)!;const size=target.size;products.delete(match);
+  add(match,target);add(match,{...row,size:size||row.size});
  }
  return [...products.values()];
 }
