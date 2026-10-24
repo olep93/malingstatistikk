@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
     return [
       // Old bookmarks and API callers. 307 keeps the method and body.
       { source: "/", destination: BASE, basePath: false, permanent: false },
-      { source: "/:path((?!malingstatistikk(?:/|$)|_next/).*)", destination: `${BASE}/:path`, basePath: false, permanent: false },
+      // A path is already under the base path when it is the base path itself or continues with "/" or "."
+      // (/malingstatistikk.rsc, /malingstatistikk.segments/… are how the router fetches the app's root).
+      { source: "/:path((?!malingstatistikk(?:[/.]|$)|_next/).*)", destination: `${BASE}/:path`, basePath: false, permanent: false },
     ];
   },
 };
