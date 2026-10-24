@@ -105,19 +105,18 @@ function aggregateDisplayProducts(rows:ProductRow[],includeStore=true){
   if(!current.image&&row.image){current.image=row.image;current.ean=row.ean||current.ean;current.itemNo=row.itemNo||current.itemNo;current.productKey=row.productKey||current.productKey}
   if(!current.productUrl&&row.productUrl)current.productUrl=row.productUrl;
  };
- for(const row of rows)add(displayProductKey(row,includeStore),row);
- // En variant uten kjent størrelse legges til et søsken med størrelse (se under).
- for(const [key,row] of [...products]){
-  if(displaySize(row))continue;
+ // Varianter med størrelse samles først. Varianter uten størrelse plasseres hver for seg, så snittprisen
+ // ikke blandes på tvers av størrelser.
+ const unknown:{key:string;row:ProductRow}[]=[];
+ for(const row of rows){const key=displayProductKey(row,includeStore);if(displaySize(row))add(key,row);else unknown.push({key,row})}
+ const unit=(item:ProductRow)=>item.quantity?item.revenue/item.quantity:0;
+ for(const {key,row} of unknown){
   const family=key.replace(/\|[^|]*$/,"|");
-  const siblings=[...products.keys()].filter(other=>other!==key&&other.startsWith(family));
-  // Flere størrelser: velg den med nærmest lik stykkpris (innen ±25 %), ellers står varianten for seg.
-  const unit=(item:ProductRow)=>item.quantity?item.revenue/item.quantity:0;
+  const siblings=[...products.keys()].filter(other=>other!==key&&other.startsWith(family)&&other!==family);
+  // Én størrelse: legg den til der. Flere: velg den med nærmest lik stykkpris (innen ±25 %).
   const price=unit(row);
   const match=siblings.length===1?siblings[0]:price>0?siblings.map(other=>({other,ratio:unit(products.get(other)!)/price})).filter(x=>x.ratio>0.75&&x.ratio<1.33).sort((a,b)=>Math.abs(Math.log(a.ratio))-Math.abs(Math.log(b.ratio)))[0]?.other:undefined;
-  if(!match)continue;
-  products.delete(key);const target=products.get(match)!;const size=target.size;products.delete(match);
-  add(match,target);add(match,{...row,size:size||row.size});
+  if(match)add(match,{...row,size:products.get(match)!.size||row.size});else add(key,row);
  }
  return [...products.values()];
 }
