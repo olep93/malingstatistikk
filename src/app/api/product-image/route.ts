@@ -20,6 +20,17 @@ export async function GET(req:NextRequest){
   try{
     const result=await findObsbyggImage({productName,supplier,size,ean,itemNo,productKey});
     if(result.found && result.imageUrl){
+      if(p.get('embed')==='1'){
+        // PDF images must be readable by the browser, including sources without CORS headers.
+        // Only fetch the URL resolved by the product registry, never an arbitrary caller URL.
+        const image=await fetch(result.imageUrl,{signal:AbortSignal.timeout(8000)});
+        const type=image.headers.get('content-type')||'';
+        if(image.ok&&type.startsWith('image/')){
+          const bytes=await image.arrayBuffer();
+          if(bytes.byteLength&&bytes.byteLength<=5*1024*1024)return new NextResponse(bytes,{headers:{'content-type':type,'cache-control':'private, max-age=300'}});
+        }
+        return placeholder();
+      }
       return NextResponse.redirect(result.imageUrl,302);
     }
   }catch{}

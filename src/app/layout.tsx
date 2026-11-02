@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./design-system.css";
+import "./sales-dashboard.css";
+import "./print-report.css";
 
 // Hele jobbverktoy.no er én installerbar app: bruk portalens manifest og ikoner, ikke egne. Da åpner
 // logoen og lenker til portalen seg i samme vindu, også i en installert app.

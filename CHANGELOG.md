@@ -1,3 +1,62 @@
+## Riktig antall per EAN for malerverktøy – 28. oktober 2026
+
+- Rettet at ulike verktøyvarer med samme produktnavn og manglende størrelse ble slått sammen i produktvisningen. Malerverktøy grupperes nå på EAN, med varenummer/produktnøkkel som reserve. Samme EAN summeres fortsatt på tvers av salgslinjer og varehus når det er valgt.
+- Gjenskapt Sandefjord 26. oktober: Ultimate-rullen med EAN `7311490032147` hadde 5 stk. / 460 kr i importen, men ble vist som 10 stk. / 992 kr fordi to andre EAN-er med 2 og 3 stk. ble lagt til. Nå vises alle tre separat.
+- Variantidentitet vises med EAN når størrelsen mangler, også i dashboardets toppliste og sammenligning. Felles gruppering retter samtidig topproduktene i utskriftsrapporten. Fokuslisten stemmer fortsatt med de opprinnelige EAN-linjene.
+- Kontrollert 520 verktøylinjer fra fem varehus mot importuttrekket. Varehusenes antall, omsetning og fortjeneste er bevart; malingsproduktenes eksisterende gruppering er uendret. 27 tester og produksjonsbygg består.
+
+## Faste A4-sider fra rapportknappen – 28. oktober 2026
+
+- «Skriv ut rapport» lager nå en ferdig PDF med seks faste A4-sider, én per vareområde. Safari og Chrome skal skrive ut PDF-en, slik at nettsidens tekststørrelse og sideskift ikke fordeler rapporten over flere ark. Dette erstatter HTML-utskriften fra knappen etter tilbakemelding om at iPhone krevde 85 % skalering.
+- Beholdt nøkkeltall, leverandørmiks, kategorier, topprodukter med bilder og salgstall, regionrangering, verktøymål og alle de 20 fokusvarene. Tallene kommer fra samme rapportmodell som før; innsiktsboksen er fortsatt fjernet.
+- Innebygde skrifter, målte tekstfelt og fast plassering av tabeller og diagrammer. Rapportvinduet åpnes fra knappetrykket, og manglende produktbilder hindrer ikke utskriften.
+- Kontrollert alle seks sider for både Tønsberg 26. oktober og Alnabru september, inkludert automatisk sammenligning av summer, produktnavn og EAN. 21 tester og produksjonsbygg består. Se `docs/qa/fixed-pdf-report-2026-10-28.md`.
+
+## Utskrift uten tomme mellomsider – 28. oktober 2026
+
+- Fjernet «Dette bør du vite» fra alle seks rapportsider etter ønske.
+- Fjernet fast sidehøyde på 276 mm og lagt rapportinnholdet i vanlig blokkflyt på 255 mm. De øvrige rapportfeltene beholder størrelsen sin, og bredden tilpasser seg utskriftsområdet.
+- Sideskift settes før neste rapportside. Dette gir plass til større marger uten en ekstra side med bare bunntekst.
+- Gjenskapt 12 sider med den gamle rapporten og 20 mm topp-/bunnmarg. Samme margoppsett gir nå seks sider. Kontrollert også 12,7 mm og 20 mm marger, samt tett septemberrapport. 18 tester, TypeScript og produksjonsbygg består.
+
+## Ny A4-rapport med samme innhold – 28. oktober 2026
+
+- Utskriftsrapporten følger det nye dashboarddesignet og gir én A4-side for hver av de seks fanene: Eksteriørmaling, Interiørmaling, Terrasse, Malerverktøy, Fokusprodukter og Vareområde Maling.
+- Beholdt nøkkeltall, innsikt, leverandørmiks, underkategorier, topp fem produkter med bilder og salgstall, regionsrangering og egne styringsmål for verktøy. Fokusrapporten har topp fem, salgsdekning og alle de 20 valgte varene med EAN.
+- Rapporten bygger på samme valgte varehus, periode, produktgruppering og vektede fortjeneste som skjermen. Alle leverandører og returer inngår; områder uten salg beholder sin side med tydelig nullstatus.
+- Kontrollert seks A4-sider visuelt med septembergrunnlag og faktiske tall for Tønsberg 26. oktober. 18 automatiske tester, TypeScript og produksjonsbygg består. Se `docs/qa/a4-report-review-2026-10-28.md`.
+
+## Korrekt høyeste fortjenesteprosent – 28. oktober 2026
+
+- Fjernet den skjulte grensen på minst to solgte enheter i «Høyest fortjeneste %». Alle produkter med positivt netto antall og positiv netto omsetning deltar nå, også ett solgt spann.
+- Prosenten beregnes fra produktets summerte fortjeneste og omsetning. Returvarer uten nettosalg og null omsetning velges ikke; hvis alle gyldige salg har tap, vises fortsatt den høyeste faktiske prosenten.
+- Gjenskapt i livevisningen for Tønsberg 26. oktober: Infra Oljebeis (ett spann, 56,7 %) ble tidligere utelatt til fordel for Drygolin Optimal (to spann, −1,7 %). Lagt til fire regresjonstester.
+
+## Nytt salgsdashboard – 28. oktober 2026
+
+- Nytt dashboard med tydeligere nøkkeltall, interaktive salgsdiagrammer, omsetningsfordeling og varehusrangering. Alle leverandører og returer inngår i tallene.
+- Produktkort er bygget med egne stiler og faste rader for antall, omsetning og fortjeneste. Kompakt mobilnavigasjon og alle fem synlige periodevalg.
+- Fokusprodukter, sammenligning og kontrollpanel følger samme typografi og navigasjon. Sammenligning viser aggregerte produkter med størrelse.
+- Visuell kontroll på mobil, nettbrett og PC samt A4-kontroll. Se `docs/qa/design-review-2026-10-28.md`.
+
+## Design og kvalitetskontroll – 27. oktober 2026
+
+Mobilretting: antall solgt og enhet vises samlet på produktkortene. Ryddet opp i gamle mobilstiler som forskjøv feltene for salg, fortjeneste og omsetning.
+
+- Felles, roligere design på dashboard, produkter, historikk, sammenligning og kontrollpanel, med konsistent mobilvisning og marginskala.
+- Rettet nasjonalt produktsalg, sammenligning med flere varehus, historikkåpning, linjetelling og raske periodebytter.
+- Produktsøk og trinnvis visning av produktkort. Kontrollpanel er delt i seks tydelige deler.
+- Rettet ekstra A4-side, nasjonal utskrift og sidetelling. Se `docs/qa/design-review-2026-10-27.md` for kontrollomfang og begrensninger.
+
+## Fokusprodukter – 27. oktober 2026
+
+- Ny fane med de 20 EAN-numrene fra fokuslisten for malertilbehør.
+- Administrator kan legge til og fjerne EAN i Kontrollpanel; produktnavn hentes fra registeret når navnet ikke er oppgitt.
+- Felles fokusliste lagres i eksisterende innstillingstabell uten å endre varenes kategorier.
+- Dashboard med periode og varehus, nøkkeltall, topp fem etter fortjeneste, oppfølging og søkbar oversikt som også inkluderer varer uten salgslinjer.
+- Kontrollpanelet viser treff i produktregister og salgsarkiv.
+- Grafisk dashboard med produktbilder, produktkort, valgbar diagramrangering og ringdiagram. Kort eller tabell kan velges, og mobiloppsettet viser to produktkort i bredden.
+
 ## V16.2.0 – Rask oppstart, trygg import og Product Master
 
 - Skjemamigreringer versjoneres og kjøres ikke lenger på hvert kaldt API-kall.

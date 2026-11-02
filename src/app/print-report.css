@@ -1,0 +1,80 @@
+/* A dedicated physical layout, fed by the same selected data as the screen dashboard. */
+.paintPrintReport{display:none}
+@media print {
+ @page{size:A4 portrait;margin:10mm!important}
+ html,body{width:auto!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+ body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+ .app.salesApp,.app.salesApp main{width:auto!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
+ .app.salesApp>header,.app.salesApp main>:not(.printReportPack){display:none!important}
+ .app.salesApp main>.printReportPack.paintPrintReport{display:block!important;position:static!important;visibility:visible!important;margin:0!important;padding:0!important;width:auto!important;height:auto!important;overflow:visible!important;transform:none!important;zoom:1!important}
+ .paintPrintReport *{box-sizing:border-box}
+ /* Block flow avoids fragmenting an A4-sized grid. Its contents total 255 mm,
+    leaving room for printer margins and rounding without an empty overflow page. */
+ .prPage{width:100%;max-width:190mm;display:block;margin:0;padding:0;background:#fff;color:#24415e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-variant-numeric:tabular-nums;font-size:7pt;line-height:1.35;break-inside:avoid;page-break-inside:avoid;break-after:auto;page-break-after:auto}
+ .prPage>*+*{margin-top:3mm}
+ .prPage+.prPage{break-before:page;page-break-before:always}
+ .prPage h1,.prPage h2,.prPage p,.prPage ol,.prPage dl{margin:0}
+ .prPage svg{width:4mm;height:4mm;flex-shrink:0;stroke-width:1.6}
+ .prHeader{height:22mm;display:grid;grid-template-columns:minmax(0,1fr) 19mm 10mm;gap:4mm;align-items:center;border-bottom:.35mm solid #e5ebf1;padding:0 0 3mm}
+ .prHeader>div>span{display:block;font-size:6.2pt;font-weight:650;letter-spacing:.8pt;color:#8a99ab;line-height:1.4}
+ .prHeader h1{font-size:20pt;line-height:1.2;font-weight:750;letter-spacing:-.7pt;color:#1b3550;margin:1mm 0 1.5mm}
+ .prHeader p{display:flex;align-items:center;flex-wrap:wrap;gap:1.5mm;font-size:6.7pt;color:#74869a;line-height:1.35}
+ .prHeader p>i{display:inline-block;width:.7mm;height:.7mm;background:#d59b69;border-radius:50%}
+ .prHeader>img{display:block;width:19mm;height:18mm;object-fit:contain}
+ .prHeader>b{display:block;text-align:right;color:#3e5d7e;font-size:15pt;font-weight:550;line-height:1.1}
+ .prHeader>b>small{display:block;font-size:6.5pt;color:#98a6b6;margin-top:1mm;font-weight:400}
+ .prStats{height:24mm;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3mm;min-width:0}
+ .prStat{min-width:0;border:.25mm solid #dfe6ee;border-radius:2.7mm;padding:3mm 3.2mm;background:#fff;overflow:visible}
+ .prStat>div{display:flex;align-items:center;justify-content:space-between;gap:1mm;color:#7c8c9f;font-size:6pt;font-weight:550;min-height:3mm}
+ .prStat>div>svg{width:3.2mm;height:3.2mm;color:#93a5b7}
+ .prStat>strong{display:block;color:#264663;font-size:13.5pt;line-height:1.15;font-weight:750;letter-spacing:-.35pt;margin-top:2mm;white-space:nowrap}
+ .prStat>small{display:block;font-size:5.6pt;line-height:1.4;color:#8d9bad;margin-top:1.7mm}
+ .prStat.prFeatured{background:#152f4b;border-color:#152f4b}
+ .prStat.prFeatured>div{color:#c2d2e3}.prStat.prFeatured svg{color:#e6a26c}.prStat.prFeatured>strong{color:#fff}.prStat.prFeatured>small{color:#b0c4d8}
+ .prMainGrid,.prBottomGrid,.prFocusVisuals{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:3mm;min-height:0;min-width:0}
+ .prMainGrid{height:90mm}
+ .prBottomGrid{height:100mm;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)}
+ .prPanel{display:flex;flex-direction:column;min-width:0;min-height:0;border:.25mm solid #dfe6ee;border-radius:2.7mm;padding:3.5mm;background:#fff}
+ .prPanel>header{display:flex;align-items:flex-start;justify-content:space-between;gap:2mm;flex-shrink:0;min-height:9mm;margin-bottom:2.5mm}
+ .prPanel>header>div{min-width:0}.prPanel h2{font-size:8.3pt;line-height:1.3;letter-spacing:-.15pt;color:#284661;font-weight:700}.prPanel>header p{font-size:5.5pt;line-height:1.4;color:#8a99ab;margin-top:1mm}.prPanel>header>svg{width:3.6mm;height:3.6mm;color:#95a7b9;flex-shrink:0}
+ .prGroupRows{display:grid;gap:3mm;min-width:0}
+ .prGroup{min-width:0}
+ .prGroupTitle{display:flex;align-items:baseline;justify-content:space-between;gap:2mm;font-size:6.6pt;line-height:1.25;min-width:0;margin-bottom:1.1mm}
+ .prGroupTitle>b{color:#48637e;font-weight:650;overflow-wrap:anywhere;min-width:0}.prGroupTitle>strong{white-space:nowrap;font-size:6.5pt;font-weight:650;color:#56738f}
+ .prTrack{height:1.65mm;overflow:hidden;border-radius:1mm;background:#eef2f6;margin-bottom:1mm}
+ .prTrack>i{display:block;height:100%;border-radius:1mm;background:var(--pr-group-color,#7b9aba)}
+ .prGroupValues{display:flex;align-items:baseline;justify-content:space-between;gap:1.5mm;font-size:5.9pt;line-height:1.25;color:#8192a4;white-space:nowrap}
+ .prGroupValues>b{font-size:6.2pt;font-weight:650}
+ .prDenseGroups{gap:.8mm}.prDenseGroups .prGroupTitle{font-size:6.1pt;margin-bottom:.6mm}.prDenseGroups .prGroupTitle>strong{font-size:6pt}.prDenseGroups .prTrack{height:1.25mm;margin-bottom:.7mm}.prDenseGroups .prGroupValues{font-size:5.5pt}.prDenseGroups .prGroupValues>b{font-size:5.8pt}
+ .prToolsMetrics dl{display:grid;gap:3mm;margin:0}
+ .prToolsMetrics dl>div{border-bottom:.25mm solid #edf1f5;padding-bottom:3mm}.prToolsMetrics dl>div:last-child{border-bottom:0;padding-bottom:0}
+ .prToolsMetrics dt{font-size:6.3pt;color:#8595a8;margin:0 0 1mm;line-height:1.4}.prToolsMetrics dd{font-size:10.5pt;line-height:1.35;font-weight:650;color:#3d5e7e;margin:0;overflow-wrap:anywhere}.prToolsMetrics dd>small{font-size:7pt;color:#9a7550;display:block;margin-top:1mm}
+ .prProductList{display:grid;grid-template-rows:repeat(5,15.3mm);gap:1mm;min-height:0;min-width:0}
+ .prProductList>article{display:grid;grid-template-columns:4mm 11mm minmax(0,1fr) 24mm;gap:1.5mm;align-items:center;border-bottom:.25mm solid #eef2f6;min-width:0;padding:1mm 0}
+ .prProductList>article:last-of-type{border:0}.prProductRank{font-size:5.8pt;font-weight:500;color:#9aa8b9}
+ .prProductList img{width:10.5mm;height:12mm;object-fit:contain}
+ .prImageMissing{display:grid;place-items:center;width:10.5mm;height:12mm;border:.2mm solid #edf1f5;border-radius:1.2mm;color:#b3bfcc;background:#f8fafc}.prImageMissing>svg{width:4.5mm;height:4.5mm}
+ .prProductName{min-width:0}.prProductName>b{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:6.3pt;font-weight:650;color:#3f5f7c;line-height:1.3;overflow-wrap:anywhere}.prProductName>small{display:block;font-size:5.4pt;line-height:1.3;color:#8a9bad;margin-top:.8mm}
+ .prProductNumbers{text-align:right;white-space:nowrap;min-width:0}.prProductNumbers>b{display:block;font-size:6.8pt;font-weight:700;color:#345775;line-height:1.25}.prProductNumbers>small{display:block;font-size:5.5pt;color:#8496aa;margin-top:.6mm;line-height:1.25}.prProductNumbers>span{display:block;font-size:5.4pt;margin-top:.8mm;line-height:1.25}.prProductNumbers>strong{display:block;font-size:6.5pt;font-weight:650;margin-top:.6mm;line-height:1.25}
+ .prRegion table,.prFocusTable table{border-collapse:collapse;width:100%;table-layout:fixed;text-align:left}
+ .prRegion thead th{font-size:4.9pt;line-height:1.3;color:#8d9cae;font-weight:550;padding:0 .7mm 2mm;border-bottom:.25mm solid #e6edf4}
+ .prRegion th:first-child{width:5mm}.prRegion th:nth-child(2){width:22%}.prRegion th:nth-child(3),.prRegion th:nth-child(4){width:24%}.prRegion th:last-child{width:17%}
+ .prRegion td,.prRegion tbody th{font-size:5.6pt;padding:3.1mm .7mm;color:#667f98;border-bottom:.25mm solid #edf1f5;vertical-align:middle;line-height:1.35}
+ .prRegion tbody th{font-weight:650;color:#496883;overflow-wrap:anywhere}.prRegion td{white-space:nowrap}.prRegion td:nth-child(n+3),.prRegion thead th:nth-child(n+3){text-align:right}
+ .prRegion td:first-child>b{font-weight:650;color:#8b9fb4}.prRegion tbody td:last-child>b{font-size:5.8pt;font-weight:700}
+ .prRegion tr.prFocusStore{background:#fff5e9}.prRegion tr.prFocusStore td,.prRegion tr.prFocusStore th{border-color:#f0ddc8}.prRegion tr.prFocusStore th{color:#9b6d3c}
+ .prRegionNote{font-size:5.6pt;line-height:1.5;color:#8d9cad;border-top:.25mm solid #e9eef4;padding-top:2.5mm;margin-top:auto!important}
+ .prFooter{height:7mm;display:flex;align-items:center;justify-content:space-between;gap:2mm;border-top:.25mm solid #e6edf4;color:#94a2b3;font-size:5.5pt;line-height:1.3;padding-top:1mm}
+ .prFooter>b{font-weight:550;color:#71869d;text-align:right}
+ .prPositive,.prPage .prTone-high,.prPage .prTone-excellent{color:#2e876d!important}.prNegative,.prPage .prTone-critical,.prPage .prTone-low{color:#b46052!important}.prPage .prTone-medium{color:#a78349!important}
+ .prEmpty{font-size:7pt;line-height:1.6;color:#95a2b2;padding:6mm 0;grid-column:1/-1}
+ /* Focus retains its coverage chart, top five and the full original twenty-product table. */
+ .prFocusVisuals{height:65mm;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
+ .prFocusBars{list-style:none;padding:0;display:grid;gap:3mm}
+ .prFocusBars>li{display:flex;align-items:center;gap:2mm;min-width:0}.prFocusBars>li>span{width:4mm;font-size:5.5pt;color:#9aabbd;flex-shrink:0}.prFocusBars>li>div{flex:1;min-width:0}.prFocusBars>li>div>div{display:flex;justify-content:space-between;align-items:baseline;gap:3mm;font-size:6.3pt;line-height:1.3}.prFocusBars b{font-weight:600;color:#58738d;min-width:0;overflow-wrap:anywhere}.prFocusBars strong{font-weight:700;color:#3f6281;white-space:nowrap}.prFocusBars i{display:block;height:1.4mm;border-radius:1mm;background:#edf2f6;margin-top:1.2mm;overflow:hidden}.prFocusBars em{display:block;height:100%;background:#e99a53;border-radius:1mm}
+ .prFocusBars>li>img{width:6mm;height:6mm;object-fit:contain;flex-shrink:0}
+ .prFocusBars>li>.prImageMissing{width:6mm;height:6mm;flex-shrink:0}
+ .prFocusCoverage>header{margin-bottom:0}.prDonut{width:29mm;height:29mm;position:relative;align-self:center}.prDonut svg{width:100%;height:100%}.prDonut>strong{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19pt;letter-spacing:-.4pt;font-weight:700;color:#365878}.prDonut small{font-size:9pt;font-weight:400;color:#8b9cae}
+ .prFocusLegend{display:grid;gap:1.2mm;margin-top:1mm}.prFocusLegend>span{display:flex;justify-content:space-between;gap:2mm;font-size:5.7pt;color:#8799ab;line-height:1.35}.prFocusLegend b{font-weight:650;color:#597995}.prFocusCoverage>p{font-size:5.5pt;color:#9ba9b9;border-top:.25mm solid #eef2f6;padding-top:1.4mm;margin-top:1.8mm}
+ .prFocusTable{height:125mm}.prFocusTable>header{margin-bottom:2mm;min-height:9mm}.prFocusTable table{font-size:6pt}.prFocusTable thead th{font-size:5.5pt;font-weight:600;color:#8196ac;background:#f0f4f8;padding:1.5mm 1mm;white-space:nowrap}.prFocusTable td,.prFocusTable tbody th{padding:.7mm 1mm;border-bottom:.25mm solid #edf2f7;line-height:1.3;color:#5c7690;font-weight:400}.prFocusTable tbody th{font-weight:500;color:#45627d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prFocusTable th:first-child{width:34%}.prFocusTable th:nth-child(2){width:20%}.prFocusTable td:nth-child(2){font-size:5.5pt;color:#92a2b4}.prFocusTable th:nth-child(n+3),.prFocusTable td:nth-child(n+3){text-align:right;white-space:nowrap}.prFocusTable th:nth-child(3){width:8%}.prFocusTable th:nth-child(4),.prFocusTable th:nth-child(5){width:14%}.prFocusTable th:nth-child(6){width:10%}
+}

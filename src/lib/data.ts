@@ -9,7 +9,7 @@ export type ProductRow={storeId:string;store:string;itemNo:string;ean?:string;ra
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
 /** Kontroll av en import: totalen filen selv oppgir (når den har en), og linjer som ble forkastet. */
 export type ImportCheck={expectedRevenue?:number;expectedProfit?:number;skippedLines:number;skippedRevenue:number;skippedProfit:number;skippedGroups:string[]};
-export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];sourceTotals?:SourceTotal[];importCheck?:ImportCheck;uploadedBy?:string;uploadedAt?:string};
+export type DailyReport={date:string;createdAt:string;sourceName:string;rows:ProductRow[];rowCount?:number;sourceTotals?:SourceTotal[];importCheck?:ImportCheck;uploadedBy?:string;uploadedAt?:string};
 
 export const supplierFromVendor=(vendor:string):Supplier|undefined=>{
   const v=(vendor||"").toUpperCase();
