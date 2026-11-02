@@ -152,3 +152,25 @@ test('failed or invalid product images do not remove any PDF report pages',async
  const bytes=await createPrintReportPdf(pdfInput([reportRow({ean:DEFAULT_FOCUS_PRODUCTS[0].ean})],{loadImage:async()=>{imageRequests++;throw new Error('Unavailable image')}}));
  assert(imageRequests>1);assert.equal((await PDFDocument.load(bytes)).getPageCount(),6);
 });
+
+test('an old item number and its EAN are one tool card, and goods sharing a name stay apart',()=>{
+ const url=ean=>`https://www.obsbygg.no/tape/1?v=ObsBygg-${ean}`;
+ const row=(itemNo,ean,quantity,revenue,extra={})=>({storeId:'1',store:'A',itemNo,ean,rawName:'',product:'Tesa tape',size:'3 L',supplier:'Jordan',area:'tools',subgroup:'Tape',quantity,revenue,profit:revenue/2,margin:50,productKey:itemNo,productUrl:url(ean||'4042448563378'),...extra});
+ const merged=aggregateDisplayProducts([row('7146827',undefined,11,1404),row('4042448563378','4042448563378',23,1183)]);
+ assert.equal(merged.length,1);assert.equal(merged[0].quantity,34);assert.equal(merged[0].revenue,2587);assert.equal(merged[0].ean,'4042448563378');
+ const widths=aggregateDisplayProducts([row('1',undefined,1,10,{productUrl:'',rawName:'RULL 10CM'}),row('2',undefined,1,10,{productUrl:'',rawName:'RULL 18CM'}),row('3',undefined,1,10,{productUrl:'',rawName:'RULL 25CM'})]);
+ assert.equal(widths.length,3);
+ const unsure=aggregateDisplayProducts([row('5317615',undefined,1,10),row('3705001',undefined,1,10)]);
+ assert.equal(unsure.length,2);
+});
+test('tools do not show litres from the product page, but liquids and paint keep their size',()=>{
+ const base={storeId:'1',store:'A',itemNo:'1',rawName:'',product:'Jordan rull',supplier:'Jordan',quantity:1,revenue:1,profit:1,margin:100};
+ assert.equal(productSubtitle({...base,area:'tools',subgroup:'Ruller',size:'3 L',rawName:'JORDAN RULL 18CM'}),'18 cm');
+ assert.equal(productSubtitle({...base,area:'tools',subgroup:'Tape',size:'3 L',ean:'123'}),'EAN 123');
+ assert.equal(productSubtitle({...base,area:'tools',subgroup:'Rensemidler',size:'1 L'}),'1 L');
+ assert.equal(productSubtitle({...base,area:'interior',subgroup:'Matt',size:'3 L'}),'3 L');
+});
+test('filler is never merged like paint',()=>{
+ const row=(ean,size)=>({storeId:'1',store:'A',itemNo:ean,ean,rawName:'',product:'Butinox finsparkel',size,supplier:'Butinox',area:'interior',subgroup:'Sparkel',quantity:1,revenue:100,profit:50,margin:50});
+ assert.equal(aggregateDisplayProducts([row('1111111111111',''),row('2222222222222','3 L')]).length,2);
+});
