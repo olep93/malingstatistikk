@@ -5,7 +5,7 @@ export type Supplier = "Infra"|"Butinox"|"Jotun"|"Jordan"|"Øvrig";
 export type ProductArea = "exterior"|"interior"|"terrace"|"tools";
 export type Period = "Dag"|"Uke"|"Måned"|"Hittil i år"|"År";
 export type ProductCategory = "Maling / Dekkbeis / Beis"|"Vindu / Dør"|"Murmaling"|"Annet";
-export type ProductRow={storeId:string;store:string;itemNo:string;ean?:string;rawName:string;product:string;productKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;area?:ProductArea;subgroup?:string;quantity:number;revenue:number;profit:number;margin:number;image?:string};
+export type ProductRow={storeId:string;store:string;itemNo:string;ean?:string;rawName:string;product:string;productKey?:string;masterKey?:string;productUrl?:string;size:string;supplier:Supplier;category?:ProductCategory;area?:ProductArea;subgroup?:string;quantity:number;revenue:number;profit:number;margin:number;image?:string};
 export type SourceTotal={storeId:string;store:string;quantity:number;revenue:number;profit:number;margin:number};
 /** Kontroll av en import: totalen filen selv oppgir (når den har en), og linjer som ble forkastet. */
 export type ImportCheck={expectedRevenue?:number;expectedProfit?:number;skippedLines:number;skippedRevenue:number;skippedProfit:number;skippedGroups:string[]};

@@ -45,7 +45,7 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
    ORDER BY keys.product_key,CASE WHEN candidate.product_key=keys.product_key THEN 0 ELSE 1 END,
      CASE WHEN candidate.lookup_status='found' THEN 0 ELSE 1 END,candidate.updated_at DESC
  ) SELECT c.store_id,c.store_name,
-   c.product_key,c.item_no,c.ean,c.raw_name,
+   c.product_key,p.product_key master_key,c.item_no,c.ean,c.raw_name,
    COALESCE(
      CASE WHEN NULLIF(p.display_name,'') IS NOT NULL
        AND p.display_name !~* '^(ean|vare|varenr|produkt|ukjent)([[:space:]:#-]|$)'
@@ -65,7 +65,7 @@ async function loadFastReport(date:string,period:ReportPeriod,storeIds:string[]=
  ORDER BY c.store_name,product_name`;
  if(!rows.length)return null;
  const meta=await q`SELECT min(created_at)::text created_at,max(updated_at)::text updated_at,max(uploaded_by) uploaded_by,count(*)::int day_count FROM paint_reports WHERE report_date BETWEEN ${from}::date AND ${to}::date`;
- const mapped=rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,itemNo:r.item_no||'',ean:r.ean||undefined,rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}));
+ const mapped=rows.map((r:any)=>({storeId:r.store_id,store:r.store_name,productKey:r.product_key,masterKey:r.master_key||undefined,itemNo:r.item_no||'',ean:r.ean||undefined,rawName:cleanProductName(r.raw_name||r.product_name),product:cleanProductName(r.product_name)||'Ukjent produkt',size:r.size||'',supplier:r.supplier,category:r.category||undefined,area:r.area||undefined,subgroup:r.subgroup||undefined,quantity:Number(r.quantity||0),revenue:Number(r.revenue||0),profit:Number(r.profit||0),margin:Number(r.revenue)?Number(r.profit)/Number(r.revenue)*100:0,image:r.image_url||undefined,productUrl:r.product_url||undefined}));
  // SQL-en har allerede aggregert per butikk og stabil product_key. En ny runde
  // gjennom aggregateProducts/canonicalizeRow ville normalisert fra rawName igjen
  // og dermed overskrevet Product Master-navnet med "EAN …" fra BI-importen.
