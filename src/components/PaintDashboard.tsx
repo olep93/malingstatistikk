@@ -91,7 +91,12 @@ function productFamily(product:string){
   .map(word=>word.replace(/grunning$/,"grunn").replace(/maling$/,"mal")).join("-");
 }
 function displaySize(row:ProductRow){return normalizeCommercialSize(row.size||"")||productSubtitle(row)||""}
+/** Bredde eller lengde fra navnet, ellers EAN, så like navn kan skilles. */
+function toolSubtitle(row:ProductRow){const match=`${row.rawName||""} ${row.product||""}`.match(/(\d+(?:[.,]\d+)?)\s*(cm|mm|m)\b/i);return match?`${match[1]} ${match[2].toLowerCase()}`:row.ean?`EAN ${row.ean}`:""}
+/** Bare maling har baser som er samme vare. Malerverktøy og sparkel er ulike varer selv med likt navn (rull 10, 18 og 25 cm). */
+function isPaintProduct(row:ProductRow){return row.area!=="tools"&&row.subgroup!=="Sparkel"}
 function displayProductKey(row:ProductRow,includeStore=true){
+ if(!isPaintProduct(row))return [includeStore?row.storeId:"",row.area||"exterior","vare",row.masterKey||row.ean||row.productKey||`${row.product}|${row.size}`].join("|");
  return [includeStore?row.storeId:"",row.area||"exterior",row.supplier,productFamily(row.product),productFamily(displaySize(row))].join("|");
 }
 function aggregateDisplayProducts(rows:ProductRow[],includeStore=true){
@@ -108,7 +113,7 @@ function aggregateDisplayProducts(rows:ProductRow[],includeStore=true){
  // Varianter med størrelse samles først. Varianter uten størrelse plasseres hver for seg, så snittprisen
  // ikke blandes på tvers av størrelser.
  const unknown:{key:string;row:ProductRow}[]=[];
- for(const row of rows){const key=displayProductKey(row,includeStore);if(displaySize(row))add(key,row);else unknown.push({key,row})}
+ for(const row of rows){const key=displayProductKey(row,includeStore);if(displaySize(row)||!isPaintProduct(row))add(key,row);else unknown.push({key,row})}
  const unit=(item:ProductRow)=>item.quantity?item.revenue/item.quantity:0;
  for(const {key,row} of unknown){
   const family=key.replace(/\|[^|]*$/,"|");
@@ -120,7 +125,7 @@ function aggregateDisplayProducts(rows:ProductRow[],includeStore=true){
  }
  return [...products.values()];
 }
-function ProductCard({row,rank,onEdit}:{row:ProductRow;rank:number;onEdit?:(row:ProductRow)=>void}){const fallback=productImageUrl(row);const category=row.subgroup||row.category||categoryForProduct(row.product,row.rawName);return <article className={`productCard margin-${marginClass(row.margin)}`}><div className="rank">#{rank}</div><div className="productMedia"><div className="productImage"><img src={fallback} data-fallback={fallback} alt={row.product} onError={(e)=>{const img=e.currentTarget;const fb=img.dataset.fallback;if(fb&&img.src!==new URL(fb,window.location.origin).href)img.src=fb}}/></div>{onEdit&&<button className="productQuickEdit" type="button" onClick={()=>onEdit(row)}><Pencil size={15}/>Rediger</button>}</div><div className="productInfo"><div className="productTags"><span className={`tag ${row.supplier.toLowerCase()}`}>{row.supplier}</span><span className="categoryTag">{category}</span></div><h3>{row.product}</h3><p>{productSubtitle(row)||(row.area!=="tools"?"Størrelse ukjent":"")}</p><div className="productMetricGrid"><div><span>Solgt</span><b>{row.quantity.toLocaleString("nb-NO")}</b><small>{unitLabel(row.area,true)}</small></div><div><span>Fortj. kr</span><b>{kr(row.profit)}</b><small>{kr(row.revenue)} oms.</small></div><div className={`marginMetric ${marginClass(row.margin)}`}><span>Fortj. %</span><b>{pct(row.margin)}</b><i><em style={{width:`${Math.min(100,Math.max(0,row.margin*2))}%`}}/></i></div></div></div></article>}
+function ProductCard({row,rank,onEdit}:{row:ProductRow;rank:number;onEdit?:(row:ProductRow)=>void}){const fallback=productImageUrl(row);const category=row.subgroup||row.category||categoryForProduct(row.product,row.rawName);return <article className={`productCard margin-${marginClass(row.margin)}`}><div className="rank">#{rank}</div><div className="productMedia"><div className="productImage"><img src={fallback} data-fallback={fallback} alt={row.product} onError={(e)=>{const img=e.currentTarget;const fb=img.dataset.fallback;if(fb&&img.src!==new URL(fb,window.location.origin).href)img.src=fb}}/></div>{onEdit&&<button className="productQuickEdit" type="button" onClick={()=>onEdit(row)}><Pencil size={15}/>Rediger</button>}</div><div className="productInfo"><div className="productTags"><span className={`tag ${row.supplier.toLowerCase()}`}>{row.supplier}</span><span className="categoryTag">{category}</span></div><h3>{row.product}</h3><p>{productSubtitle(row)||(isPaintProduct(row)?"Størrelse ukjent":toolSubtitle(row))}</p><div className="productMetricGrid"><div><span>Solgt</span><b>{row.quantity.toLocaleString("nb-NO")}</b><small>{unitLabel(row.area,true)}</small></div><div><span>Fortj. kr</span><b>{kr(row.profit)}</b><small>{kr(row.revenue)} oms.</small></div><div className={`marginMetric ${marginClass(row.margin)}`}><span>Fortj. %</span><b>{pct(row.margin)}</b><i><em style={{width:`${Math.min(100,Math.max(0,row.margin*2))}%`}}/></i></div></div></div></article>}
 
 function PeriodControl({period,date,setDate,reports}:{period:Period;date:string;setDate:(value:string)=>void;reports:DailyReport[]}){
  const availableDates=useMemo(()=>reports.map(r=>r.date).sort(),[reports]);
