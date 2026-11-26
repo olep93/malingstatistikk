@@ -1568,3 +1568,16 @@
  .v10Topbar .topbarActions .topbarIconAction{width:38px!important;min-width:38px!important;height:38px!important;flex-basis:38px}
  .v10Topbar .mobileAreaPicker{margin-bottom:0}
 }
+
+.productMarginPanel {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border-radius: 8px;
+  color: #192428;
+  font-size: .85rem;
+}
+.productMarginPanel strong { font-size: 1.65rem; line-height: 1.12; font-variant-numeric: tabular-nums; }
+.productMarginPanel[data-tone="red"] { background: #f7dedb; }
+.productMarginPanel[data-tone="yellow"] { background: #faedbd; }
+.productMarginPanel[data-tone="green"] { background: #d9eee3; }
