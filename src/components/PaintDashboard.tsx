@@ -91,11 +91,14 @@ function ProductCard({row,rank,onEdit}:{row:ProductRow;rank:number;onEdit?:(row:
  const image=productImageUrl(row),category=row.subgroup||row.category||categoryForProduct(row.product,row.rawName);
  return <article className="paintProduct"><div className="paintProductVisual"><span className="paintProductRank">#{rank}</span>{imageFailed?<div className="paintProductMissing"><ImageOff size={28}/><small>Bilde mangler</small></div>:<img loading="lazy" decoding="async" src={image} alt={row.product} onError={()=>setImageFailed(true)}/>}{onEdit&&<button className="paintEdit" type="button" aria-label={`Rediger ${row.product}`} onClick={()=>onEdit(row)}><Pencil size={14}/>Rediger</button>}</div><div className="paintProductContent"><div className="paintProductTags"><b>{row.supplier}</b><span>{category}</span></div><h3>{row.product}</h3><p className="paintProductSize">{productSubtitle(row)||(row.area!=="tools"?"Størrelse ukjent":"Malerverktøy")}</p>
  <div className="productMarginPanel" data-tone={row.margin < 25 ? "red" : row.margin < 35 ? "yellow" : "green"}>
-   <span>Fortjenesteprosent</span>
+   <span>Fortjeneste i prosent</span>
    <strong>{pct(row.margin)}</strong>
-   <small>{row.margin < 25 ? "Under 25 %" : row.margin < 35 ? "25 til under 35 %" : "35 % og over"}</small>
  </div>
- <dl className="paintProductStats"><div><dt>Fortjeneste</dt><dd>{kr(row.profit)}</dd></div><div><dt>Solgt</dt><dd>{row.quantity.toLocaleString("nb-NO")} <small>{unitLabel(row.area,true)}</small></dd></div><div><dt>Omsetning</dt><dd>{kr(row.revenue)}</dd></div></dl></div></article>
+ <dl className="paintProductStats">
+   <div><dt>Solgt</dt><dd>{row.quantity.toLocaleString("nb-NO")} <small>{unitLabel(row.area,true)}</small></dd></div>
+   <div><dt>Omsetning</dt><dd>{kr(row.revenue)}</dd></div>
+   <div><dt>Fortjeneste</dt><dd>{kr(row.profit)}</dd></div>
+ </dl></div></article>
 }
 
 function PeriodControl({period,date,setDate,reports}:{period:Period;date:string;setDate:(value:string)=>void;reports:DailyReport[]}){
