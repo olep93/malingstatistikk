@@ -1577,6 +1577,4 @@
   font-size: .85rem;
 }
 .productMarginPanel strong { font-size: 1.65rem; line-height: 1.12; font-variant-numeric: tabular-nums; }
-.paintProductContent[data-tone="red"] { background: #fbece9; }
-.paintProductContent[data-tone="yellow"] { background: #fff5d9; }
-.paintProductContent[data-tone="green"] { background: #e7f4ec; }
+

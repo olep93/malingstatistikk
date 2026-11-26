@@ -242,3 +242,13 @@
   .salesApp .productSalesPage .productGrid.full { grid-template-columns: minmax(0, 1fr); }
   .productSalesPage .paintProductContent { padding: 16px; }
 }
+
+.paintProduct[data-tone="green"] { --margin-edge: #37815b; --margin-fill: #dcefe2; }
+.paintProduct[data-tone="yellow"] { --margin-edge: #ac811b; --margin-fill: #fff1c8; }
+.paintProduct[data-tone="red"] { --margin-edge: #b7524c; --margin-fill: #f9e1de; }
+.paintProduct[data-tone] {
+  border: 3px solid var(--margin-edge);
+  background: var(--margin-fill);
+}
+.paintProduct[data-tone] .paintProductVisual { border-bottom: 3px solid var(--margin-edge); }
+.paintProduct[data-tone] .paintProductContent { background: var(--margin-fill); }
