@@ -257,3 +257,15 @@
 .sdTopList .sdProductBar { display: block; height: 4px; background: #edf1f5; margin-top: 6px; border-radius: 3px; overflow: hidden; }
 .sdProductBar > i { display: block; height: 100%; background: #507796; }
 .sdTopList strong { font-variant-numeric: tabular-nums; }
+.sdTopList {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  column-gap: clamp(6px, 1vw, 12px);
+}
+.sdTopList li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  column-gap: inherit;
+}
+.sdTopList strong { text-align: right; }
