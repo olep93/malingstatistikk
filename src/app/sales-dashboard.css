@@ -252,3 +252,8 @@
 }
 .paintProduct[data-tone] .paintProductVisual { border-bottom: 3px solid var(--margin-edge); }
 .paintProduct[data-tone] .paintProductContent { background: var(--margin-fill); }
+
+.sdTopList img { width: clamp(32px, 5vw, 44px); height: 44px; object-fit: contain; flex: none; }
+.sdTopList .sdProductBar { display: block; height: 4px; background: #edf1f5; margin-top: 6px; border-radius: 3px; overflow: hidden; }
+.sdProductBar > i { display: block; height: 100%; background: #507796; }
+.sdTopList strong { font-variant-numeric: tabular-nums; }

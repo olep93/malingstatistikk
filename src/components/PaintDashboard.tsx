@@ -1,4 +1,5 @@
 "use client";
+import { productImageUrl } from '@/lib/product-image-url';
 import {useEffect,useMemo,useRef,useState,type ReactNode} from "react";
 import {BarChart3,CalendarDays,CheckCircle2,ChevronDown,ChevronLeft,ChevronRight,Coins,ExternalLink,FileSpreadsheet,ImageOff,LoaderCircle,LockKeyhole,LogIn,LogOut,PackageSearch,Save,AlertCircle,Percent,Printer,ImagePlus,RefreshCw,Store,Trophy,Trash2,TrendingDown,TrendingUp,UploadCloud,Users,Pencil,ShieldCheck,GitCompare,FlaskConical} from "lucide-react";
 import {aggregateProducts,categoryForProduct,DailyReport,normalizeCommercialSize,Period,ProductCategory,ProductRow,Supplier} from "@/lib/data";
@@ -84,7 +85,7 @@ function useReports(){
 function Kpi({label,value,sub,tone="blue",delta,deltaText,deltaDirection}:{label:string;value:string;sub:string;tone?:string;delta?:number;deltaText?:string;deltaDirection?:"up"|"down"|"flat"}){const direction=deltaDirection||(delta===undefined?"":delta>0?"up":delta<0?"down":"flat");const Icon=label==="Omsetning"?BarChart3:label==="Fortjeneste"?Coins:label.includes("Fortjeneste %")?Percent:label.includes("Region")?Trophy:Store;const shownDelta=deltaText??(delta===undefined?undefined:`${delta>0?"+":""}${delta.toLocaleString("nb-NO",{minimumFractionDigits:1,maximumFractionDigits:1})}${label.includes("%")?" pp":" %"}`);return <article className={`kpi executiveKpi ${tone} ${direction} ${/^[−-]/.test(value)?"negativeValue":""}`}><div className="kpiIcon"><Icon/></div><div className="kpiBody"><span>{label}</span><strong>{value}</strong><small>{sub}</small>{shownDelta!==undefined&&<em className="kpiDelta">{direction==="up"?<TrendingUp/>:direction==="down"?<TrendingDown/>:<span>•</span>} {shownDelta} <small>mot forrige dag</small></em>}</div></article>}
 const marginClass=marginTone;
 function profitClass(value:number){return value<0?"profit-negative":value>0?"profit-positive":"profit-neutral"}
-function productImageUrl(row:ProductRow){return appPath(row.image||`/api/product-image?${new URLSearchParams({product:row.product,supplier:row.supplier,size:row.size||"",ean:row.ean||"",itemNo:row.itemNo||"",key:row.productKey||[row.supplier,row.product,row.size||""].join("|"),v:"5"}).toString()}`)}
+
 const unitLabel=(area?:string,short=false)=>area==="tools"||area==="total"||area==="focus"?(short?"stk.":"enheter"):"spann";
 function ProductCard({row,rank,onEdit}:{row:ProductRow;rank:number;onEdit?:(row:ProductRow)=>void}){
  const [imageFailed,setImageFailed]=useState(false);

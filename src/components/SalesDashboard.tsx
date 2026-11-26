@@ -1,5 +1,6 @@
 'use client';
 
+import { productImageUrl } from '@/lib/product-image-url';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Check, ChevronDown, Coins, Layers3, MapPin, Package, Percent, Trophy } from 'lucide-react';
 import type { ProductRow } from '@/lib/data';
@@ -88,7 +89,17 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
         <footer className="sdRegionFoot"><span>Vektet fortjeneste i {national ? 'Norge' : 'regionen'}</span><strong>{percent(regionalMargin)}</strong></footer>
       </article>
 
-      <article className="sdPanel sdTopProducts"><header className="sdPanelHeading"><div><span className="sdEyebrow">VARER SOM SELGER</span><h2>Topp 5 på omsetning</h2><p>{national ? 'Samlet for hele Norge.' : `I ${cleanName(selected.store)} denne perioden.`}</p></div><Package size={20} /></header><ol className="sdTopList">{topProducts.map((product, index) => <li key={product.productKey || `${product.product}-${product.size}-${index}`}><span>{String(index + 1).padStart(2, '0')}</span><div><b>{product.product}</b><small>{product.supplier}{productSubtitle(product) ? ` · ${productSubtitle(product)}` : ''} · {amount(product.quantity)} {product.area === 'tools' ? 'stk.' : 'spann'}</small></div><strong>{money(product.revenue)}</strong></li>)}</ol>{onProducts && <button className="sdProductLink" onClick={onProducts}>Se hele produktutvalget<ArrowRight size={16} /></button>}</article>
+      <article className="sdPanel sdTopProducts"><header className="sdPanelHeading"><div><h2>Topp 5 på omsetning</h2><p>{national ? 'Hele Norge' : cleanName(selected.store)} · {periodLabel}</p></div><Package size={20} /></header>
+        <ol className="sdTopList">{topProducts.map((product, index) => (
+          <li key={product.productKey || `${product.product}-${product.size}-${index}`}>
+            <span>{index + 1}</span>
+            <img src={productImageUrl(product)} alt="" width={44} height={44} />
+            <div><b>{product.product}</b><small>{[product.supplier, productSubtitle(product), `${amount(product.quantity)} ${product.area === 'tools' ? 'stk.' : 'spann'}`].filter(Boolean).join(' · ')}</small>
+              {topProducts[0].revenue > 0 && <i className="sdProductBar" aria-hidden="true"><i style={{width: `${Math.max(0, product.revenue) / topProducts[0].revenue * 100}%`}} /></i>}
+            </div>
+            <strong>{money(product.revenue)}</strong>
+          </li>
+        ))}</ol>{onProducts && <button className="sdProductLink" onClick={onProducts}>Se hele produktutvalget<ArrowRight size={16} /></button>}</article>
     </section>
     {categoryLeaders.length > 0 && <section className="sdNationalLeaders"><header><span className="sdEyebrow">KATEGORILEDERNE I NORGE</span><h2>Høyest fortjenesteprosent per vareområde</h2><p>Varehus med positiv netto omsetning i valgt periode.</p></header><div>{categoryLeaders.map(leader => <article key={leader.area} style={{ '--chart-color': leader.color } as CSSProperties}><span>{leader.name}</span><b>{cleanName(leader.store)}</b><strong>{percent(leader.margin)}</strong></article>)}</div></section>}
     <footer className="sdReportFoot"><span><Check size={14} />Basert på valgt import, varehus og periode</span><span>Fortjenesteprosent = fortjeneste / omsetning</span></footer>
