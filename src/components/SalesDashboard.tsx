@@ -33,15 +33,19 @@ function SupplierContribution({groups}: {groups: SalesGroup[]}) {
       const hasReturns = groups.some(group => group[metric] < 0);
       return <section key={metric}>
         <h3>{metric === 'revenue' ? 'Andel av omsetningen' : 'Fortjeneste i kroner'}</h3>
-        <div className="contributionBand" aria-hidden="true">{groups.filter(group => group[metric] > 0).map(group =>
-          <i key={group.name} style={{flexGrow: group[metric], backgroundColor: group.color}} />
+        <div className="supplierRibbon">{groups.filter(group => group[metric] > 0).map(group =>
+          <div key={group.name} style={{flexGrow: group[metric] / positive}}>
+            <div className="supplierSegment" style={{backgroundColor: group.color}}>
+              <span>{group.name}</span>
+              <strong>{metric === 'profit' ? money(group.profit) : percent(group.revenue / positive * 100)}</strong>
+            </div>
+            {metric === 'revenue' && <small>Omsetning<b>{money(group.revenue)}</b></small>}
+          </div>
         )}</div>
-        <div className="contributionValues">{groups.map(group => <div key={group.name}>
-          <span><i style={{backgroundColor: group.color}}/>{group.name}</span>
-          <strong>{metric === 'profit' ? money(group.profit) : positive && group.revenue >= 0 ? percent(group.revenue / positive * 100) : '–'}</strong>
-          {metric === 'revenue' && <small>Omsetning <b>{money(group.revenue)}</b></small>}
-        </div>)}</div>
-        {hasReturns && <small>Båndet viser bare positive bidrag. Beløpene inkluderer returer.</small>}
+        {groups.filter(group => group[metric] <= 0).map(group =>
+          <small className="supplierAdjustment" key={group.name}>{group.name}: {money(group[metric])}</small>
+        )}
+        {hasReturns && <small>Båndet viser positive bidrag. Returer inngår i beløpene.</small>}
       </section>;
     })}
   </article>;

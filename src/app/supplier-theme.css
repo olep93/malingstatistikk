@@ -26,15 +26,16 @@
  .contributionOverview .sdFeatured { background: #143c3b; }
  .contribution h2,.contribution h3 { margin: 0; }
  .contribution h3 { font-size: 14px; margin-top: 20px; }
- .contributionBand { height: 17px; background: #eef2f0; display: flex; border-radius: 4px; overflow: hidden; margin: 8px 0 10px; }
- .contributionBand i { flex-basis: 0; }
- .contributionValues { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
- .contributionValues > div { display: grid; align-content: start; gap: 4px; min-width: 0; }
- .contributionValues span { display: flex; align-items: baseline; gap: 5px; font-weight: 600; overflow-wrap: anywhere; }
- .contributionValues i { flex: none; width: 8px; height: 8px; border-radius: 2px; }
- .contributionValues strong { font-size: clamp(15px,1.5vw,22px); line-height: 1.2; }
- .contribution small { color: #526762; }
- .contributionValues small b { display: block; font-weight: 600; }
+ .supplierRibbon { display:flex; flex-wrap:wrap; gap:3px; margin-top:8px; }
+ .supplierRibbon > div { flex-basis:0; min-width:min(100%,85px); text-align:center; }
+ .supplierSegment { display:grid; align-content:center; gap:3px; min-height:65px; padding:6px 3px; color:white; background-image:linear-gradient(#0002,#0002); overflow-wrap:anywhere; }
+ .supplierRibbon > div:first-child .supplierSegment { border-radius:5px 0 0 5px; }
+ .supplierRibbon > div:last-child .supplierSegment { border-radius:0 5px 5px 0; }
+ .supplierSegment span { font-size:13px; }
+ .supplierSegment strong { font-size:clamp(16px,1.6vw,22px); }
+ .supplierRibbon small,.supplierRibbon small b,.supplierAdjustment { display:block; }
+ .supplierRibbon small { margin-top:6px; color:#526762; }
+ .supplierRibbon small b { color:#193633; }
  @media(max-width: 960px) { .contributionOverview { grid-template-columns: minmax(0,1fr); } }
- @media(max-width: 500px) { .contributionValues { gap: 6px; font-size: 12px; } }
+
 }
