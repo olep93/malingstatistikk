@@ -1,0 +1,40 @@
+/* Screen palette for the sales workspace. */
+@media screen {
+ .salesApp {
+   --ink: #193633;
+   --accent: #326b62;
+   --surface-border: #d5dfda;
+   --radius-panel: 12px;
+   color: var(--ink);
+   background: #eef2f0;
+   font-variant-numeric: tabular-nums;
+ }
+ .salesApp .topbar.v10Topbar,.salesApp .v10Topbar .topbarPrimary { background: #143c3b; }
+ .salesApp .v10Topbar .areaNav button.active { box-shadow: inset 0 -3px #91d4ba; }
+ .salesApp .v10Topbar .topbarSecondary .viewNav button.active { color: var(--accent); box-shadow: inset 0 -2px var(--accent)!important; }
+ .salesApp :is(.hero,.panel,.sdPanel,.compareStore,.productFilters,.productSearchRow,.kpi) {
+   border-color: var(--surface-border); border-radius: 12px; box-shadow: none;
+ }
+ .salesApp :is(.page,.salesDashboard) :is(h1,h2,h3) { color: var(--ink); letter-spacing: -.025em; }
+ .salesApp .hero .eyebrow,.salesApp .sdEyebrow { color: var(--accent); }
+ .salesApp .toolbar .segments button.active,.salesApp .sdIsFocus { background: #e0eee8; color: #234e47; }
+ .salesApp :is(.primary,.chips button.active,.sdButton) { background: var(--accent); color: white; }
+ .salesApp .sdRankTrack span,.salesApp .sdProductBar > i { background: var(--accent); }
+ .contributionOverview { display: grid; grid-template-columns: minmax(280px,.85fr) minmax(0,1.65fr); gap: 16px; margin-bottom: 18px; }
+ .contributionOverview .sdStats { margin: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+ .contributionOverview .sdStat { min-width: 0; padding: 14px; }
+ .contributionOverview .sdFeatured { background: #143c3b; }
+ .contribution h2,.contribution h3 { margin: 0; }
+ .contribution h3 { font-size: 14px; margin-top: 20px; }
+ .contributionBand { height: 17px; background: #eef2f0; display: flex; border-radius: 4px; overflow: hidden; margin: 8px 0 10px; }
+ .contributionBand i { flex-basis: 0; }
+ .contributionValues { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+ .contributionValues > div { display: grid; align-content: start; gap: 4px; min-width: 0; }
+ .contributionValues span { display: flex; align-items: baseline; gap: 5px; font-weight: 600; overflow-wrap: anywhere; }
+ .contributionValues i { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+ .contributionValues strong { font-size: clamp(15px,1.5vw,22px); line-height: 1.2; }
+ .contribution small { color: #526762; }
+ .contributionValues small b { display: block; font-weight: 600; }
+ @media(max-width: 960px) { .contributionOverview { grid-template-columns: minmax(0,1fr); } }
+ @media(max-width: 500px) { .contributionValues { gap: 6px; font-size: 12px; } }
+}

@@ -2,7 +2,7 @@ import type { ProductRow } from './data';
 
 export type SalesGroup = { name: string; revenue: number; profit: number; quantity: number; margin: number; color: string };
 const colors: Record<string, string> = {
-  Infra: '#8061a6', Butinox: '#3984c5', Jotun: '#efbb43', Jordan: '#ea863c', 'Øvrig': '#91a0b4',
+  Infra: '#6c6085', Butinox: '#87652e', Jotun: '#326b62', Jordan: '#ea863c', 'Øvrig': '#91a0b4',
   Eksteriørmaling: '#345a87', Interiørmaling: '#34988c', Terrasse: '#c7a267', Malerverktøy: '#ec8b44',
 };
 const areaNames: Record<string, string> = { exterior: 'Eksteriørmaling', interior: 'Interiørmaling', terrace: 'Terrasse', tools: 'Malerverktøy' };

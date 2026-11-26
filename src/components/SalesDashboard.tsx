@@ -4,7 +4,7 @@ import { productImageUrl } from '@/lib/product-image-url';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Check, ChevronDown, Coins, Layers3, MapPin, Package, Percent, Trophy } from 'lucide-react';
 import type { ProductRow } from '@/lib/data';
-import { buildSalesGroups, salesCategoryLeaders, weightedSalesMargin } from '@/lib/sales-visuals';
+import { buildSalesGroups, type SalesGroup, salesCategoryLeaders, weightedSalesMargin } from '@/lib/sales-visuals';
 import { marginTone } from '@/lib/presentation';
 import { productSubtitle } from '@/lib/display-products';
 
@@ -23,6 +23,28 @@ function Change({ value, suffix = '%', label }: { value?: number; suffix?: strin
 
 function Stat({ label, value, suffix, note, icon, featured, children }: { label: string; value: string; suffix?: string; note: string; icon: ReactNode; featured?: boolean; children?: ReactNode }) {
   return <article className={`sdStat${value.replace(/\D/g, '').length >= 9 ? ' sdHugeValue' : value.replace(/\D/g, '').length >= 7 ? ' sdLongValue' : ''}${featured ? ' sdFeatured' : ''}`}><div className="sdStatTop"><span>{label}</span><i>{icon}</i></div><strong aria-label={`${value}${suffix ? ` ${suffix}` : ''}`}><span>{value}</span>{suffix && <small>{suffix}</small>}</strong><p>{note}</p>{children}</article>;
+}
+
+function SupplierContribution({groups}: {groups: SalesGroup[]}) {
+  return <article className="sdPanel contribution">
+    <h2>Leverandørenes bidrag</h2>
+    {groups.length === 0 ? <p>Ingen salg i valgt periode.</p> : (['revenue', 'profit'] as const).map(metric => {
+      const positive = groups.reduce((sum, group) => sum + Math.max(0, group[metric]), 0);
+      const hasReturns = groups.some(group => group[metric] < 0);
+      return <section key={metric}>
+        <h3>{metric === 'revenue' ? 'Andel av omsetningen' : 'Fortjeneste i kroner'}</h3>
+        <div className="contributionBand" aria-hidden="true">{groups.filter(group => group[metric] > 0).map(group =>
+          <i key={group.name} style={{flexGrow: group[metric], backgroundColor: group.color}} />
+        )}</div>
+        <div className="contributionValues">{groups.map(group => <div key={group.name}>
+          <span><i style={{backgroundColor: group.color}}/>{group.name}</span>
+          <strong>{metric === 'profit' ? money(group.profit) : positive && group.revenue >= 0 ? percent(group.revenue / positive * 100) : '–'}</strong>
+          {metric === 'revenue' && <small>Omsetning <b>{money(group.revenue)}</b></small>}
+        </div>)}</div>
+        {hasReturns && <small>Båndet viser bare positive bidrag. Beløpene inkluderer returer.</small>}
+      </section>;
+    })}
+  </article>;
 }
 
 export function SalesDashboard({ area, areaLabel, periodLabel, selected, previous, previousRank, stores, products, metric, setMetric, onProducts, onSelectStore, focusStoreId, allRows }: {
@@ -55,7 +77,7 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
   return <div className="salesDashboard">
     <header className="sdHeading"><div><span className="sdEyebrow"><span />SALGSOVERSIKT / {areaLabel}</span><h1>{national ? 'Hele Norge' : cleanName(selected.store)}<span> / salgsoversikt</span></h1><p>{periodLabel}</p></div><div className="sdHeadingRight"><span className="sdDataStatus"><Check size={13} />Importerte salgsdata</span>{onProducts && <button className="sdButton" onClick={onProducts}>Utforsk produktene<ArrowRight size={16} /></button>}</div></header>
 
-    <section className="sdStats" aria-label="Nøkkeltall for valgt periode">
+    <div className={supplierMode ? "contributionOverview" : undefined}><section className="sdStats" aria-label="Nøkkeltall for valgt periode">
       <Stat label="Omsetning" value={amount(selected.revenue)} suffix="kr" note={`${amount(selected.quantity)} enheter solgt netto`} icon={<BarChart3 size={19} />} featured><Change value={change('revenue')} label="mot forrige dag" /></Stat>
       <Stat label="Fortjeneste" value={amount(selected.profit)} suffix="kr" note="Etter varekostnad" icon={<Coins size={19} />}><Change value={change('profit')} label="mot forrige dag" /></Stat>
       <Stat label="Fortjenesteprosent" value={selected.margin.toLocaleString('nb-NO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} suffix="%" note="Vektet etter omsetning" icon={<Percent size={19} />}><span className={`sdTone sdTone-${marginTone(selected.margin)}`}>{selected.margin >= 30 ? 'Svært god margin' : selected.margin >= 25 ? 'God margin' : selected.margin >= 15 ? 'Middels margin' : selected.margin >= 10 ? 'Lav margin' : 'Svak margin'}</span></Stat>
@@ -64,7 +86,8 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
       </Stat>
     </section>
 
-    <section className="sdMainGrid">
+    {supplierMode && <SupplierContribution groups={groups} />}</div>
+    {!supplierMode && <section className="sdMainGrid">
       <article className="sdPanel sdPerformance"><header className="sdPanelHeading"><div><span className="sdEyebrow">{supplierMode ? 'LEVERANDØRBILDET' : 'SALGSMIKSEN'}</span><h2>{supplierMode ? 'Hvem driver salget?' : 'Hva driver salget?'}</h2><p>{supplierMode ? 'Alle leverandører i valgt område.' : area === 'total' ? 'Fordelt på de fire vareområdene.' : 'De seks største verktøykategoriene.'}</p></div><div className="sdToggle" aria-label="Velg måltall for salgsdiagram">{(['revenue', 'profit'] as const).map(key => <button key={key} aria-pressed={chartMetric === key} onClick={() => setChartMetric(key)}>{key === 'revenue' ? 'Omsetning' : 'Fortjeneste'}</button>)}</div></header>
         <div className="sdBars" role="list" aria-label={`${chartMetric === 'revenue' ? 'Omsetning' : 'Fortjeneste'} per ${supplierMode ? 'leverandør' : 'kategori'}`}>
           {chartGroups.map(group => <div className="sdBarRow" key={group.name} role="listitem" style={{ '--chart-color': group.color } as CSSProperties}><div className="sdBarIdentity"><i /><b>{group.name}</b><strong className={group[chartMetric] < 0 ? 'sdNegative' : ''}>{money(group[chartMetric])}</strong></div><div className="sdBarTrack"><span style={{ width: `${Math.abs(group[chartMetric]) / chartMax * 100}%`, background: group[chartMetric] < 0 ? '#c3554e' : undefined }} /></div><div className="sdBarMeta"><span>{amount(group.quantity)} enheter</span><span>Fortjeneste <b className={`sdText-${marginTone(group.margin)}`}>{percent(group.margin)}</b></span></div></div>)}
@@ -80,7 +103,7 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
         <ul className="sdLegend">{groups.map(group => <li key={group.name}><i style={{ background: group.color }} /><span>{group.name}</span><b>{positiveRevenue ? percent(Math.max(0, group.revenue) / positiveRevenue * 100) : '0,0 %'}</b></li>)}</ul>
         <p className="sdFinePrint">{hasNegativeGroup ? 'Diagrammet fordeler positiv omsetning. Negative grupper inngår i nøkkeltallene.' : 'Netto omsetning, inkludert returer.'}</p>
       </article>
-    </section>
+    </section>}
 
     <section className="sdLowerGrid">
       <article className="sdPanel sdRegion"><header className="sdPanelHeading"><div><span className="sdEyebrow">{national ? 'VAREHUSENE I NORGE' : 'DITT VAREHUS I REGIONEN'}</span><h2>{national ? 'Hvem ligger foran?' : 'Sammenlign resultatene'}</h2><p>{stores.length} varehus med salg i valgt periode.</p></div><label className="sdMetricSelect"><span>Ranger etter</span><select aria-label="Ranger varehus etter" value={metric} onChange={event => setMetric(event.target.value as Metric)}><option value="margin">Fortjeneste %</option><option value="profit">Fortjeneste kr</option><option value="revenue">Omsetning</option></select><ChevronDown size={14} /></label></header>
