@@ -1,29 +1,29 @@
 /* Screen palette for the sales workspace. */
 @media screen {
  .salesApp {
-   --ink: #193633;
-   --accent: #326b62;
-   --surface-border: #d5dfda;
+   --ink: #192b42;
+   --accent: #274969;
+   --surface-border: #dce3eb;
    --radius-panel: 12px;
    color: var(--ink);
-   background: #eef2f0;
+   background: #f3f5f8;
    font-variant-numeric: tabular-nums;
  }
- .salesApp .topbar.v10Topbar,.salesApp .v10Topbar .topbarPrimary { background: #143c3b; }
- .salesApp .v10Topbar .areaNav button.active { box-shadow: inset 0 -3px #91d4ba; }
+ .salesApp .topbar.v10Topbar,.salesApp .v10Topbar .topbarPrimary { background: #142c47; }
+ .salesApp .v10Topbar .areaNav button.active { box-shadow: inset 0 -3px #ed934b; }
  .salesApp .v10Topbar .topbarSecondary .viewNav button.active { color: var(--accent); box-shadow: inset 0 -2px var(--accent)!important; }
  .salesApp :is(.hero,.panel,.sdPanel,.compareStore,.productFilters,.productSearchRow,.kpi) {
    border-color: var(--surface-border); border-radius: 12px; box-shadow: none;
  }
  .salesApp :is(.page,.salesDashboard) :is(h1,h2,h3) { color: var(--ink); letter-spacing: -.025em; }
  .salesApp .hero .eyebrow,.salesApp .sdEyebrow { color: var(--accent); }
- .salesApp .toolbar .segments button.active,.salesApp .sdIsFocus { background: #e0eee8; color: #234e47; }
+ .salesApp .toolbar .segments button.active,.salesApp .sdIsFocus { background: #eaf0f6; color: #2d4b6b; }
  .salesApp :is(.primary,.chips button.active,.sdButton) { background: var(--accent); color: white; }
  .salesApp .sdRankTrack span,.salesApp .sdProductBar > i { background: var(--accent); }
  .contributionOverview { display: grid; grid-template-columns: minmax(280px,.85fr) minmax(0,1.65fr); gap: 16px; margin-bottom: 18px; }
  .contributionOverview .sdStats { margin: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
  .contributionOverview .sdStat { min-width: 0; padding: 14px; }
- .contributionOverview .sdFeatured { background: #143c3b; }
+ .contributionOverview .sdFeatured { background: #142c47; }
  .contribution h2,.contribution h3 { margin: 0; }
  .contribution h3 { font-size: 14px; margin-top: 20px; }
  .supplierRibbon { display:flex; flex-wrap:wrap; gap:3px; margin-top:8px; }
@@ -34,8 +34,8 @@
  .supplierSegment span { font-size:13px; }
  .supplierSegment strong { font-size:clamp(16px,1.6vw,22px); }
  .supplierRibbon small,.supplierRibbon small b,.supplierAdjustment { display:block; }
- .supplierRibbon small { margin-top:6px; color:#526762; }
- .supplierRibbon small b { color:#193633; }
+ .supplierRibbon small { margin-top:6px; color:#526780; }
+ .supplierRibbon small b { color:#192b42; }
  @media(max-width: 960px) { .contributionOverview { grid-template-columns: minmax(0,1fr); } }
 
 }

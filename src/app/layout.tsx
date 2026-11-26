@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   icons: { apple: "https://jobbverktoy.no/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Jobbverktøy", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { themeColor: "#143c3b" };
+export const viewport: Viewport = { themeColor: "#142c47" };
 
 // Gamle adresser (malingstatistikk.vercel.app osv.) sender nettleseren videre til samme side på jobbverktoy.no.
 // Portalen henter sidene fra malingstatistikk.vercel.app, men der står jobbverktoy.no i nettleseren, så det går ikke i ring.
