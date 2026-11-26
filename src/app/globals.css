@@ -1572,12 +1572,11 @@
 .productMarginPanel {
   display: grid;
   gap: 3px;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 0;
   color: #192428;
   font-size: .85rem;
 }
 .productMarginPanel strong { font-size: 1.65rem; line-height: 1.12; font-variant-numeric: tabular-nums; }
-.productMarginPanel[data-tone="red"] { background: #f7dedb; }
-.productMarginPanel[data-tone="yellow"] { background: #faedbd; }
-.productMarginPanel[data-tone="green"] { background: #d9eee3; }
+.paintProductContent[data-tone="red"] { background: #fbece9; }
+.paintProductContent[data-tone="yellow"] { background: #fff5d9; }
+.paintProductContent[data-tone="green"] { background: #e7f4ec; }
