@@ -79,9 +79,13 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
   const positiveGroups = groups.filter(group => group.revenue > 0);
 
   return <div className="salesDashboard">
-    <header className="sdHeading"><div><span className="sdEyebrow"><span />SALGSOVERSIKT / {areaLabel}</span><h1>{national ? 'Hele Norge' : cleanName(selected.store)}<span> / salgsoversikt</span></h1><p>{periodLabel}</p></div><div className="sdHeadingRight"><span className="sdDataStatus"><Check size={13} />Importerte salgsdata</span>{onProducts && <button className="sdButton" onClick={onProducts}>Utforsk produktene<ArrowRight size={16} /></button>}</div></header>
-
-    <div className={supplierMode ? "contributionOverview" : undefined}><section className="sdStats" aria-label="Nøkkeltall for valgt periode">
+    <div className={supplierMode ? "salesLead withContribution" : "salesLead"}>
+      <div className="resultBoard">
+        <header className="resultHeading">
+          <div><p>{areaLabel} · Salgsoversikt</p><h1>{national ? 'Hele Norge' : cleanName(selected.store)}</h1></div>
+          <span>{periodLabel}</span>
+        </header>
+        <section className="sdStats" aria-label="Nøkkeltall for valgt periode">
       <Stat label="Omsetning" value={amount(selected.revenue)} suffix="kr" note={`${amount(selected.quantity)} enheter solgt netto`} icon={<BarChart3 size={19} />} featured><Change value={change('revenue')} label="mot forrige dag" /></Stat>
       <Stat label="Fortjeneste" value={amount(selected.profit)} suffix="kr" note="Etter varekostnad" icon={<Coins size={19} />}><Change value={change('profit')} label="mot forrige dag" /></Stat>
       <Stat label="Fortjenesteprosent" value={selected.margin.toLocaleString('nb-NO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} suffix="%" note="Vektet etter omsetning" icon={<Percent size={19} />}><span className={`sdTone sdTone-${marginTone(selected.margin)}`}>{selected.margin >= 30 ? 'Svært god margin' : selected.margin >= 25 ? 'God margin' : selected.margin >= 15 ? 'Middels margin' : selected.margin >= 10 ? 'Lav margin' : 'Svak margin'}</span></Stat>
@@ -90,7 +94,9 @@ export function SalesDashboard({ area, areaLabel, periodLabel, selected, previou
       </Stat>
     </section>
 
-    {supplierMode && <SupplierContribution groups={groups} />}</div>
+    </div>
+      {supplierMode && <SupplierContribution groups={groups} />}
+    </div>
     {!supplierMode && <section className="sdMainGrid">
       <article className="sdPanel sdPerformance"><header className="sdPanelHeading"><div><span className="sdEyebrow">{supplierMode ? 'LEVERANDØRBILDET' : 'SALGSMIKSEN'}</span><h2>{supplierMode ? 'Hvem driver salget?' : 'Hva driver salget?'}</h2><p>{supplierMode ? 'Alle leverandører i valgt område.' : area === 'total' ? 'Fordelt på de fire vareområdene.' : 'De seks største verktøykategoriene.'}</p></div><div className="sdToggle" aria-label="Velg måltall for salgsdiagram">{(['revenue', 'profit'] as const).map(key => <button key={key} aria-pressed={chartMetric === key} onClick={() => setChartMetric(key)}>{key === 'revenue' ? 'Omsetning' : 'Fortjeneste'}</button>)}</div></header>
         <div className="sdBars" role="list" aria-label={`${chartMetric === 'revenue' ? 'Omsetning' : 'Fortjeneste'} per ${supplierMode ? 'leverandør' : 'kategori'}`}>

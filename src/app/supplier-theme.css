@@ -20,10 +20,6 @@
  .salesApp .toolbar .segments button.active,.salesApp .sdIsFocus { background: #eaf0f6; color: #2d4b6b; }
  .salesApp :is(.primary,.chips button.active,.sdButton) { background: var(--accent); color: white; }
  .salesApp .sdRankTrack span,.salesApp .sdProductBar > i { background: var(--accent); }
- .contributionOverview { display: grid; grid-template-columns: minmax(280px,.85fr) minmax(0,1.65fr); gap: 16px; margin-bottom: 18px; }
- .contributionOverview .sdStats { margin: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
- .contributionOverview .sdStat { min-width: 0; padding: 14px; }
- .contributionOverview .sdFeatured { background: #142c47; }
  .contribution h2,.contribution h3 { margin: 0; }
  .contribution h3 { font-size: 14px; margin-top: 20px; }
  .supplierRibbon { display:flex; flex-wrap:wrap; gap:3px; margin-top:8px; }
@@ -36,7 +32,6 @@
  .supplierRibbon small,.supplierRibbon small b,.supplierAdjustment { display:block; }
  .supplierRibbon small { margin-top:6px; color:#526780; }
  .supplierRibbon small b { color:#192b42; }
- @media(max-width: 960px) { .contributionOverview { grid-template-columns: minmax(0,1fr); } }
 
 }
 
@@ -102,4 +97,59 @@
    .salesApp .crossCompareAdd label:first-child { grid-column: 1 / -1; }
    .salesApp .crossCompareAdd select { font-size: 16px; }
  }
+}
+
+@media screen {
+ .salesLead { margin: 0 0 var(--section-gap); }
+ .salesLead.withContribution { display: grid; grid-template-columns: minmax(320px,.88fr) minmax(0,1.35fr); gap: 0; border-radius: 16px; overflow: hidden; background: white; border: 1px solid #ccd7e3; }
+ .resultBoard { color: white; background: linear-gradient(118deg,#102b48,#1e4265); padding: clamp(18px,2vw,32px); border-radius: 14px; }
+ .withContribution .resultBoard { border-radius: 0; }
+ .resultHeading { display:flex; justify-content:space-between; align-items:end; flex-wrap:wrap; gap:8px 16px; padding-bottom:18px; border-bottom:1px solid #ffffff38; }
+ .resultHeading p,.resultHeading > span { margin:0; font-size:12px; line-height:1.5; color:#ccdaea; }
+ .salesApp .salesDashboard .resultHeading h1 { color:white; margin:3px 0 0; font-size:clamp(30px,3.5vw,54px); line-height:1.06; letter-spacing:-.045em; }
+ .resultBoard .sdStats { gap:0; margin:0; }
+ .withContribution .sdStats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .resultBoard .sdStat { background:none; border:0; border-radius:0; min-height:0; padding:16px 8px 4px 0; box-shadow:none; overflow:visible; }
+ .resultBoard .sdStat:after,.resultBoard .sdStat:before,.resultBoard .sdStatTop i { display:none; }
+ .resultBoard .sdStatTop,.resultBoard .sdFeatured .sdStatTop { color:#d2e0ef; min-height:0; font-size:12px; margin-bottom:5px; }
+ .resultBoard .sdStat > strong { color:white; font-size:clamp(24px,2.55vw,39px); letter-spacing:-.04em; }
+ .resultBoard .sdStat > strong > span { max-width:100%; overflow-wrap:anywhere; }
+ .resultBoard .sdLongValue > strong { font-size:clamp(19px,2vw,30px); }
+ .resultBoard .sdHugeValue > strong { font-size:clamp(16px,1.65vw,24px); }
+ .resultBoard .sdStat > p,.resultBoard .sdStat > strong > small { color:#bed1e6; }
+ .salesLead .contribution { padding:clamp(18px,2.4vw,36px); border:0; border-radius:0; align-self:center; }
+ .salesLead .contribution h2 { font-size:clamp(21px,2vw,30px); line-height:1.1; }
+ .salesLead .supplierSegment strong { font-size:clamp(18px,1.9vw,29px); }
+ .salesDashboard .sdLowerGrid { display:grid; grid-template-columns:minmax(0,1fr); }
+ .sdTopProducts .sdPanelHeading > svg { display:none; }
+ @media(min-width:760px) {
+   .sdTopProducts .sdTopList { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+   .sdTopProducts .sdTopList li { position:relative; grid-column:auto; display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:14px; border:1px solid #dae3ec; border-radius:8px; background:linear-gradient(#f1f5f9 0 116px,white 116px); }
+   .sdTopProducts .sdTopList li > span { position:absolute; top:8px; left:10px; color:#395370; font-size:12px; }
+   .sdTopProducts .sdTopList img { width:100%; height:91px; margin-bottom:9px; object-fit:contain; mix-blend-mode:multiply; }
+   .sdTopProducts .sdTopList li > div { display:flex; flex-direction:column; }
+   .sdTopProducts .sdTopList b { font-size:14px; color:#173552; }
+   .sdTopProducts .sdTopList strong { text-align:left; font-size:18px; white-space:normal; }
+   .sdTopProducts .sdProductBar { margin-top:auto; }
+   .sdTopProducts .sdTopList small { padding-bottom:10px; }
+ }
+ @media(max-width:880px) { .salesLead.withContribution { grid-template-columns:minmax(0,1fr); } }
+ .salesApp :is(.productSalesPage,.crossComparison,.page) > .hero.compact,
+ .salesApp .fpDashboard > .fpHeading {
+   padding:clamp(18px,2vw,28px); border:0; border-radius:12px; background:#163653; color:white;
+ }
+ .salesApp :is(.page,.crossComparison) > .hero.compact h1,.salesApp .fpDashboard > .fpHeading h1 { color:white; }
+ .salesApp :is(.page,.crossComparison) > .hero.compact :is(.eyebrow,p),.salesApp .fpDashboard > .fpHeading :is(p,.sdEyebrow,h1 span) { color:#c6d8e9; }
+}
+
+@media screen and (min-width:1000px) {
+ .salesApp :is(.catalogWorkspace,.adminWorkspace) { display:grid; grid-template-columns:clamp(205px,19vw,255px) minmax(0,1fr); gap:var(--section-gap); align-items:start; }
+ .salesApp .catalogWorkspace .productFilters,.salesApp .adminWorkspace .adminSectionNav { display:flex; flex-direction:column; align-items:stretch; margin:0; }
+ .salesApp .catalogWorkspace .productSearchRow { flex-direction:column; align-items:stretch; }
+ .salesApp .catalogWorkspace .productSearchRow label { min-width:0; }
+ .salesApp .catalogResults .productGrid.full { margin-top:0; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); }
+ .salesApp .adminWorkspace .adminSectionNav button { text-align:left; padding:12px 14px; }
+ .salesApp .adminWorkspace .adminSectionNav button[aria-current=page] { box-shadow:inset 3px 0 #4977a0; }
+ .adminWorkspaceBody { min-width:0; }
+ .adminWorkspaceBody > :first-child { margin-top:0; }
 }
