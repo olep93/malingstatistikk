@@ -6,7 +6,9 @@
 export const basePath = "/malingstatistikk";
 
 /** The portal's address. Its pages are not part of this app, so links there are plain `<a>` tags. */
-export const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || "https://jobbverktoy.no";
+export const portalUrl = process.env.VERCEL_GIT_COMMIT_REF === "codex/design-1f-test"
+  ? "https://jobbverktoy-git-codex-design-1f-test-ole93.vercel.app"
+  : process.env.NEXT_PUBLIC_PORTAL_URL || "https://jobbverktoy.no";
 
 /** An app path such as "/api/reports" as the browser must request it. Absolute URLs pass through. */
 export function appPath(path: string) {
